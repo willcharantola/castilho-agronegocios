@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   description: "Sistema de gestão de negócios e gado da Castilho Agronegócios.",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default",
+    statusBarStyle: "black-translucent",
     title: "Castilho Agronegócios",
   },
 };
