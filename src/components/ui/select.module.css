@@ -1,0 +1,83 @@
+.trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+  width: 100%;
+  border: none;
+  background: transparent;
+  font: inherit;
+  color: var(--color-ink);
+  cursor: pointer;
+  outline: none;
+}
+
+.trigger[data-placeholder] {
+  color: color-mix(in oklch, var(--color-ink) 40%, transparent);
+}
+
+.value {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 0.4rem;
+  text-align: left;
+}
+
+.icon {
+  flex-shrink: 0;
+  color: var(--color-olive);
+}
+
+.positioner {
+  isolation: isolate;
+  z-index: 50;
+}
+
+.popup {
+  z-index: 50;
+  max-height: var(--available-height, 20rem);
+  width: var(--anchor-width);
+  min-width: 10rem;
+  overflow-y: auto;
+  border-radius: var(--radius-md);
+  background: var(--color-white);
+  color: var(--color-ink);
+  box-shadow: 0 12px 30px -8px rgb(43 66 14 / 30%);
+  border: 1px solid color-mix(in oklch, var(--color-olive) 25%, transparent);
+  padding: 0.25rem;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.5rem 0.6rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  cursor: default;
+  outline: none;
+}
+
+.item[data-highlighted] {
+  background: var(--color-field-green);
+}
+
+.itemText {
+  flex: 1;
+}
+
+.itemIndicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-olive);
+}
+
+.scrollButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem 0;
+}

@@ -1,0 +1,35 @@
+/* Shared "tinted glass box" look, reused by text inputs and the select trigger
+   so both render as the same pill-shaped field in the mockups. */
+.box {
+  height: 3rem;
+  width: 100%;
+  border-radius: var(--radius-md);
+  border: 2px solid color-mix(in oklch, var(--color-olive) 40%, transparent);
+  padding: 0 1rem;
+  font-size: 1rem;
+  color: var(--color-ink);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  transition: border-color 0.15s ease;
+}
+
+.box:focus-within {
+  border-color: var(--color-olive);
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--color-olive) 30%, transparent);
+}
+
+.green {
+  background: color-mix(in oklch, var(--color-field-green) 70%, transparent);
+}
+
+.pink {
+  background: color-mix(in oklch, var(--color-field-pink) 70%, transparent);
+}
+
+.plain {
+  background: color-mix(in oklch, white 70%, transparent);
+}
+
+.box:has(:disabled) {
+  opacity: 0.7;
+}

@@ -1,0 +1,31 @@
+.screen {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding-bottom: 4rem;
+  text-align: center;
+}
+
+.icon {
+  display: flex;
+  height: 4rem;
+  width: 4rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--color-dark);
+}
+
+.description {
+  max-width: 20rem;
+  font-size: 0.9rem;
+  color: color-mix(in oklch, var(--color-ink) 70%, transparent);
+}

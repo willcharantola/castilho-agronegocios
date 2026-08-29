@@ -1,0 +1,22 @@
+.screen {
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  padding-bottom: 4rem;
+  text-align: center;
+}
+
+.title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--color-dark);
+}
+
+.description {
+  color: color-mix(in oklch, var(--color-ink) 80%, transparent);
+}
+
+.button {
+  margin-top: 1.5rem;
+  width: 100%;
+}

@@ -1,0 +1,12 @@
+.forgotLink {
+  margin-top: 0.25rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: color-mix(in oklch, var(--color-ink) 80%, transparent);
+}
+
+.forgotHighlight {
+  color: var(--color-teal);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}

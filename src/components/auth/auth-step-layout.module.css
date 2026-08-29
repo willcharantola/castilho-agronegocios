@@ -1,0 +1,31 @@
+.screen {
+  padding-bottom: 2.5rem;
+}
+
+.header {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.title {
+  text-align: center;
+  font-size: 1.5rem;
+  line-height: 1.3;
+  font-weight: 800;
+  color: var(--color-dark);
+}
+
+.progressWrap {
+  width: 100%;
+  max-width: 220px;
+}
+
+.body {
+  margin-top: 2.5rem;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}

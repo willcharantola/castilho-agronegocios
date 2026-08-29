@@ -1,0 +1,179 @@
+.page {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Negócio summary card */
+.summary {
+  border-radius: var(--radius-xl);
+  padding: 1rem;
+}
+
+.summaryHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.summaryIcon {
+  display: flex;
+  height: 2.25rem;
+  width: 2.25rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 15%);
+}
+
+.summaryFarm {
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.summarySeller {
+  font-size: 0.75rem;
+  color: rgb(255 255 255 / 75%);
+}
+
+.summaryStats {
+  margin-top: 1rem;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  text-align: center;
+  font-size: 0.75rem;
+}
+
+.summaryStatLabel {
+  color: rgb(255 255 255 / 70%);
+}
+
+.summaryStatValue {
+  font-weight: 700;
+}
+
+.summaryFooter {
+  margin-top: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid rgb(255 255 255 / 15%);
+  padding-top: 0.75rem;
+  font-size: 0.9rem;
+}
+
+/* Form */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+.totalRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border-top: 2px dashed color-mix(in oklch, var(--color-olive) 30%, transparent);
+  padding-top: 1rem;
+}
+
+.totalLabel {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--color-dark);
+}
+
+.totalValue {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--color-dark);
+}
+
+.readOnlyField {
+  opacity: 1;
+}
+
+/* Session list */
+.sessionList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.sessionTitle {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--color-dark);
+}
+
+.sessionItems {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: var(--radius-xl);
+  background: rgb(255 255 255 / 60%);
+}
+
+.sessionItems > * + * {
+  border-top: 1px solid color-mix(in oklch, var(--color-olive) 15%, transparent);
+}
+
+.sessionRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+}
+
+.sessionIcon {
+  display: flex;
+  height: 2.25rem;
+  width: 2.25rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--color-dark);
+  color: var(--color-white);
+}
+
+.sessionInfo {
+  flex: 1;
+}
+
+.sessionName {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--color-dark);
+}
+
+.sessionMeta {
+  font-size: 0.75rem;
+  color: color-mix(in oklch, var(--color-ink) 70%, transparent);
+}
+
+.sessionAmount {
+  text-align: right;
+  font-size: 0.75rem;
+}
+
+.sessionAmountValue {
+  font-weight: 700;
+  color: var(--color-dark);
+}
+
+.finishButton {
+  margin-top: 0.5rem;
+  width: 100%;
+  color: var(--color-teal);
+}

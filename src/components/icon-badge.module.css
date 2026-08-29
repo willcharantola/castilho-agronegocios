@@ -1,0 +1,15 @@
+.badge {
+  margin-left: auto;
+  margin-right: auto;
+  display: flex;
+  height: 5rem;
+  width: 5rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: color-mix(in oklch, var(--color-olive) 85%, transparent);
+}
+
+.icon {
+  color: var(--color-white);
+}

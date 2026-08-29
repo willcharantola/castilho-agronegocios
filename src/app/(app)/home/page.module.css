@@ -1,0 +1,68 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.logo {
+  margin-left: auto;
+  margin-right: auto;
+  height: 5rem;
+  width: 5rem;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: 0.75rem;
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border-radius: 5px;
+  padding: 1rem;
+}
+
+.tileLarge {
+  grid-row: span 2;
+}
+
+.tileIcon {
+  color: var(--color-olive);
+}
+
+.tileValue {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--color-dark);
+}
+
+.tileLabel {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: color-mix(in oklch, var(--color-ink) 70%, transparent);
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  
+}
+
+.actions > * {
+  width: 100%;
+}
+
+
+.bottons{
+  display: flex;
+  border-radius: 5px;
+  background-color: #2B420E;
+  color: #fff;
+}
+

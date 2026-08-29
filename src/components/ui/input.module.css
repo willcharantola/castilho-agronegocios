@@ -1,0 +1,17 @@
+.input {
+  width: 100%;
+  min-width: 0;
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  border: none;
+  outline: none;
+}
+
+.input::placeholder {
+  color: color-mix(in oklch, var(--color-ink) 40%, transparent);
+}
+
+.input:disabled {
+  cursor: not-allowed;
+}

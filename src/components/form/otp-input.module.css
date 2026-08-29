@@ -1,0 +1,39 @@
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.row {
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.box {
+  height: 4rem;
+  width: 3.5rem;
+  border-radius: var(--radius-md);
+  border: 2px solid color-mix(in oklch, var(--color-olive) 40%, transparent);
+  background: color-mix(in oklch, var(--color-field-green) 70%, transparent);
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-ink);
+  outline: none;
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  transition: border-color 0.15s ease;
+}
+
+.box:focus-visible {
+  border-color: var(--color-olive);
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--color-olive) 30%, transparent);
+}
+
+.error {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-danger);
+}

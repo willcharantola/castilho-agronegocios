@@ -1,0 +1,46 @@
+.decor {
+  position: fixed;
+  inset: 0;
+  z-index: -10;
+  overflow: hidden;
+  background: var(--color-cream);
+  pointer-events: none;
+}
+
+.blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(64px);
+}
+
+.blob1 {
+  top: -6rem;
+  left: -5rem;
+  width: 18rem;
+  height: 18rem;
+  background: color-mix(in oklch, var(--color-olive-light) 40%, transparent);
+}
+
+.blob2 {
+  top: 33%;
+  right: -6rem;
+  width: 20rem;
+  height: 20rem;
+  background: color-mix(in oklch, var(--color-mauve) 35%, transparent);
+}
+
+.blob3 {
+  bottom: 0;
+  left: 25%;
+  width: 24rem;
+  height: 24rem;
+  background: color-mix(in oklch, var(--color-teal) 20%, transparent);
+}
+
+.blob4 {
+  bottom: 25%;
+  right: -2.5rem;
+  width: 16rem;
+  height: 16rem;
+  background: color-mix(in oklch, var(--color-dark) 10%, transparent);
+}

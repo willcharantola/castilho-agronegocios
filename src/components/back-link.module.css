@@ -1,0 +1,15 @@
+.link {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 1rem 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--color-teal);
+  transition: opacity 0.15s ease;
+}
+
+.link:hover {
+  opacity: 0.7;
+}

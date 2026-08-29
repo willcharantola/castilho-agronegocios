@@ -1,0 +1,48 @@
+.screen {
+  justify-content: center;
+  padding-bottom: 4rem;
+}
+
+.banner {
+  margin-bottom: 2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border-radius: var(--radius-xl);
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-dark);
+}
+
+.bannerIcon {
+  flex-shrink: 0;
+  color: var(--color-teal);
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4rem;
+}
+
+.actions {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.actions > .button {
+  width: 100%;
+}
+
+.registerLink {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--color-teal);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}

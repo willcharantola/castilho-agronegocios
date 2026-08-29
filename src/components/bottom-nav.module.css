@@ -1,0 +1,44 @@
+.nav {
+  position: absolute;
+  bottom: 0;
+  z-index: 20;
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+  max-width: 28rem;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+}
+
+.bar {
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  border-radius: var(--radius-full);
+  padding: 0.5rem 0.75rem;
+}
+
+.tab {
+  display: flex;
+  height: 3rem;
+  width: 3rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: color-mix(in oklch, var(--color-dark) 70%, transparent);
+  transition: color 0.15s ease;
+}
+
+.tab:hover {
+  color: var(--color-dark);
+}
+
+.tabActive {
+  background: color-mix(in oklch, var(--color-olive) 80%, transparent);
+  color: var(--color-white);
+}
+
+.tabActive:hover {
+  color: var(--color-white);
+}
