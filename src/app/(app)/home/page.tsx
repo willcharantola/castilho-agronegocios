@@ -36,11 +36,10 @@ export default function HomePage() {
 
 
       <div className={styles.grid}>
-        <StatTile icon={TrendingUp} label="Negócios no período" value="—" large />
-        <StatTile icon={DollarSign} label="Comissão total" value="—" />
-        <StatTile icon={Users} label="Clientes ativos" value="—" />
-        <StatTile icon={Percent} label="Rendimento médio" value="—" />
-        <StatTile icon={BarChart3} label="Cabeças vendidas" value="—" />
+        <StatTile icon={TrendingUp} label="Negócios no período" value="56" large />
+        <StatTile icon={DollarSign} label="Comissão total" value="10.000,00" />
+        <StatTile icon={Users} label="Clientes ativos" value="15" />
+        
       </div>
 
       <div className={styles.actions}>
