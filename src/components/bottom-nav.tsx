@@ -8,7 +8,7 @@ import styles from "./bottom-nav.module.css";
 
 const TABS = [
   { href: "/perfil", icon: User, label: "Perfil" },
-  { href: "/home", icon: Home, label: "Início" },
+  { href: "/", icon: Home, label: "Início" },
   { href: "/configuracoes", icon: Settings, label: "Configurações" },
 ];
 
@@ -19,7 +19,7 @@ export function BottomNav() {
     <nav className={cn(styles.nav, "pb-safe")}>
       <div className={cn(styles.bar, "glass-nav")}>
         {TABS.map(({ href, icon: Icon, label }) => {
-          const active = pathname === href || pathname.startsWith(`${href}/`);
+          const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
           return (
             <Link
               key={href}

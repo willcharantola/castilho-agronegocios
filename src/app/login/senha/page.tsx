@@ -37,7 +37,7 @@ export default function LoginSenhaPage() {
   function onSubmit() {
     setLoading(true);
     // No backend wired up yet — simulate the request so the flow feels real.
-    setTimeout(() => router.push("/home"), 500);
+    setTimeout(() => router.push("/"), 500);
   }
 
   return (

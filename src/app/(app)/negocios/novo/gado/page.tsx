@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { Warehouse, Beef } from "lucide-react";
+import { Warehouse } from "lucide-react";
 import { useForm, useWatch, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -42,7 +42,7 @@ type FormValues = z.output<typeof schema>;
 
 export default function CadastroGadoPage() {
   const router = useRouter();
-  const { data, update, reset } = useNegocioFlow();
+  const { data, update } = useNegocioFlow();
   const {
     register,
     handleSubmit,
@@ -90,11 +90,6 @@ export default function CadastroGadoPage() {
     // automatically once pesoTotal clears. Cabeças/valor médio (in the summary
     // card above) persist across submits, per the demo spec.
     resetForm({ denominacao: "", genero: undefined, valor: undefined, pesoTotal: undefined });
-  }
-
-  function finalizar() {
-    reset();
-    router.push("/home");
   }
 
   if (!data.fazenda) return null;

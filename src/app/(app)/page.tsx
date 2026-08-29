@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
-import { TrendingUp, Users, DollarSign, Percent, BarChart3, type LucideIcon } from "lucide-react";
-import  Logo from "../../../assets/logo-castilho.svg";
+import { TrendingUp, Users, DollarSign, type LucideIcon } from "lucide-react";
+import Logo from "@/assets/logo-castilho.svg";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import styles from "./page.module.css";
@@ -39,7 +39,7 @@ export default function HomePage() {
         <StatTile icon={TrendingUp} label="Negócios no período" value="56" large />
         <StatTile icon={DollarSign} label="Comissão total" value="10.000,00" />
         <StatTile icon={Users} label="Clientes ativos" value="15" />
-        
+
       </div>
 
       <div className={styles.actions}>

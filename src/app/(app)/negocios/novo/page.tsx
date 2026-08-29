@@ -63,7 +63,7 @@ export default function NovoNegocioPage() {
 
   return (
     <div className={cn(styles.page, "pt-safe")}>
-      <BackLink href="/home" />
+      <BackLink href="/" />
       <h1 className={styles.title}>Dados do negócio</h1>
 
       <form onSubmit={handleSubmit(onSubmit)} className={styles.form}>
