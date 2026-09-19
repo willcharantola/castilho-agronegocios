@@ -36,7 +36,7 @@ const ERA_CARIMBO_OPTIONS = [
 
 const schema = z.object({
   denominacao: z.string().min(2, "Informe a denominação.").max(20),
-  genero: z.enum(["Selecionar","Macho", "Femea"], { error: "Selecione o gênero." }),
+  genero: z.enum(["Macho", "Femea"], { error: "Selecione o gênero." }),
   peso_total: z.coerce.number({ error: "Informe o peso total." }).positive("Deve ser maior que zero."),
   data_pesagem: z.string().min(1, "Informe a data de pesagem."),
   era: z.coerce.number({ error: "Informe a era." }).min(0, "Não pode ser negativo."),
@@ -107,7 +107,7 @@ export default function NovoNegocioGadoPage() {
       await carregarNegocio();
       resetForm({
         denominacao: "",
-        genero: "Selecionar",
+        genero: undefined,
         peso_total: "",
         data_pesagem: new Date().toISOString().slice(0, 10),
         era: "",
