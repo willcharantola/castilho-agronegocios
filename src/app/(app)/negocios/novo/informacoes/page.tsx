@@ -22,7 +22,7 @@ import fieldBox from "@/components/form/field-box.module.css";
 import styles from "./page.module.css";
 
 const schema = z.object({
-  marchante: z.string().min(2, "Informe o marchante.").max(50),
+ 
   comprador: z.string().min(1, "Informe o comprador.").max(50),
   tipo_gado: z.enum(["Gordo", "Magro"], { error: "Selecione o tipo de gado." }),
   modalidade: z.enum(["arroba", "kg", "cabeca"], { error: "Selecione a modalidade." }),
@@ -34,7 +34,6 @@ const schema = z.object({
   tipo_lote: z.enum(["Vaca", "Boi", "Novilha", "Garrote", "Bezerro", "Variados"], {
     error: "Selecione o tipo de lote.",
   }),
-  tipo_precificacao: z.string().min(1, "Informe a precificação.").max(20),
   data_negocio: z.string().min(1, "Informe a data do negócio."),
   comissao: z.coerce.number({ error: "Informe a comissão." }).nonnegative("Não pode ser negativa."),
   observacao: z.string().min(1, "Informe uma observação.").max(100),
@@ -55,14 +54,13 @@ export default function NovoNegocioInformacoesPage() {
   } = useForm<FormInput, unknown, FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
-      marchante: data.marchante,
+     
       comprador: data.comprador,
       tipo_gado: data.tipoGado || undefined,
       modalidade: data.modalidade || undefined,
       valor_arroba: data.valorArroba ?? undefined,
       rendimento_carcaca: data.rendimentoCarcaca ?? undefined,
       tipo_lote: data.tipoLote || undefined,
-      tipo_precificacao: data.tipoPrecificacao,
       data_negocio: data.dataNegocio || new Date().toISOString().slice(0, 10),
       comissao: data.comissao ?? undefined,
       observacao: data.observacao,
@@ -92,12 +90,12 @@ export default function NovoNegocioInformacoesPage() {
       const negocio = await createNegocio({
         empresa_id: usuario.empresa_id,
         fazenda_id: data.fazendaId,
-        marchante: values.marchante,
+        marchante: "valor do marchante", // retirar 
         comprador: values.comprador,
         modalidade: values.modalidade,
         tipo_gado: values.tipo_gado,
         tipo_lote: values.tipo_lote,
-        tipo_precificacao: values.tipo_precificacao,
+        tipo_precificacao: "valor precificacao", // retirar
         rendimento_carcaca: values.rendimento_carcaca,
         data_negocio: new Date(values.data_negocio).toISOString(),
         comissao: values.comissao,
@@ -105,14 +103,13 @@ export default function NovoNegocioInformacoesPage() {
         observacao: values.observacao,
       });
       update({
-        marchante: values.marchante,
+     
         comprador: values.comprador,
         tipoGado: values.tipo_gado,
         modalidade: values.modalidade,
         valorArroba: values.valor_arroba,
         rendimentoCarcaca: values.rendimento_carcaca,
         tipoLote: values.tipo_lote,
-        tipoPrecificacao: values.tipo_precificacao,
         dataNegocio: values.data_negocio,
         comissao: values.comissao,
         observacao: values.observacao,
@@ -143,10 +140,7 @@ export default function NovoNegocioInformacoesPage() {
         <div className={styles.fields}>
           {submitError ? <p className={styles.submitError}>{submitError}</p> : null}
 
-          <Field label="Marchante" htmlFor="marchante" error={errors.marchante?.message}>
-            <TintedInput id="marchante" tint="pink" {...register("marchante")} />
-          </Field>
-
+        
           <Field label="Comprador" htmlFor="comprador" error={errors.comprador?.message}>
             <TintedInput id="comprador" tint="pink" placeholder="Nome do comprador" {...register("comprador")} />
           </Field>
@@ -196,9 +190,8 @@ export default function NovoNegocioInformacoesPage() {
             </Field>
           </div>
 
-          <div className={styles.row}>
             <Field
-              label="Valor Unidade (Arroba, Kg ou Cabeça)"
+              label="Valor Un. (Arroba, Kg ou Cabeça)"
               htmlFor="valor_arroba"
               error={errors.valor_arroba?.message}
             >
@@ -213,7 +206,12 @@ export default function NovoNegocioInformacoesPage() {
               />
             </Field>
 
-            <Field
+           
+        
+
+          <div className={styles.row}>
+
+             <Field
               label="Rendimento de carcaça"
               htmlFor="rendimento_carcaca"
               error={errors.rendimento_carcaca?.message}
@@ -230,9 +228,7 @@ export default function NovoNegocioInformacoesPage() {
                 {...register("rendimento_carcaca")}
               />
             </Field>
-          </div>
 
-          <div className={styles.row}>
             <Field label="Tipo de Lote" htmlFor="tipo_lote" error={errors.tipo_lote?.message}>
               <Controller
                 control={control}
@@ -256,13 +252,6 @@ export default function NovoNegocioInformacoesPage() {
               />
             </Field>
 
-            <Field
-              label="Precificação"
-              htmlFor="tipo_precificacao"
-              error={errors.tipo_precificacao?.message}
-            >
-              <TintedInput id="tipo_precificacao" tint="pink" {...register("tipo_precificacao")} />
-            </Field>
           </div>
 
           <div className={styles.row}>
@@ -288,7 +277,7 @@ export default function NovoNegocioInformacoesPage() {
           </Field>
         </div>
 
-        <Button type="submit" variant="brand" size="xl" className="w-full" disabled={isSubmitting}>
+        <Button type="submit"  disabled={isSubmitting}>
           {isSubmitting ? "Salvando..." : "Próximo"}
         </Button>
       </form>

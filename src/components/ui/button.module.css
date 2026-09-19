@@ -4,7 +4,8 @@
   justify-content: center;
   gap: 0.4rem;
   border: none;
-  border-radius: var(--radius-md);
+  border-radius: 5px;
+  height: 10rem;
   font-weight: 600;
   white-space: nowrap;
   cursor: pointer;
@@ -13,6 +14,7 @@
     opacity 0.15s ease,
     transform 0.1s ease;
   outline: none;
+  margin-bottom: 50%;
 }
 
 .button:focus-visible {

@@ -25,9 +25,18 @@ import styles from "./page.module.css";
 
 const KG_PER_ARROBA = 15;
 
+const ERA_CARIMBO_OPTIONS = [
+  { value: "0", label: "0 — Dente de leite (< 18 meses)" },
+  { value: "2", label: "2 — Até 2 dentes permanentes (18 a 24 meses)" },
+  { value: "4", label: "4 — Até 4 dentes permanentes (25 a 30 meses)" },
+  { value: "6", label: "6 — Até 6 dentes permanentes (31 a 42 meses)" },
+  { value: "8", label: "8 — Mais de 6 dentes (acima de 42 meses)" },
+];
+
+
 const schema = z.object({
   denominacao: z.string().min(2, "Informe a denominação.").max(20),
-  genero: z.enum(["Macho", "Femea"], { error: "Selecione o gênero." }),
+  genero: z.enum(["Selecionar","Macho", "Femea"], { error: "Selecione o gênero." }),
   peso_total: z.coerce.number({ error: "Informe o peso total." }).positive("Deve ser maior que zero."),
   data_pesagem: z.string().min(1, "Informe a data de pesagem."),
   era: z.coerce.number({ error: "Informe a era." }).min(0, "Não pode ser negativo."),
@@ -79,7 +88,7 @@ export default function NovoNegocioGadoPage() {
   const pesoTotal = Number(pesoTotalRaw) || 0;
   const rendimentoCarcaca = negocio?.rendimento_carcaca ?? 0;
   const pesoCalculoEstimado = pesoTotal * (rendimentoCarcaca / 100);
-  const pesoArrobaEstimado = pesoCalculoEstimado > 0 ? pesoCalculoEstimado / KG_PER_ARROBA : 0;
+  const pesoArrobaEstimado = pesoCalculoEstimado > 0 ?  Math.ceil(pesoCalculoEstimado / KG_PER_ARROBA) : 0;
   const valorEstimado = pesoArrobaEstimado * (negocio?.valor_arroba ?? 0);
 
   async function onSubmit(values: FormValues) {
@@ -98,11 +107,11 @@ export default function NovoNegocioGadoPage() {
       await carregarNegocio();
       resetForm({
         denominacao: "",
-        genero: undefined,
-        peso_total: undefined,
+        genero: "Selecionar",
+        peso_total: "",
         data_pesagem: new Date().toISOString().slice(0, 10),
-        era: undefined,
-        carimbo: undefined,
+        era: "",
+        carimbo: "",
       });
     } catch (err) {
       setSubmitError(err instanceof ApiError || err instanceof Error ? err.message : "Erro ao cadastrar.");
@@ -188,7 +197,7 @@ export default function NovoNegocioGadoPage() {
           </Field>
         </div>
 
-        <div className={styles.row}>
+  <div className={styles.row}>
           <Field label="Era" htmlFor="era" error={errors.era?.message}>
             <TintedInput id="era" tint="pink" type="number" inputMode="numeric" {...register("era")} />
           </Field>
@@ -214,7 +223,7 @@ export default function NovoNegocioGadoPage() {
         </Field>
 
         <div className={styles.row}>
-          <Field label="Peso p/ Cálculo (estimado)" htmlFor="pesoCalculo">
+          <Field label="Peso p/ Cálculo" htmlFor="pesoCalculo">
             <TintedInput
               id="pesoCalculo"
               tint="none"
@@ -225,7 +234,7 @@ export default function NovoNegocioGadoPage() {
               className={styles.readOnlyField}
             />
           </Field>
-          <Field label="Peso da Arroba (estimado)" htmlFor="pesoArroba">
+          <Field label="Peso da Arroba" htmlFor="pesoArroba">
             <TintedInput
               id="pesoArroba"
               tint="none"
