@@ -13,6 +13,8 @@ import { Field } from "@/components/form/field";
 import { PasswordField } from "@/components/form/password-field";
 import { Button } from "@/components/ui/button";
 import { useLoginFlow } from "@/lib/flows/login-flow";
+import { login } from "@/lib/api/auth";
+import { setSession } from "@/lib/api-client";
 import styles from "./page.module.css";
 
 const schema = z.object({
@@ -24,6 +26,7 @@ export default function LoginSenhaPage() {
   const router = useRouter();
   const { data } = useLoginFlow();
   const [loading, setLoading] = React.useState(false);
+  const [authError, setAuthError] = React.useState<string | null>(null);
   const {
     register,
     handleSubmit,
@@ -34,10 +37,17 @@ export default function LoginSenhaPage() {
     if (!data.email) router.replace("/login/email");
   }, [data.email, router]);
 
-  function onSubmit() {
+  async function onSubmit(values: FormValues) {
+    setAuthError(null);
     setLoading(true);
-    // No backend wired up yet — simulate the request so the flow feels real.
-    setTimeout(() => router.push("/"), 500);
+    try {
+      const { access_token, usuario } = await login(data.email, values.senha);
+      setSession(access_token, usuario);
+      router.push("/");
+    } catch (err) {
+      setAuthError(err instanceof Error ? err.message : "Não foi possível entrar.");
+      setLoading(false);
+    }
   }
 
   return (
@@ -54,21 +64,24 @@ export default function LoginSenhaPage() {
       <StepForm
         onSubmit={handleSubmit(onSubmit)}
         fields={
-          <Field label="Senha" htmlFor="senha" error={errors.senha?.message}>
-            <PasswordField
-              id="senha"
-              placeholder="Insira sua senha"
-              autoComplete="current-password"
-              autoFocus
-              {...register("senha")}
-            />
-            <Link href="/recuperar-senha" className={styles.forgotLink}>
-              Esqueceu sua senha? <span className={styles.forgotHighlight}>Clique aqui.</span>
-            </Link>
-          </Field>
+          <>
+            {authError ? <p className={styles.authError}>{authError}</p> : null}
+            <Field label="Senha" htmlFor="senha" error={errors.senha?.message}>
+              <PasswordField
+                id="senha"
+                placeholder="Insira sua senha"
+                autoComplete="current-password"
+                autoFocus
+                {...register("senha")}
+              />
+              <Link href="/recuperar-senha" className={styles.forgotLink}>
+                Esqueceu sua senha? <span className={styles.forgotHighlight}>Clique aqui.</span>
+              </Link>
+            </Field>
+          </>
         }
         footer={
-          <Button type="submit" variant="brand" size="xl" className="w-full" disabled={loading}>
+          <Button type="submit"  className={styles.button} disabled={loading}>
             {loading ? "Entrando..." : "Próximo"}
           </Button>
         }

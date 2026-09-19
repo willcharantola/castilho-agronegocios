@@ -5,6 +5,12 @@
   gap: 1.5rem;
 }
 
+.title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--color-dark);
+}
+
 /* Negócio summary card */
 .summary {
   border-radius: var(--radius-xl);
@@ -101,6 +107,23 @@
 
 .readOnlyField {
   opacity: 1;
+}
+
+.submitError {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-danger);
+}
+
+.state {
+  border-radius: var(--radius-xl);
+  padding: 2rem 1.25rem;
+  text-align: center;
+  color: var(--color-ink);
+}
+
+.stateError {
+  color: var(--color-danger);
 }
 
 /* Session list */

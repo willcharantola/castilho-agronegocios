@@ -2,17 +2,22 @@
 
 import * as React from "react";
 import { useParams } from "next/navigation";
-import { Warehouse, Beef } from "lucide-react";
+import { Warehouse, Beef, FileText } from "lucide-react";
 import { BackLink } from "@/components/back-link";
 import { Button } from "@/components/ui/button";
+import { Fab } from "@/components/fab";
 import { formatCurrency, formatNumber, formatGenero } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import type { NegocioDetail } from "@/lib/api/negocios";
+import { fetchNegocio } from "@/lib/api/negocios";
+import { fetchFazendas } from "@/lib/api/fazendas";
+import type { NegocioDetail } from "@/lib/api/types";
+import { ApiError } from "@/lib/api-client";
 import styles from "./page.module.css";
 
 export default function NegocioDetailPage() {
   const params = useParams<{ id: string }>();
   const [negocio, setNegocio] = React.useState<NegocioDetail | null>(null);
+  const [fazendaNome, setFazendaNome] = React.useState<string | null>(null);
   const [error, setError] = React.useState<string | null>(null);
   const [reloadKey, setReloadKey] = React.useState(0);
 
@@ -24,16 +29,17 @@ export default function NegocioDetailPage() {
     setNegocio(null);
     setError(null);
 
-    fetch(`/api/negocios/${params.id}`)
-      .then(async (res) => {
-        if (!res.ok) throw new Error((await res.json().catch(() => null))?.error ?? "Erro ao carregar.");
-        return res.json() as Promise<NegocioDetail>;
+    Promise.all([fetchNegocio(params.id), fetchFazendas()])
+      .then(([negocioData, fazendasData]) => {
+        if (cancelled) return;
+        setNegocio(negocioData);
+        setFazendaNome(
+          fazendasData.find((f) => f.fazenda_id === negocioData.fazenda_id)?.nome_fazenda ?? null
+        );
       })
-      .then((data) => {
-        if (!cancelled) setNegocio(data);
-      })
-      .catch((err: Error) => {
-        if (!cancelled) setError(err.message);
+      .catch((err: unknown) => {
+        if (cancelled) return;
+        setError(err instanceof ApiError || err instanceof Error ? err.message : "Erro ao carregar.");
       });
 
     return () => {
@@ -42,9 +48,9 @@ export default function NegocioDetailPage() {
   }, [params.id, reloadKey]);
 
   const valorMedio =
-    negocio?.valorMedio ??
+    negocio?.valor_medio ??
     (negocio && negocio.gados.length > 0
-      ? negocio.gados.reduce((sum, g) => sum + (g.valorTotal ?? 0), 0) / negocio.gados.length
+      ? negocio.gados.reduce((sum, g) => sum + (g.valor_total ?? 0), 0) / negocio.gados.length
       : 0);
 
   return (
@@ -76,18 +82,23 @@ export default function NegocioDetailPage() {
                 <Warehouse size={18} />
               </span>
               <div>
-                <p className={styles.summaryFarm}>Fazenda {negocio.fazenda}</p>
-                <p className={styles.summarySeller}>Vendedor: {negocio.vendedor}</p>
+                <p className={styles.summaryFarm}>
+                  Fazenda {fazendaNome ?? `#${negocio.fazenda_id}`}
+                </p>
+                <p className={styles.summarySeller}>
+                  Marchante: {negocio.marchante}
+                  {negocio.comprador ? ` · Comprador: ${negocio.comprador}` : ""}
+                </p>
               </div>
             </div>
             <div className={styles.summaryStats}>
               <div>
                 <p className={styles.summaryStatLabel}>Rend. de Carcaça</p>
-                <p className={styles.summaryStatValue}>{formatNumber(negocio.rendimentoCarcaca, 0)}%</p>
+                <p className={styles.summaryStatValue}>{formatNumber(negocio.rendimento_carcaca, 0)}%</p>
               </div>
               <div>
                 <p className={styles.summaryStatLabel}>Valor p/ arroba</p>
-                <p className={styles.summaryStatValue}>{formatCurrency(negocio.valorArroba)}</p>
+                <p className={styles.summaryStatValue}>{formatCurrency(negocio.valor_arroba)}</p>
               </div>
               <div>
                 <p className={styles.summaryStatLabel}>Modalidade</p>
@@ -96,7 +107,7 @@ export default function NegocioDetailPage() {
             </div>
             <div className={styles.summaryFooter}>
               <span>
-                Cabeças: <b>{negocio.qtdAnimais ?? negocio.gados.length}</b>
+                Cabeças: <b>{negocio.qtd_animais ?? negocio.gados.length}</b>
               </span>
               <span>
                 Valor médio p/ cabeça: <b>{formatCurrency(valorMedio)}</b>
@@ -111,21 +122,21 @@ export default function NegocioDetailPage() {
           ) : (
             <div className={styles.gadoList}>
               {negocio.gados.map((gado) => (
-                <div key={gado.gadoId} className={styles.gadoRow}>
+                <div key={gado.gado_id} className={styles.gadoRow}>
                   <span className={styles.gadoIcon}>
                     <Beef size={18} />
                   </span>
                   <div className={styles.gadoInfo}>
                     <p className={styles.gadoName}>{gado.denominacao}</p>
                     <p className={styles.gadoMeta}>
-                      Gênero: {formatGenero(gado.genero)} · Peso p/ cálculo: {formatNumber(gado.pesoCalculo)}
+                      Gênero: {formatGenero(gado.genero)} · Peso p/ cálculo: {formatNumber(gado.peso_calculo)}
                     </p>
                   </div>
                   <div className={styles.gadoAmount}>
                     <p className={styles.gadoAmountValue}>
-                      {gado.valorTotal !== null ? formatCurrency(gado.valorTotal) : "—"}
+                      {gado.valor_total !== null ? formatCurrency(gado.valor_total) : "—"}
                     </p>
-                    <p>Peso da @: {formatNumber(gado.pesoArroba)}</p>
+                    <p>Peso da @: {formatNumber(gado.peso_arroba)}</p>
                   </div>
                 </div>
               ))}
@@ -133,6 +144,8 @@ export default function NegocioDetailPage() {
           )}
         </>
       ) : null}
+
+      <Fab icon={FileText} label="Gerar relatório" disabled />
     </div>
   );
 }

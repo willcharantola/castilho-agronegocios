@@ -11,6 +11,7 @@ import { Field } from "@/components/form/field";
 import { TintedInput } from "@/components/form/tinted-input";
 import { Button } from "@/components/ui/button";
 import { useLoginFlow } from "@/lib/flows/login-flow";
+import styles from "../page.module.css";
 
 const schema = z.object({
   email: z.string().min(1, "Informe seu e-mail.").email("Digite um e-mail válido."),
@@ -60,7 +61,7 @@ export default function LoginEmailPage() {
           </Field>
         }
         footer={
-          <Button type="submit" variant="brand" size="xl" className="w-full">
+          <Button type="submit"  variant="brand" size="xl" className={styles.button}>
             Próximo
           </Button>
         }

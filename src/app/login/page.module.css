@@ -35,7 +35,9 @@
   gap: 1.5rem;
 }
 
-.actions > .button {
+.button {
+  width: 100%;
+  border-radius: 5px;
   width: 100%;
 }
 

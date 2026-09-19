@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Logo } from "@/components/logo";
+import Logo from "../logo.png"
 import { MobileScreen } from "@/components/mobile-screen";
 import styles from "./page.module.css";
+import Image from "next/image";
 
 export default async function LoginPage(props: PageProps<"/login">) {
   const searchParams = await props.searchParams;
@@ -21,7 +22,15 @@ export default async function LoginPage(props: PageProps<"/login">) {
       ) : null}
 
       <div className={styles.content}>
-        <Logo />
+     
+
+        <Image
+          src={Logo}
+          alt="Logo"
+          width={200}
+          height={200}
+          className={styles.logo}
+        />
 
         <div className={styles.actions}>
           <Button

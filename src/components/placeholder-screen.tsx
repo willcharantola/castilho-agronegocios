@@ -6,10 +6,12 @@ export function PlaceholderScreen({
   icon: Icon,
   title,
   description,
+  action,
 }: {
   icon: LucideIcon;
   title: string;
   description: string;
+  action?: React.ReactNode;
 }) {
   return (
     <div className={styles.screen}>
@@ -18,6 +20,7 @@ export function PlaceholderScreen({
       </div>
       <h1 className={styles.title}>{title}</h1>
       <p className={styles.description}>{description}</p>
+      {action}
     </div>
   );
 }

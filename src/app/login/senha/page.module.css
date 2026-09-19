@@ -10,3 +10,15 @@
   text-decoration: underline;
   text-underline-offset: 2px;
 }
+
+.authError {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-danger);
+}
+
+.button {
+  width: 100%;
+  border-radius: 5px;
+  width: 100%;
+}

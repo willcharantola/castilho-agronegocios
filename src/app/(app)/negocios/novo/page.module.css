@@ -1,33 +1,99 @@
 .page {
   display: flex;
-  flex: 1;
   flex-direction: column;
+  gap: 1.25rem;
 }
 
 .title {
   margin-top: 0.5rem;
-  margin-bottom: 1.5rem;
   font-size: 1.25rem;
   font-weight: 800;
   color: var(--color-dark);
 }
 
-.form {
+.subtitle {
+  font-size: 0.9rem;
+  color: color-mix(in oklch, var(--color-ink) 70%, transparent);
+}
+
+.searchWrap {
+  position: relative;
+}
+
+.searchIcon {
+  position: absolute;
+  top: 50%;
+  left: 1rem;
+  transform: translateY(-50%);
+  color: color-mix(in oklch, var(--color-ink) 50%, transparent);
+  pointer-events: none;
+}
+
+.searchInput {
+  height: 3rem;
+  width: 100%;
+  border-radius: var(--radius-xl);
+  border: none;
+  padding: 0 1.25rem 0 2.75rem;
+  font-size: 0.95rem;
+  color: var(--color-ink);
+}
+
+.searchInput::placeholder {
+  color: color-mix(in oklch, var(--color-ink) 45%, transparent);
+}
+
+.list {
   display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.card {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 0.75rem;
+  border-radius: 5px;
+  padding: 0.9rem 1rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.cardIcon {
+  display: flex;
+  height: 2.5rem;
+  width: 2.5rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--color-dark);
+  color: var(--color-white);
+}
+
+.cardInfo {
   flex: 1;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: 2rem;
+  min-width: 0;
 }
 
-.fields {
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
+.cardName {
+  font-weight: 800;
+  color: var(--color-dark);
 }
 
-.row {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1rem;
+.cardMeta {
+  font-size: 0.8rem;
+  color: color-mix(in oklch, var(--color-ink) 70%, transparent);
+}
+
+.state {
+  border-radius: 5px;
+  padding: 2rem 1.25rem;
+  text-align: center;
+  color: var(--color-ink);
+}
+
+.stateError {
+  color: var(--color-danger);
 }
