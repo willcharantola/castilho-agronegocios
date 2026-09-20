@@ -13,19 +13,21 @@ export function Fab({
   href,
   onClick,
   disabled,
+  disabledTitle = "Em breve",
 }: {
   icon: LucideIcon;
   label: string;
   href?: string;
   onClick?: () => void;
   disabled?: boolean;
+  disabledTitle?: string;
 }) {
   return (
     <div className={styles.wrap}>
       <Button
         className={styles.button}
         aria-label={label}
-        title={disabled ? "Em breve" : label}
+        title={disabled ? disabledTitle : label}
         disabled={disabled}
         onClick={onClick}
         render={href && !disabled ? <Link href={href} /> : undefined}

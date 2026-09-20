@@ -10,6 +10,7 @@ import { formatCurrency, formatNumber, formatGenero } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { fetchNegocio } from "@/lib/api/negocios";
 import { fetchFazendas } from "@/lib/api/fazendas";
+import { gerarRelatorioNegocio } from "@/lib/relatorio";
 import type { NegocioDetail } from "@/lib/api/types";
 import { ApiError } from "@/lib/api-client";
 import styles from "./page.module.css";
@@ -20,6 +21,9 @@ export default function NegocioDetailPage() {
   const [fazendaNome, setFazendaNome] = React.useState<string | null>(null);
   const [error, setError] = React.useState<string | null>(null);
   const [reloadKey, setReloadKey] = React.useState(0);
+
+  const [gerandoRelatorio, setGerandoRelatorio] = React.useState(false);
+  const [relatorioError, setRelatorioError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -52,6 +56,21 @@ export default function NegocioDetailPage() {
     (negocio && negocio.gados.length > 0
       ? negocio.gados.reduce((sum, g) => sum + (g.valor_total ?? 0), 0) / negocio.gados.length
       : 0);
+
+  async function handleGerarRelatorio() {
+    if (!negocio) return;
+    setRelatorioError(null);
+    setGerandoRelatorio(true);
+    try {
+      await gerarRelatorioNegocio(negocio, fazendaNome ?? `Fazenda #${negocio.fazenda_id}`);
+    } catch (err) {
+      setRelatorioError(
+        err instanceof ApiError || err instanceof Error ? err.message : "Erro ao gerar relatório."
+      );
+    } finally {
+      setGerandoRelatorio(false);
+    }
+  }
 
   return (
     <div className={cn(styles.page, "pt-safe")}>
@@ -145,7 +164,15 @@ export default function NegocioDetailPage() {
         </>
       ) : null}
 
-      <Fab icon={FileText} label="Gerar relatório" disabled />
+      {relatorioError ? <p className={styles.relatorioError}>{relatorioError}</p> : null}
+
+      <Fab
+        icon={FileText}
+        label="Gerar relatório"
+        onClick={handleGerarRelatorio}
+        disabled={gerandoRelatorio || !negocio}
+        disabledTitle={gerandoRelatorio ? "Gerando relatório..." : "Em breve"}
+      />
     </div>
   );
 }

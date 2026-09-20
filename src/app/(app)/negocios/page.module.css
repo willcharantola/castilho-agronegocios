@@ -137,3 +137,9 @@
 .retryButton {
   margin-top: 0.75rem;
 }
+
+.relatorioError {
+  color: var(--color-danger);
+  font-size: 0.85rem;
+  text-align: center;
+}

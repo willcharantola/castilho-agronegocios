@@ -9,6 +9,7 @@ import { formatCurrency, formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { fetchNegocios } from "@/lib/api/negocios";
 import { fetchFazendas } from "@/lib/api/fazendas";
+import { gerarRelatorioNegocios } from "@/lib/relatorio";
 import type { Fazenda, Negocio } from "@/lib/api/types";
 import { ApiError } from "@/lib/api-client";
 import styles from "./page.module.css";
@@ -23,6 +24,9 @@ export default function NegociosPage() {
   const [fazendaId, setFazendaId] = React.useState("");
   const [dataInicio, setDataInicio] = React.useState("");
   const [dataFim, setDataFim] = React.useState("");
+
+  const [gerandoRelatorio, setGerandoRelatorio] = React.useState(false);
+  const [relatorioError, setRelatorioError] = React.useState<string | null>(null);
 
   const fazendasPorId = React.useMemo(
     () => Object.fromEntries(fazendas.map((f) => [f.fazenda_id, f.nome_fazenda])),
@@ -67,6 +71,21 @@ export default function NegociosPage() {
       negocio.marchante.toLowerCase().includes(buscaLower)
     );
   });
+
+  async function handleGerarRelatorio() {
+    if (!filtrados || filtrados.length === 0) return;
+    setRelatorioError(null);
+    setGerandoRelatorio(true);
+    try {
+      await gerarRelatorioNegocios(filtrados, fazendasPorId);
+    } catch (err) {
+      setRelatorioError(
+        err instanceof ApiError || err instanceof Error ? err.message : "Erro ao gerar relatório."
+      );
+    } finally {
+      setGerandoRelatorio(false);
+    }
+  }
 
   return (
     <div className={cn(styles.page, "pt-safe")}>
@@ -173,7 +192,15 @@ export default function NegociosPage() {
         </div>
       ) : null}
 
-      <Fab icon={FileText} label="Gerar relatório" disabled />
+      {relatorioError ? <p className={styles.relatorioError}>{relatorioError}</p> : null}
+
+      <Fab
+        icon={FileText}
+        label="Gerar relatório"
+        onClick={handleGerarRelatorio}
+        disabled={gerandoRelatorio || !filtrados || filtrados.length === 0}
+        disabledTitle={gerandoRelatorio ? "Gerando relatório..." : "Nenhum negócio para exportar"}
+      />
     </div>
   );
 }
