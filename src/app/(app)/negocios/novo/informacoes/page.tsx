@@ -90,7 +90,7 @@ export default function NovoNegocioInformacoesPage() {
       const negocio = await createNegocio({
         empresa_id: usuario.empresa_id,
         fazenda_id: data.fazendaId,
-        marchante: "valor do marchante", // retirar 
+        marchante: "Rafael de Castro", // retirar 
         comprador: values.comprador,
         modalidade: values.modalidade,
         tipo_gado: values.tipo_gado,

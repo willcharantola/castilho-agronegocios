@@ -103,21 +103,6 @@ export default function NegociosPage() {
 
       <div className={styles.filters}>
         <div className={styles.filterGroup}>
-          <span className={styles.filterLabel}>Fazenda</span>
-          <select
-            className={cn(styles.filterSelect, "glass-panel")}
-            value={fazendaId}
-            onChange={(e) => setFazendaId(e.target.value)}
-          >
-            <option value="">Todas</option>
-            {fazendas.map((f) => (
-              <option key={f.fazenda_id} value={f.fazenda_id}>
-                {f.nome_fazenda}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className={styles.filterGroup}>
           <span className={styles.filterLabel}>De</span>
           <input
             type="date"
@@ -180,12 +165,13 @@ export default function NegociosPage() {
                   {fazendasPorId[negocio.fazenda_id] ?? `Fazenda #${negocio.fazenda_id}`}
                 </p>
                 <p className={styles.cardMeta}>
-                  Marchante: {negocio.marchante} · {formatDate(negocio.data_negocio)}
+                  Vendedor: {negocio.marchante} · {formatDate(negocio.data_negocio)}
                 </p>
+                <p className={styles.cardHeads}>Cabeças negociadas: {negocio.qtd_animais ?? "—"}</p>
               </div>
               <div className={styles.cardAmount}>
                 <p className={styles.cardCommission}>{formatCurrency(negocio.comissao)}</p>
-                <p className={styles.cardHeads}>Cabeças: {negocio.qtd_animais ?? "—"}</p>
+                <p className={styles.cardHeads}>Comissão</p>
               </div>
             </Link>
           ))}
