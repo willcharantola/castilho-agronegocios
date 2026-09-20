@@ -87,9 +87,33 @@ export default function NovoNegocioGadoPage() {
   const pesoTotalRaw = useWatch({ control, name: "peso_total" });
   const pesoTotal = Number(pesoTotalRaw) || 0;
   const rendimentoCarcaca = negocio?.rendimento_carcaca ?? 0;
-  const pesoCalculoEstimado = pesoTotal * (rendimentoCarcaca / 100);
-  const pesoArrobaEstimado = pesoCalculoEstimado > 0 ?  Math.ceil(pesoCalculoEstimado / KG_PER_ARROBA) : 0;
-  const valorEstimado = pesoArrobaEstimado * (negocio?.valor_arroba ?? 0);
+  // TODO: confirmar com o responsável pelo projeto se o campo deveria ser
+  // renomeado para algo mais genérico como valor_unidade, já que hoje seu
+  // nome sugere ser exclusivo da modalidade arroba.
+  const valorUnidade = negocio?.valor_arroba ?? 0;
+  const modalidade = negocio?.modalidade;
+
+  let pesoCalculoEstimado = 0;
+  let pesoArrobaEstimado = 0;
+  let valorEstimado = 0;
+
+  switch (modalidade) {
+    case "arroba": {
+      pesoCalculoEstimado = pesoTotal * (rendimentoCarcaca / 100);
+      pesoArrobaEstimado =
+        pesoCalculoEstimado > 0 ? Math.ceil(pesoCalculoEstimado / KG_PER_ARROBA) : 0;
+      valorEstimado = pesoArrobaEstimado * valorUnidade;
+      break;
+    }
+    case "kg": {
+      valorEstimado = valorUnidade * pesoTotal;
+      break;
+    }
+    case "cabeca": {
+      valorEstimado = valorUnidade;
+      break;
+    }
+  }
 
   async function onSubmit(values: FormValues) {
     if (!data.negocioId) return;
@@ -222,30 +246,32 @@ export default function NovoNegocioGadoPage() {
           <TintedInput id="data_pesagem" tint="pink" type="date" {...register("data_pesagem")} />
         </Field>
 
-        <div className={styles.row}>
-          <Field label="Peso p/ Cálculo" htmlFor="pesoCalculo">
-            <TintedInput
-              id="pesoCalculo"
-              tint="none"
-              value={pesoCalculoEstimado > 0 ? formatNumber(pesoCalculoEstimado) : ""}
-              placeholder="—"
-              disabled
-              readOnly
-              className={styles.readOnlyField}
-            />
-          </Field>
-          <Field label="Peso da Arroba" htmlFor="pesoArroba">
-            <TintedInput
-              id="pesoArroba"
-              tint="none"
-              value={pesoArrobaEstimado > 0 ? formatNumber(pesoArrobaEstimado) : ""}
-              placeholder="—"
-              disabled
-              readOnly
-              className={styles.readOnlyField}
-            />
-          </Field>
-        </div>
+        {modalidade === "arroba" ? (
+          <div className={styles.row}>
+            <Field label="Peso p/ Cálculo" htmlFor="pesoCalculo">
+              <TintedInput
+                id="pesoCalculo"
+                tint="none"
+                value={pesoCalculoEstimado > 0 ? formatNumber(pesoCalculoEstimado) : ""}
+                placeholder="—"
+                disabled
+                readOnly
+                className={styles.readOnlyField}
+              />
+            </Field>
+            <Field label="Peso da Arroba" htmlFor="pesoArroba">
+              <TintedInput
+                id="pesoArroba"
+                tint="none"
+                value={pesoArrobaEstimado > 0 ? formatNumber(pesoArrobaEstimado) : ""}
+                placeholder="—"
+                disabled
+                readOnly
+                className={styles.readOnlyField}
+              />
+            </Field>
+          </div>
+        ) : null}
 
         <div className={styles.totalRow}>
           <span className={styles.totalLabel}>Valor Total (estimado)</span>

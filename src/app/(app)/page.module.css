@@ -11,6 +11,45 @@
   width: 5rem;
 }
 
+.filterRow {
+  display: flex;
+  align-items: flex-end;
+
+  gap: 0.5rem;
+}
+
+.filterField {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+  height: 100%;
+}
+
+.filterLabel {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: color-mix(in oklch, var(--color-ink) 70%, transparent);
+}
+
+.filterInput {
+  width: 100%;
+}
+
+.filterReset {
+  flex-shrink: 0;
+  border-radius: 5px;
+  border: none;
+  background-color: #2b420e;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.65rem 0.75rem;
+  white-space: nowrap;
+   height: 70%;
+}
+
 .grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
