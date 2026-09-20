@@ -23,7 +23,6 @@
   flex: 1;
   flex-direction: column;
   gap: 0.3rem;
-  min-width: 0;
   height: 100%;
 }
 
@@ -43,8 +42,8 @@
   border: none;
   background-color: #2b420e;
   color: #fff;
-  font-size: 0.75rem;
-  font-weight: 700;
+  font-size: 0.40rem;
+  font-weight: 400;
   padding: 0.65rem 0.75rem;
   white-space: nowrap;
    height: 70%;

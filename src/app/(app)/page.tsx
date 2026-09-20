@@ -137,10 +137,12 @@ export default function HomePage() {
             className={styles.filterInput}
           />
         </div>
+
+          {/* 
         <button type="button" className={styles.filterReset} onClick={resetarPeriodo}>
           Este mês
-        </button>
-      </div>
+        </button> */}
+              </div>
 
       <div className={styles.grid}>
         <StatTile
