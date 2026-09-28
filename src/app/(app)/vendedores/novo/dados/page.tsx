@@ -13,6 +13,9 @@ import { TintedInput } from "@/components/form/tinted-input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { createVendedor } from "@/lib/api/vendedores";
+import { fetchFazendas } from "@/lib/api/fazendas";
+import { FazendasChecklist } from "@/components/form/fazendas-checklist";
+import type { Fazenda } from "@/lib/api/types";
 import { ApiError } from "@/lib/api-client";
 import { FISICO_JURIDICO_LABELS } from "@/lib/labels";
 import { useVendedorFlow } from "@/lib/flows/vendedor-flow";
@@ -35,6 +38,9 @@ export default function NovoVendedorDadosPage() {
   const router = useRouter();
   const { data, reset } = useVendedorFlow();
   const [submitError, setSubmitError] = React.useState<string | null>(null);
+  const [fazendas, setFazendas] = React.useState<Fazenda[]>([]);
+  // A fazenda escolhida no passo anterior já vem marcada; o vendedor pode atuar em várias (N:N).
+  const [fazendaIds, setFazendaIds] = React.useState<number[]>(data.fazendaId ? [data.fazendaId] : []);
   const {
     register,
     handleSubmit,
@@ -50,11 +56,23 @@ export default function NovoVendedorDadosPage() {
     if (!fazendaIdRef.current) router.replace("/vendedores/novo");
   }, [router]);
 
+  React.useEffect(() => {
+    fetchFazendas()
+      .then(setFazendas)
+      .catch(() => {
+        // Sem a lista só dá para manter a fazenda do passo anterior.
+      });
+  }, []);
+
   async function onSubmit(values: FormValues) {
     if (!data.fazendaId) return;
+    if (fazendaIds.length === 0) {
+      setSubmitError("Selecione ao menos uma fazenda.");
+      return;
+    }
     setSubmitError(null);
     try {
-      await createVendedor({ fazenda_id: data.fazendaId, ...values });
+      await createVendedor({ ...values, fazenda_ids: fazendaIds });
       const returnTo = data.returnTo;
       reset();
       router.push(returnTo ?? "/vendedores");
@@ -76,6 +94,10 @@ export default function NovoVendedorDadosPage() {
         </span>
         <p className={styles.fazendaNome}>{data.fazendaNome}</p>
       </div>
+
+      <Field label="Fazendas do vendedor" htmlFor="fazendas">
+        <FazendasChecklist fazendas={fazendas} selected={fazendaIds} onChange={setFazendaIds} />
+      </Field>
 
       <form onSubmit={handleSubmit(onSubmit)} className={styles.form}>
         <div className={styles.fields}>

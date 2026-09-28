@@ -1,0 +1,40 @@
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  border-radius: var(--radius-xl);
+  padding: 0.7rem 0.9rem;
+  cursor: pointer;
+}
+
+.checkbox {
+  height: 1.1rem;
+  width: 1.1rem;
+  flex-shrink: 0;
+  accent-color: var(--color-dark);
+}
+
+.icon {
+  flex-shrink: 0;
+}
+
+.name {
+  flex: 1;
+  font-weight: 700;
+}
+
+.meta {
+  font-size: 0.8rem;
+  opacity: 0.7;
+}
+
+.empty {
+  font-size: 0.85rem;
+  opacity: 0.7;
+}

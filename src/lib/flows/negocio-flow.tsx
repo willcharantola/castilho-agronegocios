@@ -7,14 +7,16 @@ export type NegocioFlowData = {
   fazendaId: number | null;
   fazendaNome: string;
   vendedorId: number | null;
-  marchante: string;
-  comprador: string;
+  compradorId: number | null;
+  compradorNome: string;
   modalidade: Modalidade | "";
   tipoGado: TipoGado | "";
   tipoLote: TipoLote | "";
   tipoPrecificacao: string;
-  rendimentoCarcaca: number | null;
-  valorArroba: number | null;
+  valorUnidade: number | null;
+  /** HH:mm vindo de um <input type="time">. */
+  horaInicioPesagem: string;
+  horaFimPesagem: string;
   comissao: number | null;
   /** yyyy-mm-dd vindo de um <input type="date">. */
   dataNegocio: string;
@@ -28,14 +30,15 @@ export const { Provider: NegocioFlowProvider, useFlow: useNegocioFlow } =
     fazendaId: null,
     fazendaNome: "",
     vendedorId: null,
-    marchante: "",
-    comprador: "",
+    compradorId: null,
+    compradorNome: "",
     modalidade: "",
     tipoGado: "",
     tipoLote: "",
     tipoPrecificacao: "",
-    rendimentoCarcaca: null,
-    valorArroba: null,
+    valorUnidade: null,
+    horaInicioPesagem: "",
+    horaFimPesagem: "",
     comissao: null,
     dataNegocio: "",
     observacao: "",

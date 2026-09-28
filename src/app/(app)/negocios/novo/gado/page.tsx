@@ -16,7 +16,7 @@ import { formatCurrency, formatNumber, formatGenero } from "@/lib/format";
 import { createGado } from "@/lib/api/gados";
 import { fetchNegocio } from "@/lib/api/negocios";
 import { ApiError } from "@/lib/api-client";
-import { MODALIDADE_LABELS } from "@/lib/labels";
+import { MESES_LABELS, MODALIDADE_LABELS } from "@/lib/labels";
 import { useNegocioFlow } from "@/lib/flows/negocio-flow";
 import { cn } from "@/lib/utils";
 import type { NegocioDetail, Modalidade } from "@/lib/api/types";
@@ -25,22 +25,19 @@ import styles from "./page.module.css";
 
 const KG_PER_ARROBA = 15;
 
-const ERA_CARIMBO_OPTIONS = [
-  { value: "0", label: "0 — Dente de leite (< 18 meses)" },
-  { value: "2", label: "2 — Até 2 dentes permanentes (18 a 24 meses)" },
-  { value: "4", label: "4 — Até 4 dentes permanentes (25 a 30 meses)" },
-  { value: "6", label: "6 — Até 6 dentes permanentes (31 a 42 meses)" },
-  { value: "8", label: "8 — Mais de 6 dentes (acima de 42 meses)" },
-];
-
-
 const schema = z.object({
   denominacao: z.string().min(2, "Informe a denominação.").max(20),
   genero: z.enum(["Macho", "Femea"], { error: "Selecione o gênero." }),
   peso_total: z.coerce.number({ error: "Informe o peso total." }).positive("Deve ser maior que zero."),
   data_pesagem: z.string().min(1, "Informe a data de pesagem."),
-  era: z.coerce.number({ error: "Informe a era." }).min(0, "Não pode ser negativo."),
-  carimbo: z.coerce.number({ error: "Informe o carimbo." }),
+  rendimento_carcaca: z.coerce
+    .number({ error: "Informe o rendimento de carcaça." })
+    .min(0, "Deve ser entre 0 e 100.")
+    .max(100, "Deve ser entre 0 e 100."),
+  horario_pesagem: z.string().optional(),
+  // Mês (1 a 12) e ano de referência definidos pelo cliente.
+  carimbo: z.enum(["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"], { error: "Selecione o mês." }),
+  ano_carimbo: z.string().regex(/^\d{4}$/, "Informe o ano com 4 dígitos (ex: 2025)."),
 });
 type FormInput = z.input<typeof schema>;
 type FormValues = z.output<typeof schema>;
@@ -56,10 +53,12 @@ export default function NovoNegocioGadoPage() {
     handleSubmit,
     control,
     reset: resetForm,
+    getValues,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<FormInput, unknown, FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { data_pesagem: new Date().toISOString().slice(0, 10) },
+    defaultValues: { data_pesagem: new Date().toISOString().slice(0, 10), horario_pesagem: "" },
   });
 
   const carregarNegocio = React.useCallback(() => {
@@ -86,12 +85,18 @@ export default function NovoNegocioGadoPage() {
 
   const pesoTotalRaw = useWatch({ control, name: "peso_total" });
   const pesoTotal = Number(pesoTotalRaw) || 0;
-  const rendimentoCarcaca = negocio?.rendimento_carcaca ?? 0;
-  // TODO: confirmar com o responsável pelo projeto se o campo deveria ser
-  // renomeado para algo mais genérico como valor_unidade, já que hoje seu
-  // nome sugere ser exclusivo da modalidade arroba.
-  const valorUnidade = negocio?.valor_arroba ?? 0;
+  // Agora é por animal (editável durante a pesagem), não mais herdado do negócio.
+  const rendimentoCarcaca = Number(useWatch({ control, name: "rendimento_carcaca" })) || 0;
+  const valorUnidade = negocio?.valor_unidade ?? 0;
   const modalidade = negocio?.modalidade;
+  // Só "arroba" usa o rendimento no cálculo; nas demais modalidades sugerimos 100 (ainda editável).
+  const rendimentoPadrao = modalidade === "arroba" ? "" : 100;
+
+  React.useEffect(() => {
+    if (modalidade && modalidade !== "arroba" && getValues("rendimento_carcaca") === undefined) {
+      setValue("rendimento_carcaca", 100);
+    }
+  }, [modalidade, getValues, setValue]);
 
   let pesoCalculoEstimado = 0;
   let pesoArrobaEstimado = 0;
@@ -122,20 +127,24 @@ export default function NovoNegocioGadoPage() {
       await createGado({
         negocio_id: data.negocioId,
         peso_total: values.peso_total,
+        rendimento_carcaca: values.rendimento_carcaca,
         data_pesagem: new Date(values.data_pesagem).toISOString(),
+        horario_pesagem: values.horario_pesagem || undefined,
         genero: values.genero,
         denominacao: values.denominacao,
-        era: values.era,
-        carimbo: values.carimbo,
+        carimbo: Number(values.carimbo),
+        ano_carimbo: values.ano_carimbo,
       });
       await carregarNegocio();
       resetForm({
         denominacao: "",
         genero: undefined,
         peso_total: "",
+        rendimento_carcaca: rendimentoPadrao,
         data_pesagem: new Date().toISOString().slice(0, 10),
-        era: "",
-        carimbo: "",
+        horario_pesagem: "",
+        carimbo: undefined,
+        ano_carimbo: values.ano_carimbo,
       });
     } catch (err) {
       setSubmitError(err instanceof ApiError || err instanceof Error ? err.message : "Erro ao cadastrar.");
@@ -154,7 +163,7 @@ export default function NovoNegocioGadoPage() {
     <div className={cn(styles.page, "pt-safe")}>
       <BackLink href={`/negocios/${data.negocioId}`} label="Ver negócio" />
       <h1 className={styles.title}>Cadastrar Novo Negócio</h1>
-      <ProgressSteps current={4} total={4} />
+      <ProgressSteps current={5} total={5} />
 
       {loadError ? <div className={cn(styles.state, styles.stateError, "glass-panel")}>{loadError}</div> : null}
 
@@ -166,17 +175,18 @@ export default function NovoNegocioGadoPage() {
             </span>
             <div>
               <p className={styles.summaryFarm}>Fazenda {data.fazendaNome}</p>
-              <p className={styles.summarySeller}>Marchante: {negocio.marchante}</p>
+              <p className={styles.summarySeller}>Vendedor: {negocio.vendedor.nome_vendedor}</p>
+              <p className={styles.summarySeller}>Comprador: {negocio.comprador.nome_empresa}</p>
             </div>
           </div>
           <div className={styles.summaryStats}>
             <div>
-              <p className={styles.summaryStatLabel}>Rend. de Carcaça</p>
-              <p className={styles.summaryStatValue}>{formatNumber(negocio.rendimento_carcaca, 0)}%</p>
+              <p className={styles.summaryStatLabel}>Precificação</p>
+              <p className={styles.summaryStatValue}>{negocio.tipo_precificacao}</p>
             </div>
             <div>
               <p className={styles.summaryStatLabel}>Valor p/ Un.</p>
-              <p className={styles.summaryStatValue}>{formatCurrency(negocio.valor_arroba)}</p>
+              <p className={styles.summaryStatValue}>{formatCurrency(negocio.valor_unidade)}</p>
             </div>
             <div>
               <p className={styles.summaryStatLabel}>Modalidade</p>
@@ -221,12 +231,38 @@ export default function NovoNegocioGadoPage() {
           </Field>
         </div>
 
-  <div className={styles.row}>
-          <Field label="Era" htmlFor="era" error={errors.era?.message}>
-            <TintedInput id="era" tint="pink" type="number" inputMode="numeric" {...register("era")} />
+        <div className={styles.row}>
+          <Field label="Carimbo (mês)" htmlFor="carimbo" error={errors.carimbo?.message}>
+            <Controller
+              control={control}
+              name="carimbo"
+              render={({ field }) => (
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger id="carimbo" className={cn(fieldBox.box, fieldBox.pink)}>
+                    <SelectValue>
+                      {(value: string | null) => (value ? MESES_LABELS[Number(value) - 1] : "Selecione")}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {MESES_LABELS.map((mes, index) => (
+                      <SelectItem key={mes} value={String(index + 1)}>
+                        {mes}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
           </Field>
-          <Field label="Carimbo" htmlFor="carimbo" error={errors.carimbo?.message}>
-            <TintedInput id="carimbo" tint="pink" type="number" inputMode="numeric" {...register("carimbo")} />
+          <Field label="Ano do Carimbo" htmlFor="ano_carimbo" error={errors.ano_carimbo?.message}>
+            <TintedInput
+              id="ano_carimbo"
+              tint="pink"
+              type="number"
+              inputMode="numeric"
+              placeholder="Ex: 2025"
+              {...register("ano_carimbo")}
+            />
           </Field>
         </div>
 
@@ -242,9 +278,30 @@ export default function NovoNegocioGadoPage() {
           />
         </Field>
 
-        <Field label="Data de Pesagem" htmlFor="data_pesagem" error={errors.data_pesagem?.message}>
-          <TintedInput id="data_pesagem" tint="pink" type="date" {...register("data_pesagem")} />
+        <Field
+          label="Rendimento de Carcaça (%)"
+          htmlFor="rendimento_carcaca"
+          error={errors.rendimento_carcaca?.message}
+        >
+          <TintedInput
+            id="rendimento_carcaca"
+            tint="pink"
+            type="number"
+            inputMode="decimal"
+            step="0.01"
+            placeholder="Ex: 50"
+            {...register("rendimento_carcaca")}
+          />
         </Field>
+
+        <div className={styles.row}>
+          <Field label="Data de Pesagem" htmlFor="data_pesagem" error={errors.data_pesagem?.message}>
+            <TintedInput id="data_pesagem" tint="pink" type="date" {...register("data_pesagem")} />
+          </Field>
+          <Field label="Horário (opcional)" htmlFor="horario_pesagem" error={errors.horario_pesagem?.message}>
+            <TintedInput id="horario_pesagem" tint="pink" type="time" {...register("horario_pesagem")} />
+          </Field>
+        </div>
 
         {modalidade === "arroba" ? (
           <div className={styles.row}>

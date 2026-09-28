@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { Warehouse } from "lucide-react";
-import { useForm, Controller, useWatch } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { BackLink } from "@/components/back-link";
@@ -21,22 +21,25 @@ import type { Modalidade, TipoLote } from "@/lib/api/types";
 import fieldBox from "@/components/form/field-box.module.css";
 import styles from "./page.module.css";
 
+const vazioParaUndefined = (v: unknown) => (v === "" || v === null ? undefined : v);
+
 const schema = z.object({
- 
-  comprador: z.string().min(1, "Informe o comprador.").max(50),
   tipo_gado: z.enum(["Gordo", "Magro"], { error: "Selecione o tipo de gado." }),
   modalidade: z.enum(["arroba", "kg", "cabeca"], { error: "Selecione a modalidade." }),
-  valor_arroba: z.coerce.number({ error: "Informe o valor por unidade." }).positive("Deve ser maior que zero."),
-  rendimento_carcaca: z.coerce
-    .number({ error: "Informe o rendimento de carcaça." })
-    .min(0, "Deve ser entre 0 e 100.")
-    .max(100, "Deve ser entre 0 e 100."),
+  valor_unidade: z.coerce.number({ error: "Informe o valor por unidade." }).positive("Deve ser maior que zero."),
   tipo_lote: z.enum(["Vaca", "Boi", "Novilha", "Garrote", "Bezerro", "Variados"], {
     error: "Selecione o tipo de lote.",
   }),
+  // Domínio de valores ainda não definido — texto livre (varchar(10)), sem Select.
+  tipo_precificacao: z.string().min(1, "Informe o tipo de precificação.").max(10, "Máximo de 10 caracteres."),
   data_negocio: z.string().min(1, "Informe a data do negócio."),
-  comissao: z.coerce.number({ error: "Informe a comissão." }).nonnegative("Não pode ser negativa."),
-  observacao: z.string().min(1, "Informe uma observação.").max(100),
+  hora_inicio_pesagem: z.string().min(1, "Informe a hora de início."),
+  hora_fim_pesagem: z.string().min(1, "Informe a hora de fim."),
+  comissao: z.preprocess(
+    vazioParaUndefined,
+    z.coerce.number({ error: "Valor inválido." }).nonnegative("Não pode ser negativa.").optional()
+  ),
+  observacao: z.string().max(100).optional(),
 });
 type FormInput = z.input<typeof schema>;
 type FormValues = z.output<typeof schema>;
@@ -49,18 +52,18 @@ export default function NovoNegocioInformacoesPage() {
     register,
     handleSubmit,
     control,
-    setValue,
     formState: { errors, isSubmitting },
   } = useForm<FormInput, unknown, FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
      
-      comprador: data.comprador,
       tipo_gado: data.tipoGado || undefined,
       modalidade: data.modalidade || undefined,
-      valor_arroba: data.valorArroba ?? undefined,
-      rendimento_carcaca: data.rendimentoCarcaca ?? undefined,
+      valor_unidade: data.valorUnidade ?? undefined,
       tipo_lote: data.tipoLote || undefined,
+      tipo_precificacao: data.tipoPrecificacao,
+      hora_inicio_pesagem: data.horaInicioPesagem,
+      hora_fim_pesagem: data.horaFimPesagem,
       data_negocio: data.dataNegocio || new Date().toISOString().slice(0, 10),
       comissao: data.comissao ?? undefined,
       observacao: data.observacao,
@@ -69,17 +72,12 @@ export default function NovoNegocioInformacoesPage() {
 
   React.useEffect(() => {
     if (!data.fazendaId) router.replace("/negocios/novo");
-  }, [data.fazendaId, router]);
-
-  const modalidade = useWatch({ control, name: "modalidade" });
-  const isArroba = modalidade === "arroba";
-
-  React.useEffect(() => {
-    if (!isArroba) setValue("rendimento_carcaca", 100);
-  }, [isArroba, setValue]);
+    else if (!data.vendedorId) router.replace("/negocios/novo/vendedor");
+    else if (!data.compradorId) router.replace("/negocios/novo/comprador");
+  }, [data.fazendaId, data.vendedorId, data.compradorId, router]);
 
   async function onSubmit(values: FormValues) {
-    if (!data.fazendaId) return;
+    if (!data.fazendaId || !data.vendedorId || !data.compradorId) return;
     const usuario = getUsuario();
     if (!usuario) {
       setSubmitError("Sessão inválida. Faça login novamente.");
@@ -90,29 +88,30 @@ export default function NovoNegocioInformacoesPage() {
       const negocio = await createNegocio({
         empresa_id: usuario.empresa_id,
         fazenda_id: data.fazendaId,
-        marchante: "Rafael de Castro", // retirar 
-        comprador: values.comprador,
+        vendedor_id: data.vendedorId,
+        comprador_id: data.compradorId,
+        hora_inicio_pesagem: values.hora_inicio_pesagem,
+        hora_fim_pesagem: values.hora_fim_pesagem,
         modalidade: values.modalidade,
         tipo_gado: values.tipo_gado,
         tipo_lote: values.tipo_lote,
-        tipo_precificacao: "valor precificacao", // retirar
-        rendimento_carcaca: values.rendimento_carcaca,
+        tipo_precificacao: values.tipo_precificacao,
         data_negocio: new Date(values.data_negocio).toISOString(),
         comissao: values.comissao,
-        valor_arroba: values.valor_arroba,
-        observacao: values.observacao,
+        valor_unidade: values.valor_unidade,
+        observacao: values.observacao || undefined,
       });
       update({
-     
-        comprador: values.comprador,
         tipoGado: values.tipo_gado,
         modalidade: values.modalidade,
-        valorArroba: values.valor_arroba,
-        rendimentoCarcaca: values.rendimento_carcaca,
+        valorUnidade: values.valor_unidade,
         tipoLote: values.tipo_lote,
+        tipoPrecificacao: values.tipo_precificacao,
+        horaInicioPesagem: values.hora_inicio_pesagem,
+        horaFimPesagem: values.hora_fim_pesagem,
         dataNegocio: values.data_negocio,
-        comissao: values.comissao,
-        observacao: values.observacao,
+        comissao: values.comissao ?? null,
+        observacao: values.observacao ?? "",
         negocioId: negocio.negocio_id,
       });
       router.push("/negocios/novo/gado");
@@ -121,13 +120,13 @@ export default function NovoNegocioInformacoesPage() {
     }
   }
 
-  if (!data.fazendaId) return null;
+  if (!data.fazendaId || !data.vendedorId || !data.compradorId) return null;
 
   return (
     <div className={cn(styles.page, "pt-safe")}>
-      <BackLink href="/negocios/novo/vendedor" />
+      <BackLink href="/negocios/novo/comprador" />
       <h1 className={styles.title}>Cadastrar Novo Negócio</h1>
-      <ProgressSteps current={3} total={4} />
+      <ProgressSteps current={4} total={5} />
 
       <div className={cn(styles.fazendaCard, "glass-dark")}>
         <span className={styles.fazendaIcon}>
@@ -141,8 +140,8 @@ export default function NovoNegocioInformacoesPage() {
           {submitError ? <p className={styles.submitError}>{submitError}</p> : null}
 
         
-          <Field label="Comprador" htmlFor="comprador" error={errors.comprador?.message}>
-            <TintedInput id="comprador" tint="pink" placeholder="Nome do comprador" {...register("comprador")} />
+          <Field label="Comprador" htmlFor="comprador">
+            <TintedInput id="comprador" tint="none" value={data.compradorNome} disabled readOnly />
           </Field>
 
           <div className={styles.row}>
@@ -192,17 +191,17 @@ export default function NovoNegocioInformacoesPage() {
 
             <Field
               label="Valor Un. (Arroba, Kg ou Cabeça)"
-              htmlFor="valor_arroba"
-              error={errors.valor_arroba?.message}
+              htmlFor="valor_unidade"
+              error={errors.valor_unidade?.message}
             >
               <TintedInput
-                id="valor_arroba"
+                id="valor_unidade"
                 tint="pink"
                 type="number"
                 inputMode="decimal"
                 step="0.01"
                 placeholder="R$ 0,00"
-                {...register("valor_arroba")}
+                {...register("valor_unidade")}
               />
             </Field>
 
@@ -210,24 +209,6 @@ export default function NovoNegocioInformacoesPage() {
         
 
           <div className={styles.row}>
-
-             <Field
-              label="Rendimento de carcaça"
-              htmlFor="rendimento_carcaca"
-              error={errors.rendimento_carcaca?.message}
-            >
-              <TintedInput
-                id="rendimento_carcaca"
-                tint={isArroba ? "pink" : "none"}
-                type="number"
-                inputMode="decimal"
-                step="0.01"
-                placeholder="Ex: 50"
-                disabled={!isArroba}
-                readOnly={!isArroba}
-                {...register("rendimento_carcaca")}
-              />
-            </Field>
 
             <Field label="Tipo de Lote" htmlFor="tipo_lote" error={errors.tipo_lote?.message}>
               <Controller
@@ -252,6 +233,19 @@ export default function NovoNegocioInformacoesPage() {
               />
             </Field>
 
+            <Field label="Tipo de Precificação" htmlFor="tipo_precificacao" error={errors.tipo_precificacao?.message}>
+              <TintedInput id="tipo_precificacao" tint="pink" maxLength={10} {...register("tipo_precificacao")} />
+            </Field>
+          </div>
+
+          <div className={styles.row}>
+            <Field label="Hora Início Pesagem" htmlFor="hora_inicio_pesagem" error={errors.hora_inicio_pesagem?.message}>
+              <TintedInput id="hora_inicio_pesagem" tint="pink" type="time" {...register("hora_inicio_pesagem")} />
+            </Field>
+
+            <Field label="Hora Fim Pesagem" htmlFor="hora_fim_pesagem" error={errors.hora_fim_pesagem?.message}>
+              <TintedInput id="hora_fim_pesagem" tint="pink" type="time" {...register("hora_fim_pesagem")} />
+            </Field>
           </div>
 
           <div className={styles.row}>
@@ -259,7 +253,7 @@ export default function NovoNegocioInformacoesPage() {
               <TintedInput id="data_negocio" tint="pink" type="date" {...register("data_negocio")} />
             </Field>
 
-            <Field label="Comissão" htmlFor="comissao" error={errors.comissao?.message}>
+            <Field label="Comissão (opcional)" htmlFor="comissao" error={errors.comissao?.message as string | undefined}>
               <TintedInput
                 id="comissao"
                 tint="pink"
@@ -272,7 +266,7 @@ export default function NovoNegocioInformacoesPage() {
             </Field>
           </div>
 
-          <Field label="Observação" htmlFor="observacao" error={errors.observacao?.message}>
+          <Field label="Observação (opcional)" htmlFor="observacao" error={errors.observacao?.message}>
             <TintedInput id="observacao" tint="pink" {...register("observacao")} />
           </Field>
         </div>

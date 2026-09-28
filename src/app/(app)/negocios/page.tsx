@@ -9,14 +9,16 @@ import { formatCurrency, formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { fetchNegocios } from "@/lib/api/negocios";
 import { fetchFazendas } from "@/lib/api/fazendas";
+import { fetchCompradores } from "@/lib/api/compradores";
 import { gerarRelatorioNegocios } from "@/lib/relatorio";
-import type { Fazenda, Negocio } from "@/lib/api/types";
+import type { Comprador, Fazenda, Negocio } from "@/lib/api/types";
 import { ApiError } from "@/lib/api-client";
 import styles from "./page.module.css";
 
 export default function NegociosPage() {
   const [negocios, setNegocios] = React.useState<Negocio[] | null>(null);
   const [fazendas, setFazendas] = React.useState<Fazenda[]>([]);
+  const [compradores, setCompradores] = React.useState<Comprador[]>([]);
   const [error, setError] = React.useState<string | null>(null);
   const [reloadKey, setReloadKey] = React.useState(0);
 
@@ -33,6 +35,11 @@ export default function NegociosPage() {
     [fazendas]
   );
 
+  const compradoresPorId = React.useMemo(
+    () => Object.fromEntries(compradores.map((c) => [c.comprador_id, c.nome_empresa])),
+    [compradores]
+  );
+
   React.useEffect(() => {
     let cancelled = false;
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -46,11 +53,13 @@ export default function NegociosPage() {
         data_fim: dataFim || undefined,
       }),
       fetchFazendas(),
+      fetchCompradores(),
     ])
-      .then(([negociosData, fazendasData]) => {
+      .then(([negociosData, fazendasData, compradoresData]) => {
         if (cancelled) return;
         setNegocios(negociosData);
         setFazendas(fazendasData);
+        setCompradores(compradoresData);
       })
       .catch((err: unknown) => {
         if (cancelled) return;
@@ -66,9 +75,10 @@ export default function NegociosPage() {
   const filtrados = negocios?.filter((negocio) => {
     if (buscaLower === "") return true;
     const fazendaNome = fazendasPorId[negocio.fazenda_id] ?? "";
+    const compradorNome = compradoresPorId[negocio.comprador_id] ?? "";
     return (
       fazendaNome.toLowerCase().includes(buscaLower) ||
-      negocio.marchante.toLowerCase().includes(buscaLower)
+      compradorNome.toLowerCase().includes(buscaLower)
     );
   });
 
@@ -95,7 +105,7 @@ export default function NegociosPage() {
         <Search className={styles.searchIcon} size={18} />
         <input
           className={cn(styles.searchInput, "glass-panel")}
-          placeholder="Buscar por fazenda ou marchante..."
+          placeholder="Buscar por fazenda ou comprador..."
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
         />
@@ -165,12 +175,12 @@ export default function NegociosPage() {
                   {fazendasPorId[negocio.fazenda_id] ?? `Fazenda #${negocio.fazenda_id}`}
                 </p>
                 <p className={styles.cardMeta}>
-                  Vendedor: {negocio.marchante} · {formatDate(negocio.data_negocio)}
+                  Comprador: {compradoresPorId[negocio.comprador_id] ?? `#${negocio.comprador_id}`} · {formatDate(negocio.data_negocio)}
                 </p>
                 <p className={styles.cardHeads}>Cabeças negociadas: {negocio.qtd_animais ?? "—"}</p>
               </div>
               <div className={styles.cardAmount}>
-                <p className={styles.cardCommission}>{formatCurrency(negocio.comissao)}</p>
+                <p className={styles.cardCommission}>{negocio.comissao !== null ? formatCurrency(negocio.comissao) : "—"}</p>
                 <p className={styles.cardHeads}>Comissão</p>
               </div>
             </Link>

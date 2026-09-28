@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { FileText, MapPin, Warehouse } from "lucide-react";
+import { FileText, Image, MapPin, Type, Warehouse } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -19,6 +19,9 @@ const schema = z.object({
   nome_fazenda: z.string().min(2, "Informe o nome da fazenda.").max(50),
   municipio: z.string().min(2, "Informe o município.").max(20),
   inscricao_estadual: z.string().min(1, "Informe a inscrição estadual.").max(12),
+  // TODO: upload real de imagem (S3 + URL pré-assinada) ainda não especificado — por ora é uma URL colada.
+  marca_url: z.string().max(500, "Máximo de 500 caracteres.").optional(),
+  marca_escrita: z.string().max(10, "Máximo de 10 caracteres.").optional(),
 });
 type FormValues = z.infer<typeof schema>;
 
@@ -34,7 +37,11 @@ export default function NovaFazendaPage() {
   async function onSubmit(values: FormValues) {
     setSubmitError(null);
     try {
-      await createFazenda(values);
+      await createFazenda({
+        ...values,
+        marca_url: values.marca_url || undefined,
+        marca_escrita: values.marca_escrita || undefined,
+      });
       router.push("/fazendas");
     } catch (err) {
       setSubmitError(err instanceof ApiError || err instanceof Error ? err.message : "Erro ao salvar.");
@@ -60,6 +67,14 @@ export default function NovaFazendaPage() {
 
           <IconField icon={FileText} label="Inscrição Estadual" htmlFor="inscricao_estadual" error={errors.inscricao_estadual?.message}>
             <TintedInput id="inscricao_estadual" tint="pink" placeholder="Ex: 234567891" {...register("inscricao_estadual")} />
+          </IconField>
+
+          <IconField icon={Image} label="Marca (URL da imagem)" htmlFor="marca_url" error={errors.marca_url?.message}>
+            <TintedInput id="marca_url" tint="pink" type="url" placeholder="https://..." {...register("marca_url")} />
+          </IconField>
+
+          <IconField icon={Type} label="Marca escrita" htmlFor="marca_escrita" error={errors.marca_escrita?.message}>
+            <TintedInput id="marca_escrita" tint="pink" maxLength={10} {...register("marca_escrita")} />
           </IconField>
         </div>
 

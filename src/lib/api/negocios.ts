@@ -8,11 +8,10 @@ function normalizeNegocio(raw: Negocio): Negocio {
     ...raw,
     valor_total: raw.valor_total === null ? null : Number(raw.valor_total),
     valor_medio: raw.valor_medio === null ? null : Number(raw.valor_medio),
-    rendimento_carcaca: Number(raw.rendimento_carcaca),
     mais_pesado: raw.mais_pesado === null ? null : Number(raw.mais_pesado),
     mais_leve: raw.mais_leve === null ? null : Number(raw.mais_leve),
-    comissao: Number(raw.comissao),
-    valor_arroba: Number(raw.valor_arroba),
+    comissao: raw.comissao === null ? null : Number(raw.comissao),
+    valor_unidade: Number(raw.valor_unidade),
   };
 }
 
@@ -31,7 +30,7 @@ export async function fetchNegocios(params?: {
 
 export async function fetchNegocio(id: number | string) {
   const negocio = await apiFetch<NegocioDetail>(`/negocios/${id}`);
-  return { ...normalizeNegocio(negocio), gados: negocio.gados.map(normalizeGado) };
+  return { ...negocio, ...normalizeNegocio(negocio), gados: negocio.gados.map(normalizeGado) };
 }
 
 export async function createNegocio(input: CreateNegocioInput) {

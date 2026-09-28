@@ -35,18 +35,18 @@ export default function NovoNegocioVendedorPage() {
 
   if (!data.fazendaId) return null;
 
-  const daFazenda = vendedores?.filter((v) => v.fazenda_id === data.fazendaId);
+  const daFazenda = vendedores?.filter((v) => v.vendedor_fazenda?.some((a) => a.fazenda_id === data.fazendaId));
 
   function selecionar(vendedor: Vendedor) {
-    update({ vendedorId: vendedor.vendedor_id, marchante: vendedor.nome_vendedor });
-    router.push("/negocios/novo/informacoes");
+    update({ vendedorId: vendedor.vendedor_id });
+    router.push("/negocios/novo/comprador");
   }
 
   return (
     <div className={cn(styles.page, "pt-safe")}>
       <BackLink href="/negocios/novo" />
       <h1 className={styles.title}>Cadastrar Novo Negócio</h1>
-      <ProgressSteps current={2} total={4} />
+      <ProgressSteps current={2} total={5} />
 
       <div className={cn(styles.fazendaCard, "glass-dark")}>
         <span className={styles.fazendaIcon}>

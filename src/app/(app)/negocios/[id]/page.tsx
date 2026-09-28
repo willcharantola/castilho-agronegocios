@@ -6,7 +6,7 @@ import { Warehouse, Beef, FileText } from "lucide-react";
 import { BackLink } from "@/components/back-link";
 import { Button } from "@/components/ui/button";
 import { Fab } from "@/components/fab";
-import { formatCurrency, formatNumber, formatGenero } from "@/lib/format";
+import { formatCurrency, formatNumber, formatGenero, formatHora } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { fetchNegocio } from "@/lib/api/negocios";
 import { fetchFazendas } from "@/lib/api/fazendas";
@@ -105,19 +105,20 @@ export default function NegocioDetailPage() {
                   Fazenda {fazendaNome ?? `#${negocio.fazenda_id}`}
                 </p>
                 <p className={styles.summarySeller}>
-                  Marchante: {negocio.marchante}
-                  {negocio.comprador ? ` · Comprador: ${negocio.comprador}` : ""}
+                  Vendedor: {negocio.vendedor.nome_vendedor} · Comprador: {negocio.comprador.nome_empresa}
                 </p>
               </div>
             </div>
             <div className={styles.summaryStats}>
               <div>
-                <p className={styles.summaryStatLabel}>Rend. de Carcaça</p>
-                <p className={styles.summaryStatValue}>{formatNumber(negocio.rendimento_carcaca, 0)}%</p>
+                <p className={styles.summaryStatLabel}>Pesagem</p>
+                <p className={styles.summaryStatValue}>
+                  {formatHora(negocio.hora_inicio_pesagem)} – {formatHora(negocio.hora_fim_pesagem)}
+                </p>
               </div>
               <div>
-                <p className={styles.summaryStatLabel}>Valor p/ arroba</p>
-                <p className={styles.summaryStatValue}>{formatCurrency(negocio.valor_arroba)}</p>
+                <p className={styles.summaryStatLabel}>Valor p/ un.</p>
+                <p className={styles.summaryStatValue}>{formatCurrency(negocio.valor_unidade)}</p>
               </div>
               <div>
                 <p className={styles.summaryStatLabel}>Modalidade</p>
@@ -148,7 +149,7 @@ export default function NegocioDetailPage() {
                   <div className={styles.gadoInfo}>
                     <p className={styles.gadoName}>{gado.denominacao}</p>
                     <p className={styles.gadoMeta}>
-                      Gênero: {formatGenero(gado.genero)} · Peso p/ cálculo: {formatNumber(gado.peso_calculo)}
+                      Gênero: {formatGenero(gado.genero)} · Rend.: {formatNumber(gado.rendimento_carcaca, 0)}% · Peso p/ cálculo: {formatNumber(gado.peso_calculo)}
                     </p>
                   </div>
                   <div className={styles.gadoAmount}>

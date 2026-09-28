@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Banknote, CreditCard, User, Warehouse } from "lucide-react";
+import { Banknote, CreditCard, User } from "lucide-react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -13,7 +13,9 @@ import { TintedInput } from "@/components/form/tinted-input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { fetchVendedor, updateVendedor } from "@/lib/api/vendedores";
-import { fetchFazenda } from "@/lib/api/fazendas";
+import { fetchFazendas } from "@/lib/api/fazendas";
+import { FazendasChecklist } from "@/components/form/fazendas-checklist";
+import type { Fazenda } from "@/lib/api/types";
 import { ApiError } from "@/lib/api-client";
 import { FISICO_JURIDICO_LABELS } from "@/lib/labels";
 import { cn } from "@/lib/utils";
@@ -34,7 +36,8 @@ type FormValues = z.infer<typeof schema>;
 export default function EditarVendedorPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
-  const [fazendaNome, setFazendaNome] = React.useState<string | null>(null);
+  const [fazendas, setFazendas] = React.useState<Fazenda[]>([]);
+  const [fazendaIds, setFazendaIds] = React.useState<number[]>([]);
   const [loadError, setLoadError] = React.useState<string | null>(null);
   const [submitError, setSubmitError] = React.useState<string | null>(null);
   const [loaded, setLoaded] = React.useState(false);
@@ -48,8 +51,8 @@ export default function EditarVendedorPage() {
 
   React.useEffect(() => {
     let cancelled = false;
-    fetchVendedor(params.id)
-      .then(async (vendedor) => {
+    Promise.all([fetchVendedor(params.id), fetchFazendas()])
+      .then(([vendedor, fazendasData]) => {
         if (cancelled) return;
         reset({
           nome_vendedor: vendedor.nome_vendedor,
@@ -60,13 +63,9 @@ export default function EditarVendedorPage() {
           conta: vendedor.conta,
           chave_pix: vendedor.chave_pix,
         });
+        setFazendas(fazendasData);
+        setFazendaIds((vendedor.vendedor_fazenda ?? []).map((a) => a.fazenda_id));
         setLoaded(true);
-        try {
-          const fazenda = await fetchFazenda(vendedor.fazenda_id);
-          if (!cancelled) setFazendaNome(fazenda.nome_fazenda);
-        } catch {
-          if (!cancelled) setFazendaNome(`#${vendedor.fazenda_id}`);
-        }
       })
       .catch((err: unknown) => {
         if (cancelled) return;
@@ -78,9 +77,13 @@ export default function EditarVendedorPage() {
   }, [params.id, reset]);
 
   async function onSubmit(values: FormValues) {
+    if (fazendaIds.length === 0) {
+      setSubmitError("Selecione ao menos uma fazenda.");
+      return;
+    }
     setSubmitError(null);
     try {
-      await updateVendedor(params.id, values);
+      await updateVendedor(params.id, { ...values, fazenda_ids: fazendaIds });
       router.push("/vendedores");
     } catch (err) {
       setSubmitError(err instanceof ApiError || err instanceof Error ? err.message : "Erro ao salvar.");
@@ -97,16 +100,13 @@ export default function EditarVendedorPage() {
 
       {loaded ? (
         <>
-          <div className={cn(styles.fazendaCard, "glass-dark")}>
-            <span className={styles.fazendaIcon}>
-              <Warehouse size={18} />
-            </span>
-            <p className={styles.fazendaNome}>{fazendaNome ?? "Carregando..."}</p>
-          </div>
-
           <form onSubmit={handleSubmit(onSubmit)} className={styles.form}>
             <div className={styles.fields}>
               {submitError ? <p className={styles.submitError}>{submitError}</p> : null}
+
+              <Field label="Fazendas do vendedor" htmlFor="fazendas">
+                <FazendasChecklist fazendas={fazendas} selected={fazendaIds} onChange={setFazendaIds} />
+              </Field>
 
               <IconField icon={User} label="Nome Vendedor" htmlFor="nome_vendedor" error={errors.nome_vendedor?.message}>
                 <TintedInput id="nome_vendedor" tint="pink" {...register("nome_vendedor")} />

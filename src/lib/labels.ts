@@ -24,3 +24,18 @@ export const FISICO_JURIDICO_LABELS: Record<"fisico" | "juridico", string> = {
   fisico: "Pessoa Física",
   juridico: "Pessoa Jurídica",
 };
+
+export const MESES_LABELS = [
+  "Janeiro",
+  "Fevereiro",
+  "Março",
+  "Abril",
+  "Maio",
+  "Junho",
+  "Julho",
+  "Agosto",
+  "Setembro",
+  "Outubro",
+  "Novembro",
+  "Dezembro",
+];
