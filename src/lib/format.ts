@@ -20,3 +20,8 @@ export function formatDate(iso: string) {
 export function formatGenero(genero: string) {
   return genero === "Femea" ? "Fêmea" : genero;
 }
+
+/** Colunas TIME chegam como ISO em 1970-01-01 (UTC) — devolve "HH:mm". */
+export function formatHora(iso: string | null | undefined) {
+  return iso ? iso.slice(11, 16) : "";
+}

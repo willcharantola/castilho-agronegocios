@@ -2,10 +2,9 @@ import { apiFetch } from "@/lib/api-client";
 import type { CreateVendedorInput, UpdateVendedorInput, Vendedor } from "@/lib/api/types";
 
 /**
- * GET /vendedores não aceita nenhum query param (confirmado no Swagger ao
- * vivo) — para listar os vendedores de uma fazenda, busque todos e filtre
- * o array no cliente (`v => v.fazenda_id === fazendaId`). Não existe um
- * `?fazenda_id=` para adicionar aqui.
+ * GET /vendedores não aceita query params. Cada vendedor vem com
+ * `vendedor_fazenda` (N:N) — para listar os vendedores de uma fazenda,
+ * filtre no cliente com `v.vendedor_fazenda?.some(a => a.fazenda_id === id)`.
  */
 export function fetchVendedores() {
   return apiFetch<Vendedor[]>("/vendedores");

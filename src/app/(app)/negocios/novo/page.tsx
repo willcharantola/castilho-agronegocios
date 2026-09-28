@@ -32,7 +32,6 @@ export default function NovoNegocioFazendaPage() {
       fazendaId: fazenda.fazenda_id,
       fazendaNome: fazenda.nome_fazenda,
       vendedorId: null,
-      marchante: "",
       negocioId: null,
     });
     router.push("/negocios/novo/vendedor");
@@ -47,7 +46,7 @@ export default function NovoNegocioFazendaPage() {
     <div className={cn(styles.page, "pt-safe")}>
       <BackLink href="/" />
       <h1 className={styles.title}>Cadastrar Novo Negócio</h1>
-      <ProgressSteps current={1} total={4} />
+      <ProgressSteps current={1} total={5} />
       <p className={styles.subtitle}>Selecione a fazenda com a qual deseja realizar o negócio</p>
 
       <div className={styles.searchWrap}>

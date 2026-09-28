@@ -24,7 +24,7 @@ async function carregarTemplate(url: string) {
 
 /**
  * Colunas espelham exatamente o que a tela de listagem de negócios exibe
- * por card (fazenda, marchante, data, comissão, cabeças) — ver
+ * por card (fazenda, data, comissão, cabeças) — ver
  * `src/app/(app)/negocios/page.tsx`. Mudou o que aparece lá? mude aqui e
  * na tabela do `modelo-relatorio.docx` também.
  */
@@ -40,10 +40,12 @@ export async function gerarRelatorioNegocios(
     "data-emissao": new Date().toLocaleDateString("pt-BR"),
     negocios: negocios.map((n) => ({
       fazenda: fazendasPorId[n.fazenda_id] ?? `Fazenda #${n.fazenda_id}`,
-      marchante: n.marchante,
+      // `negocio` não tem mais `marchante` (nem vendedor_id) — pendente definir o que
+      // vai nessa coluna do modelo .docx (ver alteracoes.md).
+      marchante: "—",
       data_negocio: formatDate(n.data_negocio),
       cabecas: n.qtd_animais !== null ? String(n.qtd_animais) : "—",
-      comissao: formatCurrency(n.comissao),
+      comissao: n.comissao !== null ? formatCurrency(n.comissao) : "—",
     })),
   });
 
@@ -71,10 +73,10 @@ export async function gerarRelatorioNegocio(negocio: NegocioDetail, fazendaNome:
     negocios: [
       {
         fazenda: fazendaNome,
-        marchante: negocio.marchante,
+        marchante: "—", // ver comentário acima
         data_negocio: formatDate(negocio.data_negocio),
         cabecas: negocio.qtd_animais !== null ? String(negocio.qtd_animais) : "—",
-        comissao: formatCurrency(negocio.comissao),
+        comissao: negocio.comissao !== null ? formatCurrency(negocio.comissao) : "—",
       },
     ],
     gados: negocio.gados.map((g) => ({

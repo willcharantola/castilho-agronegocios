@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Handshake, TrendingUp, Users, DollarSign, Warehouse, type LucideIcon } from "lucide-react";
+import { Building2, Handshake, TrendingUp, Users, DollarSign, Warehouse, type LucideIcon } from "lucide-react";
 import Logo from "@/assets/logo-castilho.svg";
 import { Button } from "@/components/ui/button";
 import { TintedInput } from "@/components/form/tinted-input";
@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { fetchNegocios } from "@/lib/api/negocios";
 import { fetchFazendas } from "@/lib/api/fazendas";
 import { fetchVendedores } from "@/lib/api/vendedores";
+import { fetchCompradores } from "@/lib/api/compradores";
 import styles from "./page.module.css";
 
 function StatTile({
@@ -69,6 +70,7 @@ export default function HomePage() {
   const [cabecasTotal, setCabecasTotal] = React.useState<number | null>(null);
   const [fazendasCount, setFazendasCount] = React.useState<number | null>(null);
   const [vendedoresCount, setVendedoresCount] = React.useState<number | null>(null);
+  const [compradoresCount, setCompradoresCount] = React.useState<number | null>(null);
 
   // Bento (tiles do topo) segue o período do filtro; atalhos de navegação
   // (fazendas/vendedores/negócios totais) não são vinculados a data.
@@ -76,7 +78,7 @@ export default function HomePage() {
     fetchNegocios({ data_inicio: dataInicio, data_fim: dataFim })
       .then((negocios) => {
         setNegociosCount(negocios.length);
-        setComissaoTotal(negocios.reduce((sum, n) => sum + n.comissao, 0));
+        setComissaoTotal(negocios.reduce((sum, n) => sum + (n.comissao ?? 0), 0));
         setCabecasTotal(negocios.reduce((sum, n) => sum + (n.qtd_animais ?? 0), 0));
       })
       .catch(() => {
@@ -86,10 +88,11 @@ export default function HomePage() {
   }, [dataInicio, dataFim]);
 
   React.useEffect(() => {
-    Promise.all([fetchFazendas(), fetchVendedores()])
-      .then(([fazendas, vendedores]) => {
+    Promise.all([fetchFazendas(), fetchVendedores(), fetchCompradores()])
+      .then(([fazendas, vendedores, compradores]) => {
         setFazendasCount(fazendas.length);
         setVendedoresCount(vendedores.length);
+        setCompradoresCount(compradores.length);
       })
       .catch(() => {
         // Idem — falha silenciosa.
@@ -166,6 +169,7 @@ export default function HomePage() {
       <div className={styles.shortcuts}>
         <NavShortcut icon={Warehouse} label="Fazendas" count={fazendasCount ?? 0} href="/fazendas" />
         <NavShortcut icon={Users} label="Vendedores" count={vendedoresCount ?? 0} href="/vendedores" />
+        <NavShortcut icon={Building2} label="Compradores" count={compradoresCount ?? 0} href="/compradores" />
         <NavShortcut icon={Handshake} label="Negócios" count={negociosCount ?? 0} href="/negocios" />
       </div>
 

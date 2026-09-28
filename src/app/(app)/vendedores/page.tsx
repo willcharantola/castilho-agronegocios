@@ -7,15 +7,17 @@ import { Button } from "@/components/ui/button";
 import { Fab } from "@/components/fab";
 import { cn } from "@/lib/utils";
 import { fetchVendedores } from "@/lib/api/vendedores";
-import { fetchFazendas } from "@/lib/api/fazendas";
 import type { Vendedor } from "@/lib/api/types";
 import { FISICO_JURIDICO_LABELS } from "@/lib/labels";
 import { ApiError } from "@/lib/api-client";
 import styles from "./page.module.css";
 
+function nomesDasFazendas(vendedor: Vendedor) {
+  return (vendedor.vendedor_fazenda ?? []).map((a) => a.fazenda.nome_fazenda).join(", ");
+}
+
 export default function VendedoresPage() {
   const [vendedores, setVendedores] = React.useState<Vendedor[] | null>(null);
-  const [fazendasPorId, setFazendasPorId] = React.useState<Record<number, string>>({});
   const [error, setError] = React.useState<string | null>(null);
   const [reloadKey, setReloadKey] = React.useState(0);
   const [busca, setBusca] = React.useState("");
@@ -26,11 +28,10 @@ export default function VendedoresPage() {
     setVendedores(null);
     setError(null);
 
-    Promise.all([fetchVendedores(), fetchFazendas()])
-      .then(([vendedoresData, fazendasData]) => {
+    fetchVendedores()
+      .then((vendedoresData) => {
         if (cancelled) return;
         setVendedores(vendedoresData);
-        setFazendasPorId(Object.fromEntries(fazendasData.map((f) => [f.fazenda_id, f.nome_fazenda])));
       })
       .catch((err: unknown) => {
         if (cancelled) return;
@@ -45,10 +46,9 @@ export default function VendedoresPage() {
   const buscaLower = busca.trim().toLowerCase();
   const filtrados = vendedores?.filter((v) => {
     if (buscaLower === "") return true;
-    const fazendaNome = fazendasPorId[v.fazenda_id] ?? "";
     return (
       v.nome_vendedor.toLowerCase().includes(buscaLower) ||
-      fazendaNome.toLowerCase().includes(buscaLower)
+      nomesDasFazendas(v).toLowerCase().includes(buscaLower)
     );
   });
 
@@ -105,7 +105,7 @@ export default function VendedoresPage() {
                   <p className={styles.cardName}>{vendedor.nome_vendedor}</p>
                   <p className={styles.cardMeta}> Pessoa: {FISICO_JURIDICO_LABELS[vendedor.fisico_juridico]} 
                   <p className={styles.cardMeta}></p>CPF/CNPJ: {vendedor.cpf_cnpj}  </p>
-                  <p className={styles.cardMeta}> Fazenda: {fazendasPorId[vendedor.fazenda_id] ?? `#${vendedor.fazenda_id}`} </p>
+                  <p className={styles.cardMeta}> Fazendas: {nomesDasFazendas(vendedor) || "—"} </p>
                 </div>
               </div>
               <div className={styles.cardFooter}>
