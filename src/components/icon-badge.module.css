@@ -6,7 +6,7 @@
   width: 5rem;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
+  border-radius: 5px;
   background: color-mix(in oklch, var(--color-olive) 85%, transparent);
 }
 

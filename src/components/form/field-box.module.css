@@ -3,7 +3,7 @@
 .box {
   height: 3rem;
   width: 100%;
-  border-radius: var(--radius-md);
+  border-radius: 5px;
   border: 2px solid color-mix(in oklch, var(--color-olive) 40%, transparent);
   padding: 0 1rem;
   font-size: 1rem;
