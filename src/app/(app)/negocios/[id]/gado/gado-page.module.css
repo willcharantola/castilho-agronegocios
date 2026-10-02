@@ -19,7 +19,7 @@
 }
 
 .state {
-  border-radius: var(--radius-xl);
+  border-radius: 5px;
   padding: 2rem 1.25rem;
   text-align: center;
   color: var(--color-ink);

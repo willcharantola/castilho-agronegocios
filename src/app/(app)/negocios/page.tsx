@@ -171,17 +171,26 @@ export default function NegociosPage() {
                 <Warehouse size={18} />
               </span>
               <div className={styles.cardInfo}>
+
                 <p className={styles.cardFarm}>
                   {fazendasPorId[negocio.fazenda_id] ?? `Fazenda #${negocio.fazenda_id}`}
                 </p>
+
                 <p className={styles.cardMeta}>
                   Comprador: {compradoresPorId[negocio.comprador_id] ?? `#${negocio.comprador_id}`} · {formatDate(negocio.data_negocio)}
                 </p>
+
+                 <p className={styles.cardMeta}>
+                  Comissão: {negocio.comissao !== null ? formatCurrency(negocio.comissao) : "—"}
+                </p>
+
                 <p className={styles.cardHeads}>Cabeças negociadas: {negocio.qtd_animais ?? "—"}</p>
               </div>
               <div className={styles.cardAmount}>
-                <p className={styles.cardCommission}>{negocio.comissao !== null ? formatCurrency(negocio.comissao) : "—"}</p>
-                <p className={styles.cardHeads}>Comissão</p>
+                 <p className={styles.cardCommission}>{negocio.valor_total !== null ? formatCurrency(negocio.valor_total) : "—"}</p>
+                <p className={styles.cardHeads}>Valor Total</p>
+
+                
               </div>
             </Link>
           ))}

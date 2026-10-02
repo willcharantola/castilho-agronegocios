@@ -14,7 +14,7 @@
 .box {
   height: 4rem;
   width: 3.5rem;
-  border-radius: var(--radius-md);
+  border-radius: 5px;
   border: 2px solid color-mix(in oklch, var(--color-olive) 40%, transparent);
   background: color-mix(in oklch, var(--color-field-green) 70%, transparent);
   text-align: center;

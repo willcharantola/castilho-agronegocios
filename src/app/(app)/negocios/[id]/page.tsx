@@ -7,7 +7,7 @@ import { Warehouse, Beef, FileText, Pencil, Plus } from "lucide-react";
 import { BackLink } from "@/components/back-link";
 import { Button } from "@/components/ui/button";
 import { Fab } from "@/components/fab";
-import { formatCurrency, formatNumber, formatGenero, formatHora } from "@/lib/format";
+import { formatCurrency, formatNumber, formatGenero, formatHora, formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { fetchNegocio } from "@/lib/api/negocios";
 import { fetchFazendas } from "@/lib/api/fazendas";
@@ -106,35 +106,64 @@ export default function NegocioDetailPage() {
               </span>
               <div>
                 <p className={styles.summaryFarm}>
-                  Fazenda {fazendaNome ?? `#${negocio.fazenda_id}`}
+                  {fazendaNome ?? `#${negocio.fazenda_id}`}
                 </p>
-                <p className={styles.summarySeller}>
-                  Vendedor: {negocio.vendedor.nome_vendedor} · Comprador: {negocio.comprador.nome_empresa}
-                </p>
+               
               </div>
             </div>
-            <div className={styles.summaryStats}>
-              <div>
-                <p className={styles.summaryStatLabel}>Pesagem</p>
-                <p className={styles.summaryStatValue}>
-                  {negocio.hora_inicio_pesagem || negocio.hora_fim_pesagem
-                    ? `${formatHora(negocio.hora_inicio_pesagem) || "…"} – ${formatHora(negocio.hora_fim_pesagem) || "…"}`
-                    : "—"}
-                </p>
-              </div>
-              <div>
-                <p className={styles.summaryStatLabel}>Valor p/ un.</p>
-                <p className={styles.summaryStatValue}>{formatCurrency(negocio.valor_unidade)}</p>
-              </div>
-              <div>
-                <p className={styles.summaryStatLabel}>Modalidade</p>
-                <p className={styles.summaryStatValue}>{negocio.modalidade}</p>
-              </div>
-            </div>
+          
+
+
+            <div className={styles.summaryFooter}>
+
+               <span>Vendedor: {negocio.vendedor.nome_vendedor}</span>
+              
+             </div>
+
+             <div className={styles.summaryFooter}>
+
+               <span>Comprador: {negocio.comprador.nome_empresa}</span>
+              
+             </div>
+
+
+             <div className={styles.summaryFooter}>
+
+               <span>Modalidade: {negocio.modalidade}</span>
+              
+             </div>
+
+               <div className={styles.summaryFooter}>
+
+               <span>Valor p/ un.: {formatCurrency(negocio.valor_unidade)}</span>
+              
+             </div>
+
+              <div className={styles.summaryFooter}>
+
+               <span> Data: {formatDate(negocio.data_negocio)} </span>
+              
+             </div>
+             
+
             <div className={styles.summaryFooter}>
               <span>
-                Cabeças: <b>{negocio.qtd_animais ?? negocio.gados.length}</b>
+                Início Pesagem: {negocio.hora_inicio_pesagem ? `${formatHora(negocio.hora_inicio_pesagem) || "…"}`
+                    : "—"}
               </span>
+
+              <span>Fim Pesagem: {negocio.hora_fim_pesagem ? `${formatHora(negocio.hora_fim_pesagem) || "…"} ` : "—"} </span>
+             
+            </div>
+
+            <div className={styles.summaryFooter}>
+              <span>
+                Cabeças Negociadas: <b>{negocio.qtd_animais ?? negocio.gados.length}</b>
+              </span>
+             
+            </div>
+
+            <div className={styles.summaryFooter}>
               <span>
                 Valor médio p/ cabeça: <b>{formatCurrency(valorMedio)}</b>
               </span>
@@ -142,7 +171,7 @@ export default function NegocioDetailPage() {
           </div>
 
           {porCabeca && negocio.gados.length === 0 ? null : (
-            <p className={styles.sectionTitle}>Gado cadastrado</p>
+            <p className={styles.sectionTitle}>Cabeças Cadastradas</p>
           )}
 
           {porCabeca && negocio.gados.length === 0 ? null : negocio.gados.length === 0 ? (
@@ -157,16 +186,18 @@ export default function NegocioDetailPage() {
                     </span>
                     <div className={styles.gadoInfo}>
                       <p className={styles.gadoName}>{gado.denominacao}</p>
-                      <p className={styles.gadoMeta}>
-                        Gênero: {formatGenero(gado.genero)} · Rend.: {formatNumber(gado.rendimento_carcaca, 0)}% · Peso p/ cálculo: {formatNumber(gado.peso_calculo)}
-                        {gado.horario_pesagem ? ` · Pesado às ${formatHora(gado.horario_pesagem)}` : null}
-                      </p>
+
+                      <p className={styles.gadoMeta}> Gênero: {formatGenero(gado.genero)}  </p>
+                       <p className={styles.gadoMeta}> Rend.: {formatNumber(gado.rendimento_carcaca, 0)}%</p>
+                       <p className={styles.gadoMeta}>Peso p/ cálculo: {formatNumber(gado.peso_calculo)}</p>
+                       <p className={styles.gadoMeta}>   {gado.horario_pesagem ? ` · Pesado às ${formatHora(gado.horario_pesagem)}` : null} </p>
+                        <p className={styles.gadoMeta}>Peso da @: {formatNumber(gado.peso_arroba)} </p>
                     </div>
                     <div className={styles.gadoAmount}>
                       <p className={styles.gadoAmountValue}>
                         {gado.valor_total !== null ? formatCurrency(gado.valor_total) : "—"}
                       </p>
-                      <p>Peso da @: {formatNumber(gado.peso_arroba)}</p>
+                      <p>Valor da cabeça</p>
                     </div>
                   </>
                 );
@@ -183,7 +214,7 @@ export default function NegocioDetailPage() {
                     aria-label={`Editar ${gado.denominacao}`}
                   >
                     {conteudo}
-                    <Pencil size={16} className={styles.gadoEditIcon} aria-hidden />
+                    
                   </Link>
                 );
               })}

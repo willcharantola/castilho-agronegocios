@@ -19,7 +19,7 @@
   width: 1.75rem;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
+  border-radius: 5px;
   background: var(--color-olive);
   color: var(--color-white);
 }

@@ -109,7 +109,7 @@ export default function HomePage() {
 
       <Image src={Logo} alt="Logo" className={styles.logo} />
 
-
+ {/* 
       <div className={styles.filterRow}>
         <div className={styles.filterField}>
           <label htmlFor="dataInicio" className={styles.filterLabel}>
@@ -141,18 +141,18 @@ export default function HomePage() {
           />
         </div>
 
-          {/* 
+         
         <button type="button" className={styles.filterReset} onClick={resetarPeriodo}>
           Este mês
-        </button> */}
-              </div>
+        </button>  
+              </div>  */}
 
       <div className={styles.grid}>
         <StatTile
           icon={TrendingUp}
           label="Negócios realizados"
           value={negociosCount !== null ? String(negociosCount) : "—"}
-          large
+          
         />
         <StatTile
           icon={DollarSign}
