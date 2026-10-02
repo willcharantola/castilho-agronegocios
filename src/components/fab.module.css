@@ -13,6 +13,11 @@
   pointer-events: none;
 }
 
+/* Botão de 3.25rem + 0.75rem de espaço abaixo do FAB principal. */
+.stacked {
+  bottom: calc(11.5rem + env(safe-area-inset-bottom));
+}
+
 .button {
   pointer-events: auto;
   position: absolute;

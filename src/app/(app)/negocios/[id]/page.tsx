@@ -1,8 +1,9 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { useParams } from "next/navigation";
-import { Warehouse, Beef, FileText } from "lucide-react";
+import { Warehouse, Beef, FileText, Pencil, Plus } from "lucide-react";
 import { BackLink } from "@/components/back-link";
 import { Button } from "@/components/ui/button";
 import { Fab } from "@/components/fab";
@@ -51,8 +52,11 @@ export default function NegocioDetailPage() {
     };
   }, [params.id, reloadKey]);
 
+  // Modalidade "cabeca": sem pesagem nem gados individuais — o valor por cabeça é o próprio valor_unidade.
+  const porCabeca = negocio?.modalidade === "cabeca";
   const valorMedio =
     negocio?.valor_medio ??
+    (porCabeca ? negocio.valor_unidade : null) ??
     (negocio && negocio.gados.length > 0
       ? negocio.gados.reduce((sum, g) => sum + (g.valor_total ?? 0), 0) / negocio.gados.length
       : 0);
@@ -113,7 +117,9 @@ export default function NegocioDetailPage() {
               <div>
                 <p className={styles.summaryStatLabel}>Pesagem</p>
                 <p className={styles.summaryStatValue}>
-                  {formatHora(negocio.hora_inicio_pesagem)} – {formatHora(negocio.hora_fim_pesagem)}
+                  {negocio.hora_inicio_pesagem || negocio.hora_fim_pesagem
+                    ? `${formatHora(negocio.hora_inicio_pesagem) || "…"} – ${formatHora(negocio.hora_fim_pesagem) || "…"}`
+                    : "—"}
                 </p>
               </div>
               <div>
@@ -135,31 +141,52 @@ export default function NegocioDetailPage() {
             </div>
           </div>
 
-          <p className={styles.sectionTitle}>Gado cadastrado</p>
+          {porCabeca && negocio.gados.length === 0 ? null : (
+            <p className={styles.sectionTitle}>Gado cadastrado</p>
+          )}
 
-          {negocio.gados.length === 0 ? (
+          {porCabeca && negocio.gados.length === 0 ? null : negocio.gados.length === 0 ? (
             <div className={cn(styles.state, "glass-panel")}>Nenhum gado cadastrado neste negócio.</div>
           ) : (
             <div className={styles.gadoList}>
-              {negocio.gados.map((gado) => (
-                <div key={gado.gado_id} className={styles.gadoRow}>
-                  <span className={styles.gadoIcon}>
-                    <Beef size={18} />
-                  </span>
-                  <div className={styles.gadoInfo}>
-                    <p className={styles.gadoName}>{gado.denominacao}</p>
-                    <p className={styles.gadoMeta}>
-                      Gênero: {formatGenero(gado.genero)} · Rend.: {formatNumber(gado.rendimento_carcaca, 0)}% · Peso p/ cálculo: {formatNumber(gado.peso_calculo)}
-                    </p>
+              {negocio.gados.map((gado) => {
+                const conteudo = (
+                  <>
+                    <span className={styles.gadoIcon}>
+                      <Beef size={18} />
+                    </span>
+                    <div className={styles.gadoInfo}>
+                      <p className={styles.gadoName}>{gado.denominacao}</p>
+                      <p className={styles.gadoMeta}>
+                        Gênero: {formatGenero(gado.genero)} · Rend.: {formatNumber(gado.rendimento_carcaca, 0)}% · Peso p/ cálculo: {formatNumber(gado.peso_calculo)}
+                        {gado.horario_pesagem ? ` · Pesado às ${formatHora(gado.horario_pesagem)}` : null}
+                      </p>
+                    </div>
+                    <div className={styles.gadoAmount}>
+                      <p className={styles.gadoAmountValue}>
+                        {gado.valor_total !== null ? formatCurrency(gado.valor_total) : "—"}
+                      </p>
+                      <p>Peso da @: {formatNumber(gado.peso_arroba)}</p>
+                    </div>
+                  </>
+                );
+                // Negócios "cabeca" não têm gados individuais editáveis.
+                return porCabeca ? (
+                  <div key={gado.gado_id} className={styles.gadoRow}>
+                    {conteudo}
                   </div>
-                  <div className={styles.gadoAmount}>
-                    <p className={styles.gadoAmountValue}>
-                      {gado.valor_total !== null ? formatCurrency(gado.valor_total) : "—"}
-                    </p>
-                    <p>Peso da @: {formatNumber(gado.peso_arroba)}</p>
-                  </div>
-                </div>
-              ))}
+                ) : (
+                  <Link
+                    key={gado.gado_id}
+                    href={`/negocios/${negocio.negocio_id}/gado/${gado.gado_id}/editar`}
+                    className={cn(styles.gadoRow, styles.gadoRowLink)}
+                    aria-label={`Editar ${gado.denominacao}`}
+                  >
+                    {conteudo}
+                    <Pencil size={16} className={styles.gadoEditIcon} aria-hidden />
+                  </Link>
+                );
+              })}
             </div>
           )}
         </>
@@ -174,6 +201,11 @@ export default function NegocioDetailPage() {
         disabled={gerandoRelatorio || !negocio}
         disabledTitle={gerandoRelatorio ? "Gerando relatório..." : "Em breve"}
       />
+
+      {/* Negócios "cabeca" não têm cadastro individual de gado. */}
+      {negocio && !porCabeca ? (
+        <Fab icon={Plus} label="Adicionar gado" href={`/negocios/${negocio.negocio_id}/gado/novo`} stacked />
+      ) : null}
     </div>
   );
 }

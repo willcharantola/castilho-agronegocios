@@ -70,18 +70,24 @@ export type Negocio = {
   fazenda_id: number;
   vendedor_id: number;
   comprador_id: number;
-  /** TIME do Postgres, serializado como ISO em 1970-01-01 — use `formatHora`. */
-  hora_inicio_pesagem: string;
-  hora_fim_pesagem: string;
+  /**
+   * TIME do Postgres, serializado como ISO em 1970-01-01 — use `formatHora`. Registrados
+   * pela API (início: 1º gado cadastrado; fim: PATCH /negocios/:id/concluir). NULL na
+   * modalidade "cabeca".
+   */
+  hora_inicio_pesagem: string | null;
+  hora_fim_pesagem: string | null;
   modalidade: Modalidade;
   tipo_gado: TipoGado;
   tipo_lote: TipoLote;
-  tipo_precificacao: string;
   data_negocio: string;
   comissao: number | null;
   valor_unidade: number;
   observacao: string | null;
   // Calculadas pela API a partir dos `gados` vinculados — não enviar no POST/PATCH.
+  // Exceção: na modalidade "cabeca" qtd_animais é informado via PATCH e valor_total
+  // é recalculado pela API (qtd_animais × valor_unidade); valor_medio, mais_pesado e
+  // mais_leve ficam null.
   valor_total: number | null;
   valor_medio: number | null;
   qtd_animais: number | null;
@@ -97,6 +103,7 @@ export type Gado = {
   genero: Genero;
   denominacao: string;
   rendimento_carcaca: number;
+  /** Registrado pela API no cadastro — use `formatHora`. */
   horario_pesagem: string | null;
   /** Mês (1 a 12). */
   carimbo: number;
@@ -152,29 +159,30 @@ export type CreateNegocioInput = {
   fazenda_id: number;
   vendedor_id: number;
   comprador_id: number;
-  /** HH:mm */
-  hora_inicio_pesagem: string;
-  hora_fim_pesagem: string;
   modalidade: Modalidade;
   tipo_gado: TipoGado;
   tipo_lote: TipoLote;
-  tipo_precificacao: string;
   data_negocio: string;
   comissao?: number;
   valor_unidade: number;
   observacao?: string;
 };
-export type UpdateNegocioInput = Partial<CreateNegocioInput>;
+export type UpdateNegocioInput = Partial<CreateNegocioInput> & {
+  /** Só aceito pela API para negócios da modalidade "cabeca". */
+  qtd_animais?: number;
+  /** Ignorado pela API (recalculado no servidor) — enviado só como referência. */
+  valor_total?: number;
+};
 
 export type CreateGadoInput = {
   negocio_id: number;
   peso_total: number;
   rendimento_carcaca: number;
   data_pesagem: string;
-  /** HH:mm */
-  horario_pesagem?: string;
   genero: Genero;
   denominacao: string;
   carimbo: number;
   ano_carimbo: string;
 };
+
+export type UpdateGadoInput = Partial<CreateGadoInput>;

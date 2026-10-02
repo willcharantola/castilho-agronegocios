@@ -12,11 +12,7 @@ export type NegocioFlowData = {
   modalidade: Modalidade | "";
   tipoGado: TipoGado | "";
   tipoLote: TipoLote | "";
-  tipoPrecificacao: string;
   valorUnidade: number | null;
-  /** HH:mm vindo de um <input type="time">. */
-  horaInicioPesagem: string;
-  horaFimPesagem: string;
   comissao: number | null;
   /** yyyy-mm-dd vindo de um <input type="date">. */
   dataNegocio: string;
@@ -35,10 +31,7 @@ export const { Provider: NegocioFlowProvider, useFlow: useNegocioFlow } =
     modalidade: "",
     tipoGado: "",
     tipoLote: "",
-    tipoPrecificacao: "",
     valorUnidade: null,
-    horaInicioPesagem: "",
-    horaFimPesagem: "",
     comissao: null,
     dataNegocio: "",
     observacao: "",

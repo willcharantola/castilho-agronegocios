@@ -1,11 +1,13 @@
 import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import styles from "./fab.module.css";
 
 /**
  * Floating action button, anchored bottom-right of the same 28rem column
  * `MobileScreen`/`BottomNav` use, positioned above the fixed bottom nav.
+ * `stacked` places a second FAB right below the main one.
  */
 export function Fab({
   icon: Icon,
@@ -14,6 +16,7 @@ export function Fab({
   onClick,
   disabled,
   disabledTitle = "Em breve",
+  stacked = false,
 }: {
   icon: LucideIcon;
   label: string;
@@ -21,9 +24,10 @@ export function Fab({
   onClick?: () => void;
   disabled?: boolean;
   disabledTitle?: string;
+  stacked?: boolean;
 }) {
   return (
-    <div className={styles.wrap}>
+    <div className={cn(styles.wrap, stacked && styles.stacked)}>
       <Button
         className={styles.button}
         aria-label={label}
