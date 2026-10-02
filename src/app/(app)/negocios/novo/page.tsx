@@ -46,7 +46,7 @@ export default function NovoNegocioFazendaPage() {
     <div className={cn(styles.page, "pt-safe")}>
       <BackLink href="/" />
       <h1 className={styles.title}>Cadastrar Novo Negócio</h1>
-      <ProgressSteps current={1} total={5} />
+      <ProgressSteps current={1} total={6} />
       <p className={styles.subtitle}>Selecione a fazenda com a qual deseja realizar o negócio</p>
 
       <div className={styles.searchWrap}>

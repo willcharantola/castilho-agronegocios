@@ -46,7 +46,7 @@ export default function NovoNegocioVendedorPage() {
     <div className={cn(styles.page, "pt-safe")}>
       <BackLink href="/negocios/novo" />
       <h1 className={styles.title}>Cadastrar Novo Negócio</h1>
-      <ProgressSteps current={2} total={5} />
+      <ProgressSteps current={2} total={6} />
 
       <div className={cn(styles.fazendaCard, "glass-dark")}>
         <span className={styles.fazendaIcon}>

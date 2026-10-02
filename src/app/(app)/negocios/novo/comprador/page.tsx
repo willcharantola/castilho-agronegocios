@@ -36,14 +36,14 @@ export default function NovoNegocioCompradorPage() {
 
   function selecionar(comprador: Comprador) {
     update({ compradorId: comprador.comprador_id, compradorNome: comprador.nome_empresa });
-    router.push("/negocios/novo/informacoes");
+    router.push("/negocios/novo/modalidade");
   }
 
   return (
     <div className={cn(styles.page, "pt-safe")}>
       <BackLink href="/negocios/novo/vendedor" />
       <h1 className={styles.title}>Cadastrar Novo Negócio</h1>
-      <ProgressSteps current={3} total={5} />
+      <ProgressSteps current={3} total={6} />
 
       <div className={cn(styles.fazendaCard, "glass-dark")}>
         <span className={styles.fazendaIcon}>

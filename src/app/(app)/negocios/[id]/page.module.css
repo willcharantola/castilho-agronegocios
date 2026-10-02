@@ -89,6 +89,19 @@
   padding: 0.75rem;
 }
 
+.gadoRowLink {
+  transition: background 0.15s ease;
+}
+
+.gadoRowLink:hover {
+  background: rgb(255 255 255 / 50%);
+}
+
+.gadoEditIcon {
+  flex-shrink: 0;
+  color: color-mix(in oklch, var(--color-dark) 50%, transparent);
+}
+
 .gadoIcon {
   display: flex;
   height: 2.25rem;

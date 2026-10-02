@@ -1,0 +1,30 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  /* Espaço para o formulário não ficar atrás da navegação inferior fixa. */
+  padding-bottom: 6rem;
+}
+
+.title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--color-dark);
+}
+
+.subtitle {
+  margin-top: 0.25rem;
+  font-size: 0.85rem;
+  color: color-mix(in oklch, var(--color-ink) 70%, transparent);
+}
+
+.state {
+  border-radius: var(--radius-xl);
+  padding: 2rem 1.25rem;
+  text-align: center;
+  color: var(--color-ink);
+}
+
+.stateError {
+  color: var(--color-danger);
+}

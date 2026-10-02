@@ -47,7 +47,7 @@
 .summaryStats {
   margin-top: 1rem;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 0.5rem;
   text-align: center;
   font-size: 0.75rem;
@@ -69,44 +69,6 @@
   border-top: 1px solid rgb(255 255 255 / 15%);
   padding-top: 0.75rem;
   font-size: 0.9rem;
-}
-
-/* Form */
-.form {
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-}
-
-.row {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1rem;
-}
-
-.totalRow {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 0.75rem;
-  border-top: 2px dashed color-mix(in oklch, var(--color-olive) 30%, transparent);
-  padding-top: 1rem;
-}
-
-.totalLabel {
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: var(--color-dark);
-}
-
-.totalValue {
-  font-size: 1.5rem;
-  font-weight: 800;
-  color: var(--color-dark);
-}
-
-.readOnlyField {
-  opacity: 1;
 }
 
 .submitError {
@@ -153,9 +115,24 @@
 
 .sessionRow {
   display: flex;
+  width: 100%;
   align-items: center;
   gap: 0.75rem;
+  border: 0;
+  background: transparent;
   padding: 0.75rem;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.sessionRow:hover {
+  background: rgb(255 255 255 / 50%);
+}
+
+.sessionEditIcon {
+  flex-shrink: 0;
+  color: color-mix(in oklch, var(--color-dark) 50%, transparent);
 }
 
 .sessionIcon {

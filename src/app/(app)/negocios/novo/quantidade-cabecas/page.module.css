@@ -1,0 +1,81 @@
+.page {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.title {
+  margin-top: 0.5rem;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--color-dark);
+}
+
+.fazendaCard {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border-radius: 5px;
+  padding: 0.9rem 1rem;
+}
+
+.fazendaIcon {
+  display: flex;
+  height: 2.25rem;
+  width: 2.25rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 15%);
+}
+
+.fazendaNome {
+  font-weight: 800;
+}
+
+.fazendaMeta {
+  font-size: 0.75rem;
+  color: rgb(255 255 255 / 75%);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+/* Mesmo destaque do "Valor Total (estimado)" da tela de cadastro de gado. */
+.totalRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border-top: 2px dashed color-mix(in oklch, var(--color-olive) 30%, transparent);
+  padding-top: 1rem;
+}
+
+.totalLabel {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--color-dark);
+}
+
+.totalValue {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--color-dark);
+}
+
+.submitError {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-danger);
+}

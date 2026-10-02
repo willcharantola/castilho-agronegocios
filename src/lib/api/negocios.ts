@@ -1,6 +1,6 @@
 import { apiFetch } from "@/lib/api-client";
 import { normalizeGado } from "@/lib/api/gados";
-import type { CreateNegocioInput, Negocio, NegocioDetail } from "@/lib/api/types";
+import type { CreateNegocioInput, Negocio, NegocioDetail, UpdateNegocioInput } from "@/lib/api/types";
 
 /** Ver comentário em `gados.ts#normalizeGado` — mesma questão de Decimal-como-string. */
 function normalizeNegocio(raw: Negocio): Negocio {
@@ -35,5 +35,16 @@ export async function fetchNegocio(id: number | string) {
 
 export async function createNegocio(input: CreateNegocioInput) {
   const negocio = await apiFetch<Negocio>("/negocios", { method: "POST", body: JSON.stringify(input) });
+  return normalizeNegocio(negocio);
+}
+
+/** Finaliza o cadastro: a API registra hora_fim_pesagem com o horário do servidor. */
+export async function concluirNegocio(id: number | string) {
+  const negocio = await apiFetch<Negocio>(`/negocios/${id}/concluir`, { method: "PATCH" });
+  return normalizeNegocio(negocio);
+}
+
+export async function updateNegocio(id: number | string, input: UpdateNegocioInput) {
+  const negocio = await apiFetch<Negocio>(`/negocios/${id}`, { method: "PATCH", body: JSON.stringify(input) });
   return normalizeNegocio(negocio);
 }

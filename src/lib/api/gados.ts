@@ -1,5 +1,5 @@
 import { apiFetch } from "@/lib/api-client";
-import type { CreateGadoInput, Gado } from "@/lib/api/types";
+import type { CreateGadoInput, Gado, UpdateGadoInput } from "@/lib/api/types";
 
 /**
  * A API serializa colunas Decimal/Numeric do Postgres como STRING no JSON
@@ -22,5 +22,11 @@ export function normalizeGado(raw: Gado): Gado {
 
 export async function createGado(input: CreateGadoInput) {
   const gado = await apiFetch<Gado>("/gados", { method: "POST", body: JSON.stringify(input) });
+  return normalizeGado(gado);
+}
+
+/** A API recalcula peso_calculo/peso_arroba/valor_total e os agregados do negócio. */
+export async function updateGado(id: number | string, input: UpdateGadoInput) {
+  const gado = await apiFetch<Gado>(`/gados/${id}`, { method: "PATCH", body: JSON.stringify(input) });
   return normalizeGado(gado);
 }
