@@ -81,6 +81,9 @@ export type Negocio = {
   tipo_gado: TipoGado;
   tipo_lote: TipoLote;
   data_negocio: string;
+  /** Percentual de comissão (0 a 100), definido pelo usuário — use `formatPercent`. */
+  porcentagem_comissao: number | null;
+  /** Comissão em R$, calculada pela API (valor_total × porcentagem_comissao / 100). */
   comissao: number | null;
   valor_unidade: number;
   observacao: string | null;
@@ -163,7 +166,8 @@ export type CreateNegocioInput = {
   tipo_gado: TipoGado;
   tipo_lote: TipoLote;
   data_negocio: string;
-  comissao?: number;
+  /** Percentual (0 a 100); a API calcula `comissao` em R$. */
+  porcentagem_comissao?: number;
   valor_unidade: number;
   observacao?: string;
 };

@@ -78,6 +78,7 @@ export default function HomePage() {
     fetchNegocios({ data_inicio: dataInicio, data_fim: dataFim })
       .then((negocios) => {
         setNegociosCount(negocios.length);
+        // `comissao` é o valor em R$ já calculado pela API para cada negócio.
         setComissaoTotal(negocios.reduce((sum, n) => sum + (n.comissao ?? 0), 0));
         setCabecasTotal(negocios.reduce((sum, n) => sum + (n.qtd_animais ?? 0), 0));
       })

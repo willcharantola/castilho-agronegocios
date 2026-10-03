@@ -12,6 +12,11 @@ export function formatNumber(value: number, fractionDigits = 2) {
   });
 }
 
+/** Percentual já em pontos (5 → "5%", 2.5 → "2,5%"). */
+export function formatPercent(value: number) {
+  return `${value.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}%`;
+}
+
 export function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("pt-BR");
 }
