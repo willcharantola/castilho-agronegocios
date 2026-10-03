@@ -13,7 +13,8 @@ export type NegocioFlowData = {
   tipoGado: TipoGado | "";
   tipoLote: TipoLote | "";
   valorUnidade: number | null;
-  comissao: number | null;
+  /** Percentual (0 a 100). */
+  porcentagemComissao: number | null;
   /** yyyy-mm-dd vindo de um <input type="date">. */
   dataNegocio: string;
   observacao: string;
@@ -32,7 +33,7 @@ export const { Provider: NegocioFlowProvider, useFlow: useNegocioFlow } =
     tipoGado: "",
     tipoLote: "",
     valorUnidade: null,
-    comissao: null,
+    porcentagemComissao: null,
     dataNegocio: "",
     observacao: "",
     negocioId: null,

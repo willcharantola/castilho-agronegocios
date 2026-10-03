@@ -10,6 +10,7 @@ function normalizeNegocio(raw: Negocio): Negocio {
     valor_medio: raw.valor_medio === null ? null : Number(raw.valor_medio),
     mais_pesado: raw.mais_pesado === null ? null : Number(raw.mais_pesado),
     mais_leve: raw.mais_leve === null ? null : Number(raw.mais_leve),
+    porcentagem_comissao: raw.porcentagem_comissao === null ? null : Number(raw.porcentagem_comissao),
     comissao: raw.comissao === null ? null : Number(raw.comissao),
     valor_unidade: Number(raw.valor_unidade),
   };

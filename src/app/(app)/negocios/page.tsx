@@ -5,7 +5,7 @@ import Link from "next/link";
 import { FileText, Search, Warehouse } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Fab } from "@/components/fab";
-import { formatCurrency, formatDate } from "@/lib/format";
+import { formatCurrency, formatDate, formatPercent } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { fetchNegocios } from "@/lib/api/negocios";
 import { fetchFazendas } from "@/lib/api/fazendas";
@@ -182,6 +182,7 @@ export default function NegociosPage() {
 
                  <p className={styles.cardMeta}>
                   Comissão: {negocio.comissao !== null ? formatCurrency(negocio.comissao) : "—"}
+                  {negocio.porcentagem_comissao !== null ? ` (${formatPercent(negocio.porcentagem_comissao)})` : null}
                 </p>
 
                 <p className={styles.cardHeads}>Cabeças negociadas: {negocio.qtd_animais ?? "—"}</p>

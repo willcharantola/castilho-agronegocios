@@ -7,6 +7,7 @@ import { Warehouse, Beef, FileText, Pencil, Plus } from "lucide-react";
 import { BackLink } from "@/components/back-link";
 import { Button } from "@/components/ui/button";
 import { Fab } from "@/components/fab";
+import { ComissaoForm } from "@/components/comissao-form";
 import { formatCurrency, formatNumber, formatGenero, formatHora, formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { fetchNegocio } from "@/lib/api/negocios";
@@ -168,7 +169,22 @@ export default function NegocioDetailPage() {
                 Valor médio p/ cabeça: <b>{formatCurrency(valorMedio)}</b>
               </span>
             </div>
+
+            <div className={styles.summaryFooter}>
+              <span>
+                Comissão: <b>{negocio.comissao !== null ? formatCurrency(negocio.comissao) : "—"}</b>
+              </span>
+            </div>
           </div>
+
+          <ComissaoForm
+            negocioId={negocio.negocio_id}
+            porcentagem={negocio.porcentagem_comissao}
+            comissao={negocio.comissao}
+            onUpdated={({ porcentagem_comissao, comissao }) =>
+              setNegocio((atual) => (atual ? { ...atual, porcentagem_comissao, comissao } : atual))
+            }
+          />
 
           {porCabeca && negocio.gados.length === 0 ? null : (
             <p className={styles.sectionTitle}>Cabeças Cadastradas</p>

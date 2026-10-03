@@ -39,9 +39,13 @@ const criarSchema = (porCabeca: boolean) =>
     error: "Selecione o tipo de lote.",
   }),
   data_negocio: z.string().min(1, "Informe a data do negócio."),
-  comissao: z.preprocess(
+  porcentagem_comissao: z.preprocess(
     vazioParaUndefined,
-    z.coerce.number({ error: "Valor inválido." }).nonnegative("Não pode ser negativa.").optional()
+    z.coerce
+      .number({ error: "Valor inválido." })
+      .min(0, "Deve ser entre 0 e 100.")
+      .max(100, "Deve ser entre 0 e 100.")
+      .optional()
   ),
   observacao: z.string().max(100).optional(),
     })
@@ -75,7 +79,7 @@ export default function NovoNegocioInformacoesPage() {
       valor_unidade: data.valorUnidade ?? undefined,
       tipo_lote: data.tipoLote || undefined,
       data_negocio: data.dataNegocio || new Date().toISOString().slice(0, 10),
-      comissao: data.comissao ?? undefined,
+      porcentagem_comissao: data.porcentagemComissao ?? undefined,
       observacao: data.observacao,
     },
   });
@@ -105,7 +109,7 @@ export default function NovoNegocioInformacoesPage() {
         tipo_gado: values.tipo_gado,
         tipo_lote: values.tipo_lote,
         data_negocio: new Date(values.data_negocio).toISOString(),
-        comissao: values.comissao,
+        porcentagem_comissao: values.porcentagem_comissao,
         // Na modalidade "cabeca" o valor por cabeça ainda não foi informado: a API exige o
         // campo (NOT NULL), então cria com 0 e a tela quantidade-cabecas o preenche via PATCH.
         valor_unidade: porCabeca ? 0 : (values.valor_unidade ?? 0),
@@ -116,7 +120,7 @@ export default function NovoNegocioInformacoesPage() {
         valorUnidade: porCabeca ? null : (values.valor_unidade ?? null),
         tipoLote: values.tipo_lote,
         dataNegocio: values.data_negocio,
-        comissao: values.comissao ?? null,
+        porcentagemComissao: values.porcentagem_comissao ?? null,
         observacao: values.observacao ?? "",
         negocioId: negocio.negocio_id,
       });
@@ -228,15 +232,21 @@ export default function NovoNegocioInformacoesPage() {
               <TintedInput id="data_negocio" tint="pink" type="date" {...register("data_negocio")} />
             </Field>
 
-            <Field label="Comissão (opcional)" htmlFor="comissao" error={errors.comissao?.message as string | undefined}>
+            <Field
+              label="Comissão % (opcional)"
+              htmlFor="porcentagem_comissao"
+              error={errors.porcentagem_comissao?.message as string | undefined}
+            >
               <TintedInput
-                id="comissao"
+                id="porcentagem_comissao"
                 tint="pink"
                 type="number"
                 inputMode="decimal"
                 step="0.01"
-                placeholder="R$ 0,00"
-                {...register("comissao")}
+                min="0"
+                max="100"
+                placeholder="Ex: 5"
+                {...register("porcentagem_comissao")}
               />
             </Field>
           </div>
