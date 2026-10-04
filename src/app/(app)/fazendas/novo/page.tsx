@@ -12,6 +12,7 @@ import { TintedInput } from "@/components/form/tinted-input";
 import { Button } from "@/components/ui/button";
 import { createFazenda } from "@/lib/api/fazendas";
 import { ApiError } from "@/lib/api-client";
+import { enviarOuEnfileirar } from "@/lib/offline/fila";
 import { cn } from "@/lib/utils";
 import styles from "./page.module.css";
 
@@ -37,11 +38,16 @@ export default function NovaFazendaPage() {
   async function onSubmit(values: FormValues) {
     setSubmitError(null);
     try {
-      await createFazenda({
-        ...values,
-        marca_url: values.marca_url || undefined,
-        marca_escrita: values.marca_escrita || undefined,
-      });
+      // Sem conexão, fica salva no aparelho e aparece na lista como pendente.
+      await enviarOuEnfileirar(
+        "fazenda",
+        {
+          ...values,
+          marca_url: values.marca_url || undefined,
+          marca_escrita: values.marca_escrita || undefined,
+        },
+        (payload, uuid) => createFazenda({ ...(payload as typeof values), uuid_origem: uuid })
+      );
       router.push("/fazendas");
     } catch (err) {
       setSubmitError(err instanceof ApiError || err instanceof Error ? err.message : "Erro ao salvar.");

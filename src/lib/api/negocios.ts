@@ -1,6 +1,7 @@
 import { apiFetch } from "@/lib/api-client";
 import { normalizeGado } from "@/lib/api/gados";
-import type { CreateNegocioInput, Negocio, NegocioDetail, UpdateNegocioInput } from "@/lib/api/types";
+import { comCache } from "@/lib/offline/cache";
+import type { CreateNegocioInput, Negocio, NegocioDetail, OrigemOffline, UpdateNegocioInput } from "@/lib/api/types";
 
 /** Ver comentário em `gados.ts#normalizeGado` — mesma questão de Decimal-como-string. */
 function normalizeNegocio(raw: Negocio): Negocio {
@@ -25,23 +26,29 @@ export async function fetchNegocios(params?: {
   const qs = entries.length > 0
     ? `?${new URLSearchParams(entries.map(([k, v]) => [k, String(v)])).toString()}`
     : "";
-  const negocios = await apiFetch<Negocio[]>(`/negocios${qs}`);
+  const negocios = await comCache(`negocios${qs}`, () => apiFetch<Negocio[]>(`/negocios${qs}`));
   return negocios.map(normalizeNegocio);
 }
 
 export async function fetchNegocio(id: number | string) {
-  const negocio = await apiFetch<NegocioDetail>(`/negocios/${id}`);
+  const negocio = await comCache(`negocio:${id}`, () => apiFetch<NegocioDetail>(`/negocios/${id}`));
   return { ...negocio, ...normalizeNegocio(negocio), gados: negocio.gados.map(normalizeGado) };
 }
 
-export async function createNegocio(input: CreateNegocioInput) {
+export async function createNegocio(input: CreateNegocioInput & OrigemOffline) {
   const negocio = await apiFetch<Negocio>("/negocios", { method: "POST", body: JSON.stringify(input) });
   return normalizeNegocio(negocio);
 }
 
-/** Finaliza o cadastro: a API registra hora_fim_pesagem com o horário do servidor. */
-export async function concluirNegocio(id: number | string) {
-  const negocio = await apiFetch<Negocio>(`/negocios/${id}/concluir`, { method: "PATCH" });
+/**
+ * Finaliza o cadastro: a API registra hora_fim_pesagem com o horário do servidor, ou com
+ * `horaFim` (hora local do aparelho, "HH:mm:ss") quando vem da fila offline.
+ */
+export async function concluirNegocio(id: number | string, horaFim?: string) {
+  const negocio = await apiFetch<Negocio>(`/negocios/${id}/concluir`, {
+    method: "PATCH",
+    body: JSON.stringify(horaFim ? { hora_fim_pesagem: horaFim } : {}),
+  });
   return normalizeNegocio(negocio);
 }
 

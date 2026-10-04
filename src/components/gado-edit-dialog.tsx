@@ -3,9 +3,14 @@
 import { Dialog } from "@/components/ui/dialog";
 import { GadoForm, formValuesParaInput, gadoParaFormInput } from "@/components/gado-form";
 import { updateGado } from "@/lib/api/gados";
+import { estimarValoresGado } from "@/lib/calculo-gado";
+import { atualizarPendente, ehIdTemporario } from "@/lib/offline/fila";
 import type { Gado, Modalidade } from "@/lib/api/types";
 
-/** Edição de um gado em modal, usada durante o cadastro do negócio (/negocios/novo/gado). */
+/**
+ * Edição de um gado em modal, usada durante o cadastro do negócio (/negocios/novo/gado).
+ * Um gado cadastrado offline (id negativo) é editado direto na fila do aparelho.
+ */
 export function GadoEditDialog({
   gado,
   modalidade,
@@ -33,7 +38,17 @@ export function GadoEditDialog({
           submitLabel="Salvar Alterações"
           submittingLabel="Salvando..."
           onSubmit={async (values) => {
-            await updateGado(gado.gado_id, formValuesParaInput(values));
+            const input = formValuesParaInput(values);
+            if (ehIdTemporario(gado.gado_id)) {
+              const v = estimarValoresGado(modalidade, input.peso_total, input.rendimento_carcaca, valorUnidade);
+              await atualizarPendente(-gado.gado_id, input, {
+                peso_calculo: v.pesoCalculo,
+                peso_arroba: v.pesoArroba,
+                valor_total: v.valorTotal,
+              });
+            } else {
+              await updateGado(gado.gado_id, input);
+            }
             await onSaved();
             onClose();
           }}

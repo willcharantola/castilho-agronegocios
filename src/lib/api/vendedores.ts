@@ -1,5 +1,6 @@
 import { apiFetch } from "@/lib/api-client";
-import type { CreateVendedorInput, UpdateVendedorInput, Vendedor } from "@/lib/api/types";
+import { comCache } from "@/lib/offline/cache";
+import type { CreateVendedorInput, OrigemOffline, UpdateVendedorInput, Vendedor } from "@/lib/api/types";
 
 /**
  * GET /vendedores não aceita query params. Cada vendedor vem com
@@ -7,14 +8,14 @@ import type { CreateVendedorInput, UpdateVendedorInput, Vendedor } from "@/lib/a
  * filtre no cliente com `v.vendedor_fazenda?.some(a => a.fazenda_id === id)`.
  */
 export function fetchVendedores() {
-  return apiFetch<Vendedor[]>("/vendedores");
+  return comCache("vendedores", () => apiFetch<Vendedor[]>("/vendedores"));
 }
 
 export function fetchVendedor(id: number | string) {
   return apiFetch<Vendedor>(`/vendedores/${id}`);
 }
 
-export function createVendedor(input: CreateVendedorInput) {
+export function createVendedor(input: CreateVendedorInput & OrigemOffline) {
   return apiFetch<Vendedor>("/vendedores", { method: "POST", body: JSON.stringify(input) });
 }
 

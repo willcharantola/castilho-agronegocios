@@ -15,11 +15,22 @@ import { fetchFazendas } from "@/lib/api/fazendas";
 import { gerarRelatorioNegocio } from "@/lib/relatorio";
 import type { NegocioDetail } from "@/lib/api/types";
 import { ApiError } from "@/lib/api-client";
+import { PendenteBadge } from "@/components/offline/pendente-badge";
+import { useVersaoSincronizacao } from "@/lib/offline/fila";
+import { comGadosPendentes, useGadosPendentes } from "@/lib/offline/pendentes";
 import styles from "./page.module.css";
 
 export default function NegocioDetailPage() {
   const params = useParams<{ id: string }>();
-  const [negocio, setNegocio] = React.useState<NegocioDetail | null>(null);
+  const [negocioServidor, setNegocio] = React.useState<NegocioDetail | null>(null);
+  // Gados cadastrados offline para este negócio, ainda na fila do aparelho.
+  const gadosPendentes = useGadosPendentes(Number(params.id));
+  const negocio = React.useMemo(
+    () => (negocioServidor ? comGadosPendentes(negocioServidor, gadosPendentes) : null),
+    [negocioServidor, gadosPendentes]
+  );
+  // Recarrega quando a fila é sincronizada (os gados pendentes passam a vir da API).
+  const versaoSincronizacao = useVersaoSincronizacao();
   const [fazendaNome, setFazendaNome] = React.useState<string | null>(null);
   const [error, setError] = React.useState<string | null>(null);
   const [reloadKey, setReloadKey] = React.useState(0);
@@ -51,7 +62,7 @@ export default function NegocioDetailPage() {
     return () => {
       cancelled = true;
     };
-  }, [params.id, reloadKey]);
+  }, [params.id, reloadKey, versaoSincronizacao]);
 
   // Modalidade "cabeca": sem pesagem nem gados individuais — o valor por cabeça é o próprio valor_unidade.
   const porCabeca = negocio?.modalidade === "cabeca";
@@ -63,11 +74,12 @@ export default function NegocioDetailPage() {
       : 0);
 
   async function handleGerarRelatorio() {
-    if (!negocio) return;
+    if (!negocioServidor) return;
     setRelatorioError(null);
     setGerandoRelatorio(true);
     try {
-      await gerarRelatorioNegocio(negocio, fazendaNome ?? `Fazenda #${negocio.fazenda_id}`);
+      // Só o que já está no servidor: gados pendentes têm valores apenas estimados.
+      await gerarRelatorioNegocio(negocioServidor, fazendaNome ?? `Fazenda #${negocioServidor.fazenda_id}`);
     } catch (err) {
       setRelatorioError(
         err instanceof ApiError || err instanceof Error ? err.message : "Erro ao gerar relatório."
@@ -208,6 +220,7 @@ export default function NegocioDetailPage() {
                        <p className={styles.gadoMeta}>Peso p/ cálculo: {formatNumber(gado.peso_calculo)}</p>
                        <p className={styles.gadoMeta}>   {gado.horario_pesagem ? ` · Pesado às ${formatHora(gado.horario_pesagem)}` : null} </p>
                         <p className={styles.gadoMeta}>Peso da @: {formatNumber(gado.peso_arroba)} </p>
+                        {gado.pendente ? <PendenteBadge pendente={gado.pendente} /> : null}
                     </div>
                     <div className={styles.gadoAmount}>
                       <p className={styles.gadoAmountValue}>
@@ -217,8 +230,9 @@ export default function NegocioDetailPage() {
                     </div>
                   </>
                 );
-                // Negócios "cabeca" não têm gados individuais editáveis.
-                return porCabeca ? (
+                // Negócios "cabeca" não têm gados individuais editáveis; gados pendentes
+                // (só no aparelho) também não — a edição em tela própria usa a API.
+                return porCabeca || gado.pendente ? (
                   <div key={gado.gado_id} className={styles.gadoRow}>
                     {conteudo}
                   </div>

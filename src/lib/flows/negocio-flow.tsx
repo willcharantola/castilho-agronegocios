@@ -7,6 +7,7 @@ export type NegocioFlowData = {
   fazendaId: number | null;
   fazendaNome: string;
   vendedorId: number | null;
+  vendedorNome: string;
   compradorId: number | null;
   compradorNome: string;
   modalidade: Modalidade | "";
@@ -27,6 +28,7 @@ export const { Provider: NegocioFlowProvider, useFlow: useNegocioFlow } =
     fazendaId: null,
     fazendaNome: "",
     vendedorId: null,
+    vendedorNome: "",
     compradorId: null,
     compradorNome: "",
     modalidade: "",

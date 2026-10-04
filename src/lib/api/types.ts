@@ -132,6 +132,12 @@ export type LoginResponse = {
 // Inputs para POST/PATCH — campos e limites conferidos no Swagger ao vivo
 // (localhost:3001/docs-json), não apenas em INTEGRACAO-FRONTEND.md.
 
+/**
+ * Aceito só nos POST de criação: identificador gerado no aparelho, para a API não
+ * duplicar um cadastro reenviado pela fila offline (ver lib/offline).
+ */
+export type OrigemOffline = { uuid_origem?: string };
+
 export type CreateFazendaInput = {
   nome_fazenda: string;
   municipio: string;
@@ -190,3 +196,6 @@ export type CreateGadoInput = {
 };
 
 export type UpdateGadoInput = Partial<CreateGadoInput>;
+
+/** Só para gados vindos da fila offline: hora local da pesagem no aparelho ("HH:mm:ss"). */
+export type CreateGadoOfflineInput = CreateGadoInput & OrigemOffline & { horario_pesagem?: string };

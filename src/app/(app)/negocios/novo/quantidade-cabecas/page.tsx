@@ -14,7 +14,8 @@ import { MaskedNumberInput } from "@/components/form/masked-number-input";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/format";
 import { updateNegocio } from "@/lib/api/negocios";
-import { ApiError } from "@/lib/api-client";
+import { enviarOuEnfileirar, ehIdTemporario, referencia } from "@/lib/offline/fila";
+import { mensagemDeErro } from "@/lib/offline/rede";
 import { useNegocioFlow } from "@/lib/flows/negocio-flow";
 import { cn } from "@/lib/utils";
 import styles from "./page.module.css";
@@ -69,15 +70,21 @@ export default function NovoNegocioQuantidadeCabecasPage() {
     try {
       // Horários de pesagem, mais_pesado, mais_leve e valor_medio não se aplicam a
       // "cabeca" e não são enviados (permanecem NULL).
-      await updateNegocio(negocioId, {
-        qtd_animais: values.quantidade_cabecas,
-        valor_unidade: values.valor_cabeca,
-        valor_total: values.quantidade_cabecas * values.valor_cabeca,
-      });
+      // A API recalcula valor_total = qtd × valor. Offline (ou com o negócio ainda só no
+      // aparelho), a atualização vai para a fila e é aplicada depois da criação do negócio.
+      const envio = await enviarOuEnfileirar(
+        "negocio_atualizacao",
+        {
+          ...(await referencia("negocio", negocioId)),
+          qtd_animais: values.quantidade_cabecas,
+          valor_unidade: values.valor_cabeca,
+        },
+        ({ negocio_id, ...campos }) => updateNegocio(negocio_id as number, campos)
+      );
       reset();
-      router.push(`/negocios/${negocioId}`);
+      router.push(envio.sincronizado ? `/negocios/${negocioId}` : "/negocios");
     } catch (err) {
-      setSubmitError(err instanceof ApiError || err instanceof Error ? err.message : "Erro ao salvar.");
+      setSubmitError(mensagemDeErro(err));
     }
   }
 
@@ -85,7 +92,10 @@ export default function NovoNegocioQuantidadeCabecasPage() {
 
   return (
     <div className={cn(styles.page, "pt-safe")}>
-      <BackLink href={`/negocios/${data.negocioId}`} label="Ver negócio" />
+      <BackLink
+        href={ehIdTemporario(data.negocioId) ? "/negocios" : `/negocios/${data.negocioId}`}
+        label={ehIdTemporario(data.negocioId) ? "Negócios" : "Ver negócio"}
+      />
       <h1 className={styles.title}>Cadastrar Novo Negócio</h1>
       <ProgressSteps current={6} total={6} />
 

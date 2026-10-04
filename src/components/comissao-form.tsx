@@ -4,7 +4,7 @@ import * as React from "react";
 import { MaskedNumberInput } from "@/components/form/masked-number-input";
 import { Button } from "@/components/ui/button";
 import { updateNegocio } from "@/lib/api/negocios";
-import { ApiError } from "@/lib/api-client";
+import { mensagemDeErro } from "@/lib/offline/rede";
 import { formatCurrency, formatPercent } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { Negocio } from "@/lib/api/types";
@@ -49,7 +49,7 @@ export function ComissaoForm({
       onUpdated(atualizado);
       setSucesso(true);
     } catch (err) {
-      setError(err instanceof ApiError || err instanceof Error ? err.message : "Erro ao atualizar.");
+      setError(mensagemDeErro(err, "Erro ao atualizar."));
     } finally {
       setSalvando(false);
     }

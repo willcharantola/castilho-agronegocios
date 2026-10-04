@@ -9,10 +9,20 @@ import { cn } from "@/lib/utils";
 import { fetchCompradores } from "@/lib/api/compradores";
 import type { Comprador } from "@/lib/api/types";
 import { ApiError } from "@/lib/api-client";
+import { PendenteBadge } from "@/components/offline/pendente-badge";
+import { useVersaoSincronizacao } from "@/lib/offline/fila";
+import { mesclarPendentes, useCompradoresPendentes } from "@/lib/offline/pendentes";
 import styles from "./page.module.css";
 
 export default function CompradoresPage() {
-  const [compradores, setCompradores] = React.useState<Comprador[] | null>(null);
+  const [compradoresServidor, setCompradores] = React.useState<Comprador[] | null>(null);
+  // Cadastros feitos offline aparecem no topo, marcados como pendentes de sincronização.
+  const compradoresPendentes = useCompradoresPendentes();
+  const compradores = React.useMemo(
+    () => mesclarPendentes(compradoresServidor, compradoresPendentes),
+    [compradoresServidor, compradoresPendentes]
+  );
+  const versaoSincronizacao = useVersaoSincronizacao();
   const [error, setError] = React.useState<string | null>(null);
   const [reloadKey, setReloadKey] = React.useState(0);
   const [busca, setBusca] = React.useState("");
@@ -35,7 +45,7 @@ export default function CompradoresPage() {
     return () => {
       cancelled = true;
     };
-  }, [reloadKey]);
+  }, [reloadKey, versaoSincronizacao]);
 
   const buscaLower = busca.trim().toLowerCase();
   const filtrados = compradores?.filter(
@@ -64,7 +74,7 @@ export default function CompradoresPage() {
         <div className={cn(styles.state, "glass-panel")}>Carregando compradores...</div>
       ) : null}
 
-      {error ? (
+      {error && !compradores ? (
         <div className={cn(styles.state, styles.stateError, "glass-panel")}>
           {error}
           <div>
@@ -89,6 +99,9 @@ export default function CompradoresPage() {
             <Link
               key={comprador.comprador_id}
               href={`/compradores/${comprador.comprador_id}`}
+              // Pendente: ainda não existe no servidor, então não há tela de edição para abrir.
+              aria-disabled={comprador.pendente ? true : undefined}
+              onClick={comprador.pendente ? (e) => e.preventDefault() : undefined}
               className={cn(styles.card, "glass-panel")}
             >
               <span className={styles.cardIcon}>
@@ -100,6 +113,7 @@ export default function CompradoresPage() {
                 <p className={styles.cardMeta}>
                   {comprador.municipio} · Contato: {comprador.pessoa_contato}
                 </p>
+                {comprador.pendente ? <PendenteBadge pendente={comprador.pendente} /> : null}
               </div>
             </Link>
           ))}

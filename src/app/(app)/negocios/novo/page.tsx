@@ -10,12 +10,20 @@ import { fetchFazendas } from "@/lib/api/fazendas";
 import type { Fazenda } from "@/lib/api/types";
 import { ApiError } from "@/lib/api-client";
 import { useNegocioFlow } from "@/lib/flows/negocio-flow";
+import { PendenteBadge } from "@/components/offline/pendente-badge";
+import { mesclarPendentes, useFazendasPendentes, type ComPendencia } from "@/lib/offline/pendentes";
 import styles from "./page.module.css";
 
 export default function NovoNegocioFazendaPage() {
   const router = useRouter();
   const { update } = useNegocioFlow();
-  const [fazendas, setFazendas] = React.useState<Fazenda[] | null>(null);
+  const [fazendasServidor, setFazendas] = React.useState<Fazenda[] | null>(null);
+  // Inclui fazendas cadastradas offline ainda não sincronizadas (id negativo).
+  const fazendasPendentes = useFazendasPendentes();
+  const fazendas = React.useMemo(
+    () => mesclarPendentes(fazendasServidor, fazendasPendentes),
+    [fazendasServidor, fazendasPendentes]
+  );
   const [error, setError] = React.useState<string | null>(null);
   const [busca, setBusca] = React.useState("");
 
@@ -32,6 +40,7 @@ export default function NovoNegocioFazendaPage() {
       fazendaId: fazenda.fazenda_id,
       fazendaNome: fazenda.nome_fazenda,
       vendedorId: null,
+      vendedorNome: "",
       negocioId: null,
     });
     router.push("/negocios/novo/vendedor");
@@ -63,7 +72,7 @@ export default function NovoNegocioFazendaPage() {
         <div className={cn(styles.state, "glass-panel")}>Carregando fazendas...</div>
       ) : null}
 
-      {error ? <div className={cn(styles.state, styles.stateError, "glass-panel")}>{error}</div> : null}
+      {error && !fazendas ? <div className={cn(styles.state, styles.stateError, "glass-panel")}>{error}</div> : null}
 
       {filtradas && filtradas.length === 0 ? (
         <div className={cn(styles.state, "glass-panel")}>
@@ -75,7 +84,7 @@ export default function NovoNegocioFazendaPage() {
 
       {filtradas && filtradas.length > 0 ? (
         <div className={styles.list}>
-          {filtradas.map((fazenda) => (
+          {filtradas.map((fazenda: ComPendencia<Fazenda>) => (
             <button
               key={fazenda.fazenda_id}
               type="button"
@@ -90,6 +99,7 @@ export default function NovoNegocioFazendaPage() {
                 <p className={styles.cardMeta}>
                   Município: {fazenda.municipio} · I.E.: {fazenda.inscricao_estadual}
                 </p>
+                {fazenda.pendente ? <PendenteBadge pendente={fazenda.pendente} /> : null}
               </div>
             </button>
           ))}

@@ -1,0 +1,110 @@
+.bar {
+  position: sticky;
+  top: 0;
+  z-index: 18;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  border-radius: 5px;
+  padding: 0.6rem 0.75rem;
+  background: var(--color-dark);
+  color: var(--color-white);
+  box-shadow: 0 8px 24px -10px color-mix(in oklch, var(--color-dark) 60%, transparent);
+}
+
+.barRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.barText {
+  flex: 1;
+  font-size: 0.8rem;
+  line-height: 1.3;
+}
+
+.barButton {
+  flex-shrink: 0;
+  height: 2rem;
+  margin-bottom: 0;
+  padding: 0 0.75rem;
+  font-size: 0.75rem;
+}
+
+.girando {
+  animation: girar 1s linear infinite;
+}
+
+@keyframes girar {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.erroToggle {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #fecaca;
+  text-align: left;
+  cursor: pointer;
+}
+
+.erroLista {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.erroItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  border-radius: 5px;
+  padding: 0.6rem;
+  background: rgb(255 255 255 / 10%);
+}
+
+.erroTitulo {
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.erroMotivo {
+  font-size: 0.75rem;
+  color: #fecaca;
+}
+
+.erroAcoes {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.erroAcoes .barButton:last-child {
+  color: var(--color-white);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  width: fit-content;
+  border-radius: 5px;
+  padding: 0.1rem 0.4rem;
+  background: color-mix(in oklch, var(--color-mauve) 30%, transparent);
+  color: var(--color-dark);
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.badgeErro {
+  background: color-mix(in oklch, var(--color-danger) 18%, transparent);
+  color: var(--color-danger);
+}

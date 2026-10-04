@@ -9,6 +9,8 @@ import { fetchFazendas } from "@/lib/api/fazendas";
 import type { Fazenda } from "@/lib/api/types";
 import { ApiError } from "@/lib/api-client";
 import { useVendedorFlow } from "@/lib/flows/vendedor-flow";
+import { PendenteBadge } from "@/components/offline/pendente-badge";
+import { mesclarPendentes, useFazendasPendentes, type ComPendencia } from "@/lib/offline/pendentes";
 import styles from "./page.module.css";
 
 export default function NovoVendedorFazendaPage() {
@@ -24,26 +26,30 @@ export default function NovoVendedorFazendaPage() {
 
   React.useEffect(() => {
     fetchFazendas()
-      .then((list) => {
-        setFazendas(list);
-        if (fazendaIdParam) {
-          const preselecionada = list.find((f) => f.fazenda_id === Number(fazendaIdParam));
-          if (preselecionada) {
-            update({
-              fazendaId: preselecionada.fazenda_id,
-              fazendaNome: preselecionada.nome_fazenda,
-              returnTo: returnToParam,
-            });
-            router.replace("/vendedores/novo/dados");
-          }
-        }
-      })
+      .then(setFazendas)
       .catch((err: unknown) => {
         setError(err instanceof ApiError || err instanceof Error ? err.message : "Erro ao carregar.");
       });
-    // Roda só uma vez ao montar — os params vêm da URL de entrada.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Fazendas do servidor + as cadastradas offline ainda não sincronizadas.
+  const fazendasPendentes = useFazendasPendentes();
+  const todas = React.useMemo(() => mesclarPendentes(fazendas, fazendasPendentes), [fazendas, fazendasPendentes]);
+
+  // Pré-seleção via ?fazenda_id= (vindo do fluxo de negócio) — pode ser uma fazenda pendente (id negativo).
+  const preselecionou = React.useRef(false);
+  React.useEffect(() => {
+    if (!fazendaIdParam || preselecionou.current || !todas) return;
+    const preselecionada = todas.find((f) => f.fazenda_id === Number(fazendaIdParam));
+    if (!preselecionada) return;
+    preselecionou.current = true;
+    update({
+      fazendaId: preselecionada.fazenda_id,
+      fazendaNome: preselecionada.nome_fazenda,
+      returnTo: returnToParam,
+    });
+    router.replace("/vendedores/novo/dados");
+  }, [todas, fazendaIdParam, returnToParam, update, router]);
 
   function selecionar(fazenda: Fazenda) {
     update({ fazendaId: fazenda.fazenda_id, fazendaNome: fazenda.nome_fazenda, returnTo: returnToParam });
@@ -51,7 +57,7 @@ export default function NovoVendedorFazendaPage() {
   }
 
   const buscaLower = busca.trim().toLowerCase();
-  const filtradas = fazendas?.filter(
+  const filtradas = todas?.filter(
     (f) => buscaLower === "" || f.nome_fazenda.toLowerCase().includes(buscaLower)
   );
 
@@ -71,15 +77,15 @@ export default function NovoVendedorFazendaPage() {
         />
       </div>
 
-      {fazendas === null && !error ? (
+      {todas === null && !error ? (
         <div className={cn(styles.state, "glass-panel")}>Carregando fazendas...</div>
       ) : null}
 
-      {error ? <div className={cn(styles.state, styles.stateError, "glass-panel")}>{error}</div> : null}
+      {error && !todas ? <div className={cn(styles.state, styles.stateError, "glass-panel")}>{error}</div> : null}
 
       {filtradas && filtradas.length === 0 ? (
         <div className={cn(styles.state, "glass-panel")}>
-          {fazendas && fazendas.length > 0
+          {todas && todas.length > 0
             ? "Nenhuma fazenda encontrada para essa busca."
             : "Nenhuma fazenda cadastrada ainda. Cadastre uma fazenda antes de adicionar um vendedor."}
         </div>
@@ -87,7 +93,7 @@ export default function NovoVendedorFazendaPage() {
 
       {filtradas && filtradas.length > 0 ? (
         <div className={styles.list}>
-          {filtradas.map((fazenda) => (
+          {filtradas.map((fazenda: ComPendencia<Fazenda>) => (
             <button
               key={fazenda.fazenda_id}
               type="button"
@@ -102,6 +108,7 @@ export default function NovoVendedorFazendaPage() {
                 <p className={styles.cardMeta}>
                   Município: {fazenda.municipio} · I.E.: {fazenda.inscricao_estadual}
                 </p>
+                {fazenda.pendente ? <PendenteBadge pendente={fazenda.pendente} /> : null}
               </div>
             </button>
           ))}

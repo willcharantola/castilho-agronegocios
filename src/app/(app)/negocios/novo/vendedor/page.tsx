@@ -13,12 +13,20 @@ import type { Vendedor } from "@/lib/api/types";
 import { FISICO_JURIDICO_LABELS } from "@/lib/labels";
 import { ApiError } from "@/lib/api-client";
 import { useNegocioFlow } from "@/lib/flows/negocio-flow";
+import { PendenteBadge } from "@/components/offline/pendente-badge";
+import { mesclarPendentes, useVendedoresPendentes, type ComPendencia } from "@/lib/offline/pendentes";
 import styles from "./page.module.css";
 
 export default function NovoNegocioVendedorPage() {
   const router = useRouter();
   const { data, update } = useNegocioFlow();
-  const [vendedores, setVendedores] = React.useState<Vendedor[] | null>(null);
+  const [vendedoresServidor, setVendedores] = React.useState<Vendedor[] | null>(null);
+  // Inclui vendedores cadastrados offline ainda não sincronizados (id negativo).
+  const vendedoresPendentes = useVendedoresPendentes();
+  const vendedores = React.useMemo(
+    () => mesclarPendentes(vendedoresServidor, vendedoresPendentes),
+    [vendedoresServidor, vendedoresPendentes]
+  );
   const [error, setError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
@@ -38,7 +46,7 @@ export default function NovoNegocioVendedorPage() {
   const daFazenda = vendedores?.filter((v) => v.vendedor_fazenda?.some((a) => a.fazenda_id === data.fazendaId));
 
   function selecionar(vendedor: Vendedor) {
-    update({ vendedorId: vendedor.vendedor_id });
+    update({ vendedorId: vendedor.vendedor_id, vendedorNome: vendedor.nome_vendedor });
     router.push("/negocios/novo/comprador");
   }
 
@@ -61,7 +69,7 @@ export default function NovoNegocioVendedorPage() {
         <div className={cn(styles.state, "glass-panel")}>Carregando vendedores...</div>
       ) : null}
 
-      {error ? <div className={cn(styles.state, styles.stateError, "glass-panel")}>{error}</div> : null}
+      {error && !vendedores ? <div className={cn(styles.state, styles.stateError, "glass-panel")}>{error}</div> : null}
 
       {daFazenda && daFazenda.length === 0 ? (
         <div className={cn(styles.state, "glass-panel")}>
@@ -84,7 +92,7 @@ export default function NovoNegocioVendedorPage() {
 
       {daFazenda && daFazenda.length > 0 ? (
         <div className={styles.list}>
-          {daFazenda.map((vendedor) => (
+          {daFazenda.map((vendedor: ComPendencia<Vendedor>) => (
             <button
               key={vendedor.vendedor_id}
               type="button"
@@ -99,6 +107,7 @@ export default function NovoNegocioVendedorPage() {
                 <p className={styles.cardMeta}> Pessoa: {FISICO_JURIDICO_LABELS[vendedor.fisico_juridico]}</p>
                   
                   <p className={styles.cardMeta}> CPF/CNPJ: {vendedor.cpf_cnpj}</p>
+                {vendedor.pendente ? <PendenteBadge pendente={vendedor.pendente} /> : null}
               </div>
             </button>
           ))}
