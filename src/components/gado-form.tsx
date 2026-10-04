@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Field } from "@/components/form/field";
 import { TintedInput } from "@/components/form/tinted-input";
+import { MaskedNumberInput } from "@/components/form/masked-number-input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatCurrency, formatNumber, formatGenero } from "@/lib/format";
@@ -74,7 +75,8 @@ function estimarValores(modalidade: Modalidade, pesoTotal: number, rendimento: n
   switch (modalidade) {
     case "arroba": {
       const pesoCalculo = pesoTotal * (rendimento / 100);
-      const pesoArroba = pesoCalculo > 0 ? Math.ceil(pesoCalculo / KG_PER_ARROBA) : 0;
+      // Valor exato, sem arredondamento (a pedido do cliente).
+      const pesoArroba = pesoCalculo > 0 ? pesoCalculo / KG_PER_ARROBA : 0;
       return { pesoCalculo, pesoArroba, valorTotal: pesoArroba * valorUnidade };
     }
     case "kg":
@@ -105,7 +107,10 @@ export function GadoForm({
   defaultValues?: GadoFormInput;
   submitLabel: string;
   submittingLabel: string;
-  /** Limpa o formulário após salvar (cadastro em sequência), mantendo o ano do carimbo. */
+  /**
+   * Limpa o formulário após salvar (cadastro em sequência). Gênero, carimbo e ano voltam
+   * a "Selecione"/vazio; o rendimento de carcaça é mantido (costuma se repetir no lote).
+   */
   resetAfterSubmit?: boolean;
   /** Evita ids duplicados quando o formulário aparece duas vezes na tela (ex.: modal). */
   idPrefix?: string;
@@ -144,10 +149,10 @@ export function GadoForm({
         denominacao: "",
         genero: undefined,
         peso_total: "",
-        rendimento_carcaca: rendimentoPadrao(modalidade),
+        rendimento_carcaca: values.rendimento_carcaca,
         data_pesagem: hoje(),
         carimbo: undefined,
-        ano_carimbo: values.ano_carimbo,
+        ano_carimbo: "",
       });
     }
   }
@@ -165,7 +170,9 @@ export function GadoForm({
             control={control}
             name="genero"
             render={({ field }) => (
-              <Select value={field.value} onValueChange={field.onChange}>
+              // `?? null`: com `undefined` o Select do base-ui vira não controlado e
+              // continua exibindo a última opção mesmo após o reset do formulário.
+              <Select value={field.value ?? null} onValueChange={field.onChange}>
                 <SelectTrigger id={id("genero")} className={cn(fieldBox.box, fieldBox.pink)}>
                   <SelectValue>
                     {(value: "Macho" | "Femea" | null) => (value ? formatGenero(value) : "Selecione")}
@@ -187,7 +194,7 @@ export function GadoForm({
             control={control}
             name="carimbo"
             render={({ field }) => (
-              <Select value={field.value} onValueChange={field.onChange}>
+              <Select value={field.value ?? null} onValueChange={field.onChange}>
                 <SelectTrigger id={id("carimbo")} className={cn(fieldBox.box, fieldBox.pink)}>
                   <SelectValue>
                     {(value: string | null) => (value ? MESES_LABELS[Number(value) - 1] : "Selecione")}
@@ -233,14 +240,20 @@ export function GadoForm({
         htmlFor={id("rendimento_carcaca")}
         error={errors.rendimento_carcaca?.message}
       >
-        <TintedInput
-          id={id("rendimento_carcaca")}
-          tint="pink"
-          type="number"
-          inputMode="decimal"
-          step="0.01"
-          placeholder="Ex: 50"
-          {...register("rendimento_carcaca")}
+        <Controller
+          control={control}
+          name="rendimento_carcaca"
+          render={({ field }) => (
+            <MaskedNumberInput
+              id={id("rendimento_carcaca")}
+              formato="percentual"
+              name={field.name}
+              value={field.value as number | string | undefined}
+              onValueChange={field.onChange}
+              onBlur={field.onBlur}
+              placeholder="Ex: 50%"
+            />
+          )}
         />
       </Field>
 

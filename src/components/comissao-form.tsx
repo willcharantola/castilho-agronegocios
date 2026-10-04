@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { TintedInput } from "@/components/form/tinted-input";
+import { MaskedNumberInput } from "@/components/form/masked-number-input";
 import { Button } from "@/components/ui/button";
 import { updateNegocio } from "@/lib/api/negocios";
 import { ApiError } from "@/lib/api-client";
@@ -27,12 +27,12 @@ export function ComissaoForm({
   comissao: number | null;
   onUpdated: (negocio: Pick<Negocio, "porcentagem_comissao" | "comissao">) => void;
 }) {
-  const [valor, setValor] = React.useState(porcentagem !== null ? String(porcentagem) : "");
+  const [valor, setValor] = React.useState<number | undefined>(porcentagem ?? undefined);
   const [salvando, setSalvando] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [sucesso, setSucesso] = React.useState(false);
 
-  const percentual = valor.trim() === "" ? NaN : Number(valor.replace(",", "."));
+  const percentual = valor ?? NaN;
   const alterado = !Number.isNaN(percentual) && percentual !== porcentagem;
 
   async function atualizar(event: React.FormEvent) {
@@ -61,19 +61,14 @@ export function ComissaoForm({
         Comissão (%)
       </label>
       <div className={styles.row}>
-        <TintedInput
+        <MaskedNumberInput
           id="comissao"
-          tint="pink"
-          type="number"
-          inputMode="decimal"
-          step="0.01"
-          min="0"
-          max="100"
-          placeholder="Ex: 5"
+          formato="percentual"
+          placeholder="Ex: 5%"
           className={styles.input}
           value={valor}
-          onChange={(e) => {
-            setValor(e.target.value);
+          onValueChange={(novo) => {
+            setValor(novo);
             setSucesso(false);
           }}
         />

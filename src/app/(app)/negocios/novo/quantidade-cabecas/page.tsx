@@ -3,13 +3,14 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { Warehouse } from "lucide-react";
-import { useForm, useWatch } from "react-hook-form";
+import { useForm, useWatch, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { BackLink } from "@/components/back-link";
 import { ProgressSteps } from "@/components/progress-steps";
 import { Field } from "@/components/form/field";
 import { TintedInput } from "@/components/form/tinted-input";
+import { MaskedNumberInput } from "@/components/form/masked-number-input";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/format";
 import { updateNegocio } from "@/lib/api/negocios";
@@ -118,14 +119,19 @@ export default function NovoNegocioQuantidadeCabecasPage() {
           </Field>
 
           <Field label="Valor por Cabeça" htmlFor="valor_cabeca" error={errors.valor_cabeca?.message}>
-            <TintedInput
-              id="valor_cabeca"
-              tint="pink"
-              type="number"
-              inputMode="decimal"
-              step="0.01"
-              placeholder="R$ 0,00"
-              {...register("valor_cabeca")}
+            <Controller
+              control={control}
+              name="valor_cabeca"
+              render={({ field }) => (
+                <MaskedNumberInput
+                  id="valor_cabeca"
+                  formato="moeda"
+                  name={field.name}
+                  value={field.value as number | string | undefined}
+                  onValueChange={field.onChange}
+                  onBlur={field.onBlur}
+                />
+              )}
             />
           </Field>
         </div>
