@@ -10,6 +10,7 @@ import { BackLink } from "@/components/back-link";
 import { ProgressSteps } from "@/components/progress-steps";
 import { Field } from "@/components/form/field";
 import { TintedInput } from "@/components/form/tinted-input";
+import { MaskedNumberInput } from "@/components/form/masked-number-input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { createNegocio } from "@/lib/api/negocios";
@@ -192,14 +193,19 @@ export default function NovoNegocioInformacoesPage() {
               htmlFor="valor_unidade"
               error={errors.valor_unidade?.message}
             >
-              <TintedInput
-                id="valor_unidade"
-                tint="pink"
-                type="number"
-                inputMode="decimal"
-                step="0.01"
-                placeholder="R$ 0,00"
-                {...register("valor_unidade")}
+              <Controller
+                control={control}
+                name="valor_unidade"
+                render={({ field }) => (
+                  <MaskedNumberInput
+                    id="valor_unidade"
+                    formato="moeda"
+                    name={field.name}
+                    value={field.value as number | string | undefined}
+                    onValueChange={field.onChange}
+                    onBlur={field.onBlur}
+                  />
+                )}
               />
             </Field>
           )}
@@ -237,16 +243,20 @@ export default function NovoNegocioInformacoesPage() {
               htmlFor="porcentagem_comissao"
               error={errors.porcentagem_comissao?.message as string | undefined}
             >
-              <TintedInput
-                id="porcentagem_comissao"
-                tint="pink"
-                type="number"
-                inputMode="decimal"
-                step="0.01"
-                min="0"
-                max="100"
-                placeholder="Ex: 5"
-                {...register("porcentagem_comissao")}
+              <Controller
+                control={control}
+                name="porcentagem_comissao"
+                render={({ field }) => (
+                  <MaskedNumberInput
+                    id="porcentagem_comissao"
+                    formato="percentual"
+                    name={field.name}
+                    value={field.value as number | string | undefined}
+                    onValueChange={field.onChange}
+                    onBlur={field.onBlur}
+                    placeholder="Ex: 5%"
+                  />
+                )}
               />
             </Field>
           </div>
