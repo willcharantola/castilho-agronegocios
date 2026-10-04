@@ -19,18 +19,18 @@ export function createFlowContext<T extends object>(storageKey: string, initialV
 
   function Provider({ children }: { children: React.ReactNode }) {
     const [data, setData] = React.useState<T>(initialValue);
-    const hydrated = React.useRef(false);
+    const [hydrated, setHydrated] = React.useState(false);
 
     React.useEffect(() => {
-      if (hydrated.current) return;
-      hydrated.current = true;
+      if (hydrated) return;
       try {
         const raw = sessionStorage.getItem(storageKey);
         if (raw) setData({ ...initialValue, ...JSON.parse(raw) });
       } catch {
         // ignore malformed/unavailable storage
       }
-    }, []);
+      setHydrated(true);
+    }, [hydrated]);
 
     const update = React.useCallback((patch: Partial<T>) => {
       setData((prev) => {
@@ -54,6 +54,13 @@ export function createFlowContext<T extends object>(storageKey: string, initialV
     }, []);
 
     const value = React.useMemo(() => ({ data, update, reset }), [data, update, reset]);
+
+    // Children only mount once the stored state is restored. React runs child effects
+    // before parent ones, so otherwise a step's guard (e.g. "no fazenda chosen → back to
+    // step 1") would run against the empty initial state after a full page load — which
+    // is what every step navigation becomes offline (the RSC fetch fails and Next falls
+    // back to a hard navigation served by the service worker), and also on a refresh.
+    if (!hydrated) return null;
 
     return <Context.Provider value={value}>{children}</Context.Provider>;
   }
