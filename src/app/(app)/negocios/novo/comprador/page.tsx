@@ -12,12 +12,20 @@ import { fetchCompradores } from "@/lib/api/compradores";
 import type { Comprador } from "@/lib/api/types";
 import { ApiError } from "@/lib/api-client";
 import { useNegocioFlow } from "@/lib/flows/negocio-flow";
+import { PendenteBadge } from "@/components/offline/pendente-badge";
+import { mesclarPendentes, useCompradoresPendentes, type ComPendencia } from "@/lib/offline/pendentes";
 import styles from "./page.module.css";
 
 export default function NovoNegocioCompradorPage() {
   const router = useRouter();
   const { data, update } = useNegocioFlow();
-  const [compradores, setCompradores] = React.useState<Comprador[] | null>(null);
+  const [compradoresServidor, setCompradores] = React.useState<Comprador[] | null>(null);
+  // Inclui compradores cadastrados offline ainda não sincronizados (id negativo).
+  const compradoresPendentes = useCompradoresPendentes();
+  const compradores = React.useMemo(
+    () => mesclarPendentes(compradoresServidor, compradoresPendentes),
+    [compradoresServidor, compradoresPendentes]
+  );
   const [error, setError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
@@ -58,7 +66,7 @@ export default function NovoNegocioCompradorPage() {
         <div className={cn(styles.state, "glass-panel")}>Carregando compradores...</div>
       ) : null}
 
-      {error ? <div className={cn(styles.state, styles.stateError, "glass-panel")}>{error}</div> : null}
+      {error && !compradores ? <div className={cn(styles.state, styles.stateError, "glass-panel")}>{error}</div> : null}
 
       {compradores && compradores.length === 0 ? (
         <div className={cn(styles.state, "glass-panel")}>Nenhum comprador cadastrado ainda.</div>
@@ -66,7 +74,7 @@ export default function NovoNegocioCompradorPage() {
 
       {compradores && compradores.length > 0 ? (
         <div className={styles.list}>
-          {compradores.map((comprador) => (
+          {compradores.map((comprador: ComPendencia<Comprador>) => (
             <button
               key={comprador.comprador_id}
               type="button"
@@ -82,6 +90,7 @@ export default function NovoNegocioCompradorPage() {
                 <p className={styles.cardMeta}>
                   {comprador.municipio} · Contato: {comprador.pessoa_contato}
                 </p>
+                {comprador.pendente ? <PendenteBadge pendente={comprador.pendente} /> : null}
               </div>
             </button>
           ))}

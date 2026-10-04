@@ -10,14 +10,13 @@ import { MaskedNumberInput } from "@/components/form/masked-number-input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatCurrency, formatNumber, formatGenero } from "@/lib/format";
-import { ApiError } from "@/lib/api-client";
+import { mensagemDeErro } from "@/lib/offline/rede";
 import { MESES_LABELS } from "@/lib/labels";
+import { estimarValoresGado } from "@/lib/calculo-gado";
 import { cn } from "@/lib/utils";
 import type { CreateGadoInput, Gado, Modalidade } from "@/lib/api/types";
 import fieldBox from "@/components/form/field-box.module.css";
 import styles from "./gado-form.module.css";
-
-const KG_PER_ARROBA = 15;
 
 const schema = z.object({
   denominacao: z.string().min(2, "Informe a denominação.").max(20),
@@ -68,25 +67,6 @@ export function formValuesParaInput(values: GadoFormValues): Omit<CreateGadoInpu
 }
 
 /**
- * Prévia dos valores calculados — mesma fórmula do backend (GadosService.calcularValores),
- * que continua sendo a fonte autoritativa ao salvar.
- */
-function estimarValores(modalidade: Modalidade, pesoTotal: number, rendimento: number, valorUnidade: number) {
-  switch (modalidade) {
-    case "arroba": {
-      const pesoCalculo = pesoTotal * (rendimento / 100);
-      // Valor exato, sem arredondamento (a pedido do cliente).
-      const pesoArroba = pesoCalculo > 0 ? pesoCalculo / KG_PER_ARROBA : 0;
-      return { pesoCalculo, pesoArroba, valorTotal: pesoArroba * valorUnidade };
-    }
-    case "kg":
-      return { pesoCalculo: 0, pesoArroba: 0, valorTotal: valorUnidade * pesoTotal };
-    case "cabeca":
-      return { pesoCalculo: 0, pesoArroba: 0, valorTotal: valorUnidade };
-  }
-}
-
-/**
  * Formulário de gado (campos, validação e cálculo em tempo real) compartilhado entre o
  * cadastro em /negocios/novo/gado, o modal de edição desse fluxo e as telas
  * /negocios/[id]/gado/novo e /negocios/[id]/gado/[gadoId]/editar.
@@ -134,14 +114,14 @@ export function GadoForm({
 
   const pesoTotal = Number(useWatch({ control, name: "peso_total" })) || 0;
   const rendimento = Number(useWatch({ control, name: "rendimento_carcaca" })) || 0;
-  const { pesoCalculo, pesoArroba, valorTotal } = estimarValores(modalidade, pesoTotal, rendimento, valorUnidade);
+  const { pesoCalculo, pesoArroba, valorTotal } = estimarValoresGado(modalidade, pesoTotal, rendimento, valorUnidade);
 
   async function submit(values: GadoFormValues) {
     setSubmitError(null);
     try {
       await onSubmit(values);
     } catch (err) {
-      setSubmitError(err instanceof ApiError || err instanceof Error ? err.message : "Erro ao salvar.");
+      setSubmitError(mensagemDeErro(err));
       return;
     }
     if (resetAfterSubmit) {

@@ -13,10 +13,25 @@ import { fetchCompradores } from "@/lib/api/compradores";
 import { gerarRelatorioNegocios } from "@/lib/relatorio";
 import type { Comprador, Fazenda, Negocio } from "@/lib/api/types";
 import { ApiError } from "@/lib/api-client";
+import { PendenteBadge } from "@/components/offline/pendente-badge";
+import { idTemporario, usePendentes, useVersaoSincronizacao } from "@/lib/offline/fila";
+import { mesclarPendentes, negocioDePendente, type ExibicaoNegocio } from "@/lib/offline/pendentes";
 import styles from "./page.module.css";
 
 export default function NegociosPage() {
-  const [negocios, setNegocios] = React.useState<Negocio[] | null>(null);
+  const [negociosServidor, setNegocios] = React.useState<Negocio[] | null>(null);
+  // Negócios criados offline aparecem no topo, marcados como pendentes de sincronização
+  // (com os nomes de fazenda/comprador guardados no aparelho ao cadastrar).
+  const registrosPendentes = usePendentes("negocio");
+  const negocios = React.useMemo(
+    () => mesclarPendentes(negociosServidor, registrosPendentes.map(negocioDePendente)),
+    [negociosServidor, registrosPendentes]
+  );
+  const nomesPendentes = React.useMemo(
+    () => Object.fromEntries(registrosPendentes.map((r) => [idTemporario(r), r.exibicao as ExibicaoNegocio])),
+    [registrosPendentes]
+  );
+  const versaoSincronizacao = useVersaoSincronizacao();
   const [fazendas, setFazendas] = React.useState<Fazenda[]>([]);
   const [compradores, setCompradores] = React.useState<Comprador[]>([]);
   const [error, setError] = React.useState<string | null>(null);
@@ -69,13 +84,14 @@ export default function NegociosPage() {
     return () => {
       cancelled = true;
     };
-  }, [reloadKey, fazendaId, dataInicio, dataFim]);
+  }, [reloadKey, fazendaId, dataInicio, dataFim, versaoSincronizacao]);
 
   const buscaLower = busca.trim().toLowerCase();
   const filtrados = negocios?.filter((negocio) => {
     if (buscaLower === "") return true;
-    const fazendaNome = fazendasPorId[negocio.fazenda_id] ?? "";
-    const compradorNome = compradoresPorId[negocio.comprador_id] ?? "";
+    const fazendaNome = nomesPendentes[negocio.negocio_id]?.fazendaNome ?? fazendasPorId[negocio.fazenda_id] ?? "";
+    const compradorNome =
+      nomesPendentes[negocio.negocio_id]?.compradorNome ?? compradoresPorId[negocio.comprador_id] ?? "";
     return (
       fazendaNome.toLowerCase().includes(buscaLower) ||
       compradorNome.toLowerCase().includes(buscaLower)
@@ -83,11 +99,13 @@ export default function NegociosPage() {
   });
 
   async function handleGerarRelatorio() {
-    if (!filtrados || filtrados.length === 0) return;
+    // Só negócios já no servidor: os pendentes ainda não têm valores calculados.
+    const sincronizados = filtrados?.filter((n) => !n.pendente);
+    if (!sincronizados || sincronizados.length === 0) return;
     setRelatorioError(null);
     setGerandoRelatorio(true);
     try {
-      await gerarRelatorioNegocios(filtrados, fazendasPorId);
+      await gerarRelatorioNegocios(sincronizados, fazendasPorId);
     } catch (err) {
       setRelatorioError(
         err instanceof ApiError || err instanceof Error ? err.message : "Erro ao gerar relatório."
@@ -136,7 +154,7 @@ export default function NegociosPage() {
         <div className={cn(styles.state, "glass-panel")}>Carregando negócios...</div>
       ) : null}
 
-      {error ? (
+      {error && !negocios ? (
         <div className={cn(styles.state, styles.stateError, "glass-panel")}>
           {error}
           <div>
@@ -165,6 +183,9 @@ export default function NegociosPage() {
             <Link
               key={negocio.negocio_id}
               href={`/negocios/${negocio.negocio_id}`}
+              // Pendente: ainda não existe no servidor, então não há tela de detalhe para abrir.
+              aria-disabled={negocio.pendente ? true : undefined}
+              onClick={negocio.pendente ? (e) => e.preventDefault() : undefined}
               className={cn(styles.card, "glass-panel")}
             >
               <span className={styles.cardIcon}>
@@ -173,11 +194,17 @@ export default function NegociosPage() {
               <div className={styles.cardInfo}>
 
                 <p className={styles.cardFarm}>
-                  {fazendasPorId[negocio.fazenda_id] ?? `Fazenda #${negocio.fazenda_id}`}
+                  {nomesPendentes[negocio.negocio_id]?.fazendaNome ??
+                    fazendasPorId[negocio.fazenda_id] ??
+                    `Fazenda #${negocio.fazenda_id}`}
                 </p>
 
                 <p className={styles.cardMeta}>
-                  Comprador: {compradoresPorId[negocio.comprador_id] ?? `#${negocio.comprador_id}`} · {formatDate(negocio.data_negocio)}
+                  Comprador:{" "}
+                  {nomesPendentes[negocio.negocio_id]?.compradorNome ??
+                    compradoresPorId[negocio.comprador_id] ??
+                    `#${negocio.comprador_id}`}{" "}
+                  · {formatDate(negocio.data_negocio)}
                 </p>
 
                  <p className={styles.cardMeta}>
@@ -186,6 +213,7 @@ export default function NegociosPage() {
                 </p>
 
                 <p className={styles.cardHeads}>Cabeças negociadas: {negocio.qtd_animais ?? "—"}</p>
+                {negocio.pendente ? <PendenteBadge pendente={negocio.pendente} /> : null}
               </div>
               <div className={styles.cardAmount}>
                  <p className={styles.cardCommission}>{negocio.valor_total !== null ? formatCurrency(negocio.valor_total) : "—"}</p>

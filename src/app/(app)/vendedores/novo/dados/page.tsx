@@ -19,6 +19,8 @@ import type { Fazenda } from "@/lib/api/types";
 import { ApiError } from "@/lib/api-client";
 import { FISICO_JURIDICO_LABELS } from "@/lib/labels";
 import { useVendedorFlow } from "@/lib/flows/vendedor-flow";
+import { enviarOuEnfileirar, referencias } from "@/lib/offline/fila";
+import { mesclarPendentes, useFazendasPendentes } from "@/lib/offline/pendentes";
 import { cn } from "@/lib/utils";
 import fieldBox from "@/components/form/field-box.module.css";
 import styles from "./page.module.css";
@@ -38,7 +40,12 @@ export default function NovoVendedorDadosPage() {
   const router = useRouter();
   const { data, reset } = useVendedorFlow();
   const [submitError, setSubmitError] = React.useState<string | null>(null);
-  const [fazendas, setFazendas] = React.useState<Fazenda[]>([]);
+  const [fazendasServidor, setFazendas] = React.useState<Fazenda[]>([]);
+  const fazendasPendentes = useFazendasPendentes();
+  const fazendas = React.useMemo(
+    () => mesclarPendentes(fazendasServidor, fazendasPendentes) ?? [],
+    [fazendasServidor, fazendasPendentes]
+  );
   // A fazenda escolhida no passo anterior já vem marcada; o vendedor pode atuar em várias (N:N).
   const [fazendaIds, setFazendaIds] = React.useState<number[]>(data.fazendaId ? [data.fazendaId] : []);
   const {
@@ -72,7 +79,19 @@ export default function NovoVendedorDadosPage() {
     }
     setSubmitError(null);
     try {
-      await createVendedor({ ...values, fazenda_ids: fazendaIds });
+      // Fazendas ainda pendentes (ids negativos) viram referências resolvidas na sincronização.
+      const selecionadas = fazendaIds.map((id) => ({
+        fazenda_id: id,
+        nome_fazenda:
+          fazendas.find((f) => f.fazenda_id === id)?.nome_fazenda ?? (id === data.fazendaId ? data.fazendaNome : ""),
+      }));
+      await enviarOuEnfileirar(
+        "vendedor",
+        { ...values, ...(await referencias("fazenda", fazendaIds)) },
+        (payload, uuid) =>
+          createVendedor({ ...(payload as FormValues & { fazenda_ids: number[] }), uuid_origem: uuid }),
+        { exibicao: { fazendas: selecionadas } }
+      );
       const returnTo = data.returnTo;
       reset();
       router.push(returnTo ?? "/vendedores");

@@ -1,15 +1,17 @@
 import { apiFetch } from "@/lib/api-client";
-import type { CreateFazendaInput, Fazenda, UpdateFazendaInput } from "@/lib/api/types";
+import { comCache } from "@/lib/offline/cache";
+import type { CreateFazendaInput, Fazenda, OrigemOffline, UpdateFazendaInput } from "@/lib/api/types";
 
+/** Sem rede, devolve a última lista salva no aparelho (ver lib/offline/cache). */
 export function fetchFazendas() {
-  return apiFetch<Fazenda[]>("/fazendas");
+  return comCache("fazendas", () => apiFetch<Fazenda[]>("/fazendas"));
 }
 
 export function fetchFazenda(id: number | string) {
   return apiFetch<Fazenda>(`/fazendas/${id}`);
 }
 
-export function createFazenda(input: CreateFazendaInput) {
+export function createFazenda(input: CreateFazendaInput & OrigemOffline) {
   return apiFetch<Fazenda>("/fazendas", { method: "POST", body: JSON.stringify(input) });
 }
 

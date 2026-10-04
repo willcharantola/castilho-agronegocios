@@ -9,7 +9,10 @@ import { fetchNegocio } from "@/lib/api/negocios";
 import { ApiError } from "@/lib/api-client";
 import { MODALIDADE_LABELS } from "@/lib/labels";
 import { cn } from "@/lib/utils";
-import type { NegocioDetail } from "@/lib/api/types";
+import type { CreateGadoInput, NegocioDetail } from "@/lib/api/types";
+import { estimarValoresGado } from "@/lib/calculo-gado";
+import { enviarOuEnfileirar } from "@/lib/offline/fila";
+import { horaLocalAtual } from "@/lib/offline/rede";
 import styles from "../gado-page.module.css";
 
 /** Adiciona um gado a um negócio já existente e volta para o detalhe do negócio. */
@@ -40,7 +43,25 @@ export default function AdicionarGadoPage() {
   }, [params.id]);
 
   async function cadastrar(values: GadoFormValues) {
-    await createGado({ negocio_id: Number(params.id), ...formValuesParaInput(values) });
+    if (!negocio) return;
+    const input = formValuesParaInput(values);
+    const estimado = estimarValoresGado(negocio.modalidade, input.peso_total, input.rendimento_carcaca, negocio.valor_unidade);
+    // Sem conexão, o gado fica na fila (com a hora da pesagem do aparelho) e aparece no
+    // detalhe do negócio como pendente de sincronização.
+    await enviarOuEnfileirar(
+      "gado",
+      { negocio_id: negocio.negocio_id, ...input },
+      (payload, uuid) => createGado({ ...(payload as CreateGadoInput), uuid_origem: uuid }),
+      {
+        exibicao: {
+          negocio_id: negocio.negocio_id,
+          peso_calculo: estimado.pesoCalculo,
+          peso_arroba: estimado.pesoArroba,
+          valor_total: estimado.valorTotal,
+        },
+        extrasFila: { horario_pesagem: horaLocalAtual() },
+      }
+    );
     router.push(`/negocios/${params.id}`);
   }
 

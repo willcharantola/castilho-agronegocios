@@ -9,10 +9,20 @@ import { cn } from "@/lib/utils";
 import { fetchFazendas } from "@/lib/api/fazendas";
 import type { Fazenda } from "@/lib/api/types";
 import { ApiError } from "@/lib/api-client";
+import { PendenteBadge } from "@/components/offline/pendente-badge";
+import { useVersaoSincronizacao } from "@/lib/offline/fila";
+import { mesclarPendentes, useFazendasPendentes } from "@/lib/offline/pendentes";
 import styles from "./page.module.css";
 
 export default function FazendasPage() {
-  const [fazendas, setFazendas] = React.useState<Fazenda[] | null>(null);
+  const [fazendasServidor, setFazendas] = React.useState<Fazenda[] | null>(null);
+  // Cadastros feitos offline aparecem no topo, marcados como pendentes de sincronização.
+  const fazendasPendentes = useFazendasPendentes();
+  const fazendas = React.useMemo(
+    () => mesclarPendentes(fazendasServidor, fazendasPendentes),
+    [fazendasServidor, fazendasPendentes]
+  );
+  const versaoSincronizacao = useVersaoSincronizacao();
   const [error, setError] = React.useState<string | null>(null);
   const [reloadKey, setReloadKey] = React.useState(0);
   const [busca, setBusca] = React.useState("");
@@ -35,7 +45,7 @@ export default function FazendasPage() {
     return () => {
       cancelled = true;
     };
-  }, [reloadKey]);
+  }, [reloadKey, versaoSincronizacao]);
 
   const buscaLower = busca.trim().toLowerCase();
   const filtradas = fazendas?.filter(
@@ -63,7 +73,7 @@ export default function FazendasPage() {
         <div className={cn(styles.state, "glass-panel")}>Carregando fazendas...</div>
       ) : null}
 
-      {error ? (
+      {error && !fazendas ? (
         <div className={cn(styles.state, styles.stateError, "glass-panel")}>
           {error}
           <div>
@@ -92,6 +102,9 @@ export default function FazendasPage() {
             <Link
               key={fazenda.fazenda_id}
               href={`/fazendas/${fazenda.fazenda_id}`}
+              // Pendente: ainda não existe no servidor, então não há tela de edição para abrir.
+              aria-disabled={fazenda.pendente ? true : undefined}
+              onClick={fazenda.pendente ? (e) => e.preventDefault() : undefined}
               className={cn(styles.card, "glass-panel")}
             >
               <span className={styles.cardIcon}>
@@ -101,6 +114,7 @@ export default function FazendasPage() {
                 <p className={styles.cardName}>{fazenda.nome_fazenda}</p>
                 <p className={styles.cardMeta}> Município: {fazenda.municipio} </p>
                  <p className={styles.cardMeta}>I.E.: {fazenda.inscricao_estadual}</p>
+                  {fazenda.pendente ? <PendenteBadge pendente={fazenda.pendente} /> : null}
               </div>
             </Link>
           ))}

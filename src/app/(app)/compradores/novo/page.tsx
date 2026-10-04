@@ -9,6 +9,7 @@ import { CompradorFields, compradorSchema, type CompradorFormValues } from "@/co
 import { Button } from "@/components/ui/button";
 import { createComprador } from "@/lib/api/compradores";
 import { ApiError } from "@/lib/api-client";
+import { enviarOuEnfileirar } from "@/lib/offline/fila";
 import { cn } from "@/lib/utils";
 import styles from "./page.module.css";
 
@@ -30,7 +31,10 @@ function NovoCompradorForm() {
   async function onSubmit(values: CompradorFormValues) {
     setSubmitError(null);
     try {
-      await createComprador(values);
+      // Sem conexão, fica salvo no aparelho e já pode ser escolhido num negócio.
+      await enviarOuEnfileirar("comprador", values, (payload, uuid) =>
+        createComprador({ ...(payload as CompradorFormValues), uuid_origem: uuid })
+      );
       router.push(returnTo ?? "/compradores");
     } catch (err) {
       setSubmitError(err instanceof ApiError || err instanceof Error ? err.message : "Erro ao salvar.");

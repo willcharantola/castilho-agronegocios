@@ -17,6 +17,9 @@ import { createNegocio } from "@/lib/api/negocios";
 import { getUsuario, ApiError } from "@/lib/api-client";
 import { MODALIDADE_LABELS, TIPO_GADO_LABELS, TIPO_LOTE_LABELS } from "@/lib/labels";
 import { useNegocioFlow } from "@/lib/flows/negocio-flow";
+import { enviarOuEnfileirar, idTemporario, referencia } from "@/lib/offline/fila";
+import type { ExibicaoNegocio } from "@/lib/offline/pendentes";
+import type { CreateNegocioInput } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import type { TipoLote } from "@/lib/api/types";
 import fieldBox from "@/components/form/field-box.module.css";
@@ -101,21 +104,36 @@ export default function NovoNegocioInformacoesPage() {
     }
     setSubmitError(null);
     try {
-      const negocio = await createNegocio({
-        empresa_id: usuario.empresa_id,
+      // Fazenda/vendedor/comprador podem ter sido cadastrados offline (id negativo):
+      // nesse caso o negócio também fica na fila, referenciando-os pelo uuid local.
+      const exibicao: ExibicaoNegocio = {
         fazenda_id: data.fazendaId,
         vendedor_id: data.vendedorId,
         comprador_id: data.compradorId,
-        modalidade: data.modalidade,
-        tipo_gado: values.tipo_gado,
-        tipo_lote: values.tipo_lote,
-        data_negocio: new Date(values.data_negocio).toISOString(),
-        porcentagem_comissao: values.porcentagem_comissao,
-        // Na modalidade "cabeca" o valor por cabeça ainda não foi informado: a API exige o
-        // campo (NOT NULL), então cria com 0 e a tela quantidade-cabecas o preenche via PATCH.
-        valor_unidade: porCabeca ? 0 : (values.valor_unidade ?? 0),
-        observacao: values.observacao || undefined,
-      });
+        fazendaNome: data.fazendaNome,
+        vendedorNome: data.vendedorNome,
+        compradorNome: data.compradorNome,
+      };
+      const envio = await enviarOuEnfileirar(
+        "negocio",
+        {
+          empresa_id: usuario.empresa_id,
+          ...(await referencia("fazenda", data.fazendaId)),
+          ...(await referencia("vendedor", data.vendedorId)),
+          ...(await referencia("comprador", data.compradorId)),
+          modalidade: data.modalidade,
+          tipo_gado: values.tipo_gado,
+          tipo_lote: values.tipo_lote,
+          data_negocio: new Date(values.data_negocio).toISOString(),
+          porcentagem_comissao: values.porcentagem_comissao,
+          // Na modalidade "cabeca" o valor por cabeça ainda não foi informado: a API exige o
+          // campo (NOT NULL), então cria com 0 e a tela quantidade-cabecas o preenche via PATCH.
+          valor_unidade: porCabeca ? 0 : (values.valor_unidade ?? 0),
+          observacao: values.observacao || undefined,
+        },
+        (payload, uuid) => createNegocio({ ...(payload as unknown as CreateNegocioInput), uuid_origem: uuid }),
+        { exibicao }
+      );
       update({
         tipoGado: values.tipo_gado,
         valorUnidade: porCabeca ? null : (values.valor_unidade ?? null),
@@ -123,7 +141,8 @@ export default function NovoNegocioInformacoesPage() {
         dataNegocio: values.data_negocio,
         porcentagemComissao: values.porcentagem_comissao ?? null,
         observacao: values.observacao ?? "",
-        negocioId: negocio.negocio_id,
+        // Id temporário (negativo) enquanto o negócio estiver só no aparelho.
+        negocioId: envio.sincronizado ? envio.resultado.negocio_id : idTemporario(envio.registro),
       });
       // "cabeca" pula todo o cadastro individual de gado.
       if (data.modalidade === "cabeca") {

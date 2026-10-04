@@ -1,15 +1,16 @@
 import { apiFetch } from "@/lib/api-client";
-import type { Comprador, CreateCompradorInput, UpdateCompradorInput } from "@/lib/api/types";
+import { comCache } from "@/lib/offline/cache";
+import type { Comprador, CreateCompradorInput, OrigemOffline, UpdateCompradorInput } from "@/lib/api/types";
 
 export function fetchCompradores() {
-  return apiFetch<Comprador[]>("/compradores");
+  return comCache("compradores", () => apiFetch<Comprador[]>("/compradores"));
 }
 
 export function fetchComprador(id: number | string) {
   return apiFetch<Comprador>(`/compradores/${id}`);
 }
 
-export function createComprador(input: CreateCompradorInput) {
+export function createComprador(input: CreateCompradorInput & OrigemOffline) {
   return apiFetch<Comprador>("/compradores", { method: "POST", body: JSON.stringify(input) });
 }
 
