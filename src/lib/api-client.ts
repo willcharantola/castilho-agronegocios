@@ -7,12 +7,18 @@ const USUARIO_KEY = "usuario";
 
 export class ApiError extends Error {
   status: number;
+  /** Código de erro da API, quando houver (ex.: PRIMEIRO_ACESSO_PENDENTE). */
+  code?: string;
 
-  constructor(status: number, message: string) {
+  constructor(status: number, message: string, code?: string) {
     super(message);
     this.status = status;
+    this.code = code;
   }
 }
+
+/** A API bloqueia tudo (403) até o usuário trocar a senha no primeiro acesso. */
+export const PRIMEIRO_ACESSO_PENDENTE = "PRIMEIRO_ACESSO_PENDENTE";
 
 export function getToken(): string | null {
   return typeof window !== "undefined" ? localStorage.getItem(TOKEN_KEY) : null;
@@ -32,6 +38,13 @@ export function getUsuario(): Usuario | null {
 export function setSession(accessToken: string, usuario: Usuario) {
   localStorage.setItem(TOKEN_KEY, accessToken);
   localStorage.setItem(USUARIO_KEY, JSON.stringify(usuario));
+}
+
+/** Atualiza o usuário guardado (ex.: após editar o próprio cadastro ou trocar a senha). */
+export function updateUsuarioLocal(patch: Partial<Usuario>) {
+  const atual = getUsuario();
+  if (!atual) return;
+  localStorage.setItem(USUARIO_KEY, JSON.stringify({ ...atual, ...patch }));
 }
 
 export function clearSession() {
@@ -68,7 +81,16 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
   if (!res.ok) {
     const body = await res.json().catch(() => null);
     const message = Array.isArray(body?.message) ? body.message.join(" ") : body?.message;
-    throw new ApiError(res.status, message ?? `Erro ${res.status}`);
+    if (res.status === 403 && body?.code === PRIMEIRO_ACESSO_PENDENTE) {
+      // Sessão válida, mas a senha do primeiro acesso ainda não foi definida.
+      updateUsuarioLocal({ primeiro_acesso: true });
+      if (typeof window !== "undefined" && window.location.pathname !== "/primeiro-acesso") {
+        // Hard redirect, como no 401 acima: descarta o estado da tela bloqueada.
+        // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+        window.location.href = "/primeiro-acesso";
+      }
+    }
+    throw new ApiError(res.status, message ?? `Erro ${res.status}`, body?.code);
   }
 
   if (res.status === 204) return undefined as T;

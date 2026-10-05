@@ -43,7 +43,8 @@ export default function LoginSenhaPage() {
     try {
       const { access_token, usuario } = await login(data.email, values.senha);
       setSession(access_token, usuario);
-      router.push("/");
+      // Primeiro acesso: precisa definir uma nova senha antes de entrar no sistema.
+      router.push(usuario.primeiro_acesso ? "/primeiro-acesso" : "/");
     } catch (err) {
       setAuthError(err instanceof Error ? err.message : "Não foi possível entrar.");
       setLoading(false);

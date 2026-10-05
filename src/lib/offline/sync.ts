@@ -1,6 +1,6 @@
 "use client";
 
-import { ApiError } from "@/lib/api-client";
+import { ApiError, PRIMEIRO_ACESSO_PENDENTE } from "@/lib/api-client";
 import { createComprador } from "@/lib/api/compradores";
 import { createFazenda } from "@/lib/api/fazendas";
 import { createGado } from "@/lib/api/gados";
@@ -77,9 +77,12 @@ async function enviarRegistro(registro: RegistroSalvo): Promise<ResultadoRegistr
     });
     return "enviado";
   } catch (err) {
-    // Sem rede ou sessão expirada (apiFetch já redireciona ao login): o registro volta
+    // Sem rede, sessão expirada ou primeiro acesso pendente (apiFetch já redireciona): o registro volta
     // para a fila intacto e a rodada para — tentar o resto agora só falharia igual.
-    if (ehErroDeRede(err) || (err instanceof ApiError && err.status === 401)) {
+    if (
+      ehErroDeRede(err) ||
+      (err instanceof ApiError && (err.status === 401 || err.code === PRIMEIRO_ACESSO_PENDENTE))
+    ) {
       await offlineDb.pendentes.update(registro.id, { status: "pendente" });
       return "parar";
     }
