@@ -13,7 +13,13 @@ export type Usuario = {
   sobrenome: string;
   email: string;
   nivel_acesso: NivelAcesso;
+  /** true → precisa definir uma nova senha antes de usar o sistema (/primeiro-acesso). */
+  primeiro_acesso: boolean;
 };
+
+export type CreateUsuarioInput = Omit<Usuario, "usuario_id" | "empresa_id"> & { senha: string };
+/** `senha` só é enviada quando preenchida (redefine a senha). */
+export type UpdateUsuarioInput = Partial<CreateUsuarioInput>;
 
 export type Empresa = {
   empresa_id: number;
@@ -142,8 +148,8 @@ export type CreateFazendaInput = {
   nome_fazenda: string;
   municipio: string;
   inscricao_estadual: string;
-  /** TODO: upload real (S3) pendente — por ora é uma URL colada manualmente. */
-  marca_url?: string;
+  /** finalUrl de POST /uploads/marca-fazenda; `null` remove a imagem (PATCH). */
+  marca_url?: string | null;
   marca_escrita?: string;
 };
 export type UpdateFazendaInput = Partial<CreateFazendaInput>;

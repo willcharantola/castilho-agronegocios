@@ -1,0 +1,116 @@
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding-bottom: 5rem;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.sectionTitle {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--color-dark);
+}
+
+.newButton {
+  height: 2.5rem;
+  margin-bottom: 0;
+  padding: 0 0.9rem;
+  font-size: 0.85rem;
+}
+
+.hint {
+  font-size: 0.8rem;
+  color: color-mix(in oklch, var(--color-ink) 70%, transparent);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border-radius: 5px;
+  padding: 0.9rem 1rem;
+  text-align: left;
+}
+
+.cardIcon {
+  display: flex;
+  height: 2.5rem;
+  width: 2.5rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 5px;
+  background: var(--color-dark);
+  color: var(--color-white);
+}
+
+.cardInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.cardName {
+  font-weight: 800;
+  color: var(--color-dark);
+}
+
+.cardMeta {
+  overflow: hidden;
+  font-size: 0.8rem;
+  color: color-mix(in oklch, var(--color-ink) 70%, transparent);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.35rem;
+}
+
+.tag {
+  border-radius: 5px;
+  padding: 0.1rem 0.45rem;
+  background: color-mix(in oklch, var(--color-olive) 18%, transparent);
+  color: var(--color-dark);
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.tagAdmin {
+  background: var(--color-dark);
+  color: var(--color-white);
+}
+
+.tagPendente {
+  background: color-mix(in oklch, var(--color-mauve) 35%, transparent);
+}
+
+.state {
+  border-radius: 5px;
+  padding: 2rem 1.25rem;
+  text-align: center;
+  color: var(--color-ink);
+}
+
+.stateError {
+  color: var(--color-danger);
+}
+
+.retryButton {
+  margin-top: 0.75rem;
+}

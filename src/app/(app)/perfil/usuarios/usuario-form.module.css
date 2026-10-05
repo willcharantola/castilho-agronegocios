@@ -1,0 +1,101 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding-bottom: 6rem;
+}
+
+.title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--color-dark);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.fields {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+.help {
+  font-size: 0.75rem;
+  color: color-mix(in oklch, var(--color-ink) 70%, transparent);
+}
+
+.checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  cursor: pointer;
+}
+
+.checkbox input {
+  margin-top: 0.15rem;
+  height: 1.25rem;
+  width: 1.25rem;
+  flex-shrink: 0;
+  accent-color: var(--color-dark);
+}
+
+.checkbox > span {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.checkboxLabel {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--color-dark);
+}
+
+.submitError {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-danger);
+}
+
+.state {
+  border-radius: 5px;
+  padding: 2rem 1.25rem;
+  text-align: center;
+  color: var(--color-ink);
+}
+
+.stateError {
+  color: var(--color-danger);
+}
+
+.deleteButton {
+  width: 100%;
+  color: var(--color-danger);
+}
+
+.dialogText {
+  font-size: 0.9rem;
+  color: var(--color-ink);
+}
+
+.dialogActions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.dangerButton {
+  width: 100%;
+  background: var(--color-danger);
+  color: var(--color-white);
+}

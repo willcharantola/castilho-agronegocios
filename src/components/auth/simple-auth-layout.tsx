@@ -8,14 +8,15 @@ export function SimpleAuthLayout({
   subtitle,
   children,
 }: {
-  backHref: string;
+  /** Omitido em telas sem volta (ex.: /primeiro-acesso). */
+  backHref?: string;
   title: React.ReactNode;
   subtitle?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
     <MobileScreen className={styles.screen}>
-      <BackLink href={backHref} />
+      {backHref ? <BackLink href={backHref} /> : null}
       <div className={styles.header}>
         <h1 className={styles.title}>{title}</h1>
         {subtitle ? <p className={styles.subtitle}>{subtitle}</p> : null}

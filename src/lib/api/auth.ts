@@ -1,4 +1,5 @@
-import type { LoginResponse } from "@/lib/api/types";
+import { apiFetch } from "@/lib/api-client";
+import type { LoginResponse, Usuario } from "@/lib/api/types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL!;
 
@@ -22,4 +23,16 @@ export async function login(email: string, senha: string): Promise<LoginResponse
   }
 
   return res.json() as Promise<LoginResponse>;
+}
+
+/** Estado atual do usuário logado (permitido mesmo com o primeiro acesso pendente). */
+export function fetchMe() {
+  return apiFetch<Usuario>("/auth/me");
+}
+
+export function definirSenhaPrimeiroAcesso(novaSenha: string) {
+  return apiFetch<Usuario>("/auth/primeiro-acesso/senha", {
+    method: "PATCH",
+    body: JSON.stringify({ nova_senha: novaSenha }),
+  });
 }

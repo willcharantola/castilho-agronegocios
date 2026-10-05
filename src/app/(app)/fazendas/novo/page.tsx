@@ -2,11 +2,12 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { FileText, Image, MapPin, Type, Warehouse } from "lucide-react";
-import { useForm } from "react-hook-form";
+import { FileText, MapPin, Type, Warehouse } from "lucide-react";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { BackLink } from "@/components/back-link";
+import { AvatarUpload } from "@/components/form/avatar-upload";
 import { IconField } from "@/components/form/icon-field";
 import { TintedInput } from "@/components/form/tinted-input";
 import { Button } from "@/components/ui/button";
@@ -20,8 +21,8 @@ const schema = z.object({
   nome_fazenda: z.string().min(2, "Informe o nome da fazenda.").max(50),
   municipio: z.string().min(2, "Informe o município.").max(20),
   inscricao_estadual: z.string().min(1, "Informe a inscrição estadual.").max(12),
-  // TODO: upload real de imagem (S3 + URL pré-assinada) ainda não especificado — por ora é uma URL colada.
-  marca_url: z.string().max(500, "Máximo de 500 caracteres.").optional(),
+  // URL pública no S3, preenchida pelo AvatarUpload (opcional; null = sem imagem).
+  marca_url: z.string().nullable().optional(),
   marca_escrita: z.string().max(10, "Máximo de 10 caracteres.").optional(),
 });
 type FormValues = z.infer<typeof schema>;
@@ -29,9 +30,11 @@ type FormValues = z.infer<typeof schema>;
 export default function NovaFazendaPage() {
   const router = useRouter();
   const [submitError, setSubmitError] = React.useState<string | null>(null);
+  const [enviandoMarca, setEnviandoMarca] = React.useState(false);
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({ resolver: zodResolver(schema) });
 
@@ -43,7 +46,7 @@ export default function NovaFazendaPage() {
         "fazenda",
         {
           ...values,
-          marca_url: values.marca_url || undefined,
+          marca_url: values.marca_url ?? undefined,
           marca_escrita: values.marca_escrita || undefined,
         },
         (payload, uuid) => createFazenda({ ...(payload as typeof values), uuid_origem: uuid })
@@ -63,6 +66,20 @@ export default function NovaFazendaPage() {
         <div className={styles.fields}>
           {submitError ? <p className={styles.submitError}>{submitError}</p> : null}
 
+          <Controller
+            control={control}
+            name="marca_url"
+            render={({ field }) => (
+              <AvatarUpload
+                id="marca_url"
+                value={field.value ?? null}
+                onChange={field.onChange}
+                onUploadingChange={setEnviandoMarca}
+                disabled={isSubmitting}
+              />
+            )}
+          />
+
           <IconField icon={Warehouse} label="Nome Fazenda" htmlFor="nome_fazenda" error={errors.nome_fazenda?.message}>
             <TintedInput id="nome_fazenda" tint="pink" placeholder="Ex: Fazenda Santa Maria" autoFocus {...register("nome_fazenda")} />
           </IconField>
@@ -75,17 +92,14 @@ export default function NovaFazendaPage() {
             <TintedInput id="inscricao_estadual" tint="pink" placeholder="Ex: 234567891" {...register("inscricao_estadual")} />
           </IconField>
 
-          <IconField icon={Image} label="Marca (URL da imagem)" htmlFor="marca_url" error={errors.marca_url?.message}>
-            <TintedInput id="marca_url" tint="pink" type="url" placeholder="https://..." {...register("marca_url")} />
-          </IconField>
 
           <IconField icon={Type} label="Marca escrita" htmlFor="marca_escrita" error={errors.marca_escrita?.message}>
             <TintedInput id="marca_escrita" tint="pink" maxLength={10} {...register("marca_escrita")} />
           </IconField>
         </div>
 
-        <Button type="submit" variant="brand" size="xl" className="w-full" disabled={isSubmitting}>
-          {isSubmitting ? "Salvando..." : "Salvar"}
+        <Button type="submit" variant="brand" size="xl" className="w-full" disabled={isSubmitting || enviandoMarca}>
+          {isSubmitting ? "Salvando..." : enviandoMarca ? "Enviando imagem..." : "Salvar"}
         </Button>
       </form>
     </div>
