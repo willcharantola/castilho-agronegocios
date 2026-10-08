@@ -110,9 +110,8 @@ export default function CompradoresPage() {
               <div className={styles.cardInfo}>
                 <p className={styles.cardName}>{comprador.nome_empresa}</p>
                 <p className={styles.cardMeta}>CNPJ: {comprador.cnpj}</p>
-                <p className={styles.cardMeta}>
-                  {comprador.municipio} · Contato: {comprador.pessoa_contato}
-                </p>
+                <p className={styles.cardMeta}>Cidade: {comprador.municipio}</p>
+                 <p className={styles.cardMeta}>Contato: {comprador.pessoa_contato}</p>
                 {comprador.pendente ? <PendenteBadge pendente={comprador.pendente} /> : null}
               </div>
             </Link>

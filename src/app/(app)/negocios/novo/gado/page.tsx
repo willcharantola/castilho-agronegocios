@@ -158,8 +158,7 @@ export default function NovoNegocioGadoPage() {
         href={ehIdTemporario(data.negocioId) ? "/negocios" : `/negocios/${data.negocioId}`}
         label={ehIdTemporario(data.negocioId) ? "Negócios" : "Ver negócio"}
       />
-      <h1 className={styles.title}>Cadastrar Novo Negócio</h1>
-      <ProgressSteps current={6} total={6} />
+    
 
       {loadError ? <div className={cn(styles.state, styles.stateError, "glass-panel")}>{loadError}</div> : null}
 

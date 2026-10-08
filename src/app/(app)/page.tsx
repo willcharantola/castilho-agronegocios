@@ -39,10 +39,10 @@ function StatTile({
 
 function NavShortcut({ icon: Icon, label, count, href }: { icon: LucideIcon; label: string; count: number; href: string }) {
   return (
-    <Link href={href} className={cn(styles.shortcut, "glass-panel")}>
+    <Link href={href} className={cn(styles.shortcut, )}>
       <Icon size={20} className={styles.shortcutIcon} />
       <p className={styles.shortcutLabel}>{label}</p>
-      <p className={styles.shortcutCount}>{count}</p>
+     
     </Link>
   );
 }
