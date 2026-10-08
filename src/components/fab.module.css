@@ -8,14 +8,14 @@
   margin-right: auto;
   width: 100%;
   max-width: 28rem;
-  padding-left: 1.5rem;
-  padding-right: 1.5rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
   pointer-events: none;
 }
 
 /* Botão de 3.25rem + 0.75rem de espaço abaixo do FAB principal. */
 .stacked {
-  bottom: calc(11.5rem + env(safe-area-inset-bottom));
+  bottom: calc(9.5rem + env(safe-area-inset-bottom));
 }
 
 .button {
@@ -23,8 +23,8 @@
   position: absolute;
   right: 1.5rem;
   display: flex;
-  height: 3.25rem;
-  width: 3.25rem;
+  height: 4.25rem;
+  width: 4.25rem;
   align-items: center;
   justify-content: center;
   border-radius: 100%;

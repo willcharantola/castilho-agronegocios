@@ -204,15 +204,16 @@ export default function NegociosPage() {
                   {nomesPendentes[negocio.negocio_id]?.compradorNome ??
                     compradoresPorId[negocio.comprador_id] ??
                     `#${negocio.comprador_id}`}{" "}
-                  · {formatDate(negocio.data_negocio)}
+                  
                 </p>
+                <p className={styles.cardMeta}>{formatDate(negocio.data_negocio)}</p>
 
                  <p className={styles.cardMeta}>
                   Comissão: {negocio.comissao !== null ? formatCurrency(negocio.comissao) : "—"}
-                  {negocio.porcentagem_comissao !== null ? ` (${formatPercent(negocio.porcentagem_comissao)})` : null}
+                  
                 </p>
 
-                <p className={styles.cardHeads}>Cabeças negociadas: {negocio.qtd_animais ?? "—"}</p>
+                <p className={styles.cardMeta}>Cabeças negociadas: {negocio.qtd_animais ?? "—"}</p>
                 {negocio.pendente ? <PendenteBadge pendente={negocio.pendente} /> : null}
               </div>
               <div className={styles.cardAmount}>

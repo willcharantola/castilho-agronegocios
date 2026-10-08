@@ -160,14 +160,25 @@ export default function NovoNegocioInformacoesPage() {
   return (
     <div className={cn(styles.page, "pt-safe")}>
       <BackLink href="/negocios/novo/modalidade" />
-      <h1 className={styles.title}>Cadastrar Novo Negócio</h1>
+      
       <ProgressSteps current={5} total={6} />
 
       <div className={cn(styles.fazendaCard, "glass-dark")}>
+
+        <div className={styles.fazendaCabecalho}> 
         <span className={styles.fazendaIcon}>
           <Warehouse size={18} />
         </span>
+        <div> 
         <p className={styles.fazendaNome}>{data.fazendaNome}</p>
+         <p >Vendedor: {data.vendedorNome}</p>
+         <p >Comprador: {data.compradorNome}</p>
+         <p >Modalidade: {data.modalidade}</p>
+
+        </div>
+        </div>
+        
+        
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className={styles.form}>
@@ -175,9 +186,7 @@ export default function NovoNegocioInformacoesPage() {
           {submitError ? <p className={styles.submitError}>{submitError}</p> : null}
 
         
-          <Field label="Comprador" htmlFor="comprador">
-            <TintedInput id="comprador" tint="none" value={data.compradorNome} disabled readOnly />
-          </Field>
+     
 
           <div className={styles.row}>
             <Field label="Tipo de Gado" htmlFor="tipo_gado" error={errors.tipo_gado?.message}>
@@ -200,10 +209,30 @@ export default function NovoNegocioInformacoesPage() {
               />
             </Field>
 
-            {/* Escolhida no passo anterior — só exibida aqui. */}
-            <Field label="Modalidade" htmlFor="modalidade">
-              <TintedInput id="modalidade" tint="none" value={MODALIDADE_LABELS[data.modalidade]} disabled readOnly />
-            </Field>
+            <Field label="Tipo de Lote" htmlFor="tipo_lote" error={errors.tipo_lote?.message}>
+            <Controller
+              control={control}
+              name="tipo_lote"
+              render={({ field }) => (
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger id="tipo_lote" className={cn(fieldBox.box, fieldBox.pink)}>
+                    <SelectValue>
+                      {(value: TipoLote | null) => (value ? TIPO_LOTE_LABELS[value] : "Selecione")}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(Object.keys(TIPO_LOTE_LABELS) as Array<keyof typeof TIPO_LOTE_LABELS>).map((key) => (
+                      <SelectItem key={key} value={key}>
+                        {TIPO_LOTE_LABELS[key]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
+          </Field>
+
+           
           </div>
 
           {data.modalidade === "cabeca" ? null : (
@@ -229,30 +258,9 @@ export default function NovoNegocioInformacoesPage() {
             </Field>
           )}
 
-          <Field label="Tipo de Lote" htmlFor="tipo_lote" error={errors.tipo_lote?.message}>
-            <Controller
-              control={control}
-              name="tipo_lote"
-              render={({ field }) => (
-                <Select value={field.value} onValueChange={field.onChange}>
-                  <SelectTrigger id="tipo_lote" className={cn(fieldBox.box, fieldBox.pink)}>
-                    <SelectValue>
-                      {(value: TipoLote | null) => (value ? TIPO_LOTE_LABELS[value] : "Selecione")}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(Object.keys(TIPO_LOTE_LABELS) as Array<keyof typeof TIPO_LOTE_LABELS>).map((key) => (
-                      <SelectItem key={key} value={key}>
-                        {TIPO_LOTE_LABELS[key]}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            />
-          </Field>
+          
 
-          <div className={styles.row}>
+        
             <Field label="Data do Negócio" htmlFor="data_negocio" error={errors.data_negocio?.message}>
               <TintedInput id="data_negocio" tint="pink" type="date" {...register("data_negocio")} />
             </Field>
@@ -278,7 +286,7 @@ export default function NovoNegocioInformacoesPage() {
                 )}
               />
             </Field>
-          </div>
+         
 
           <Field label="Observação (opcional)" htmlFor="observacao" error={errors.observacao?.message}>
             <TintedInput id="observacao" tint="pink" {...register("observacao")} />

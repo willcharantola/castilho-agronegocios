@@ -1,7 +1,7 @@
 /* Castilho Agronegócios — design tokens (plain CSS, no framework) */
 :root {
-  --color-cream: #fefce5;
-  --color-cream-soft: #fbfaf0;
+  --color-cream: #ffff;
+  --color-cream-soft: #fff;
   --color-dark: #2b420e;
   --color-dark-2: #3a5c28;
   --color-olive: #788221;

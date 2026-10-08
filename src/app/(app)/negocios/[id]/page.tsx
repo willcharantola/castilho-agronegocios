@@ -8,7 +8,7 @@ import { BackLink } from "@/components/back-link";
 import { Button } from "@/components/ui/button";
 import { Fab } from "@/components/fab";
 import { ComissaoForm } from "@/components/comissao-form";
-import { formatCurrency, formatNumber, formatGenero, formatHora, formatDate } from "@/lib/format";
+import { formatCurrency, formatNumber, formatGenero, formatHora, formatDate} from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { fetchNegocio } from "@/lib/api/negocios";
 import { fetchFazendas } from "@/lib/api/fazendas";
@@ -169,7 +169,12 @@ export default function NegocioDetailPage() {
              
             </div>
 
-            <div className={styles.summaryFooter}>
+           
+          </div>
+
+           <div className={cn(styles.summary, "glass-dark")}>
+
+             <div className={styles.summaryFooter}>
               <span>
                 Cabeças Negociadas: <b>{negocio.qtd_animais ?? negocio.gados.length}</b>
               </span>
@@ -182,9 +187,29 @@ export default function NegocioDetailPage() {
               </span>
             </div>
 
+           
+
+
             <div className={styles.summaryFooter}>
               <span>
                 Comissão: <b>{negocio.comissao !== null ? formatCurrency(negocio.comissao) : "—"}</b>
+              </span>
+            </div>
+
+
+           </div>
+
+          <div className={cn(styles.summary, "glass-dark")}>
+
+             <div className={styles.summaryFooter}>
+              <span>
+                Cabeça mais leve: <b>{negocio.mais_leve}</b>
+              </span>
+            </div>
+
+             <div className={styles.summaryFooter}>
+              <span>
+                Cabeça mais pesada: <b>{negocio.mais_pesado}</b>
               </span>
             </div>
           </div>
@@ -198,9 +223,6 @@ export default function NegocioDetailPage() {
             }
           />
 
-          {porCabeca && negocio.gados.length === 0 ? null : (
-            <p className={styles.sectionTitle}>Cabeças Cadastradas</p>
-          )}
 
           {porCabeca && negocio.gados.length === 0 ? null : negocio.gados.length === 0 ? (
             <div className={cn(styles.state, "glass-panel")}>Nenhum gado cadastrado neste negócio.</div>
@@ -218,7 +240,8 @@ export default function NegocioDetailPage() {
                       <p className={styles.gadoMeta}> Gênero: {formatGenero(gado.genero)}  </p>
                        <p className={styles.gadoMeta}> Rend.: {formatNumber(gado.rendimento_carcaca, 0)}%</p>
                        <p className={styles.gadoMeta}>Peso p/ cálculo: {formatNumber(gado.peso_calculo)}</p>
-                       <p className={styles.gadoMeta}>   {gado.horario_pesagem ? ` · Pesado às ${formatHora(gado.horario_pesagem)}` : null} </p>
+                       <p className={styles.gadoMeta}>   {gado.horario_pesagem ? ` Pesado às ${formatHora(gado.horario_pesagem)}` : null} </p>
+                       <p className={styles.gadoMeta}>Peso total: {formatNumber(gado.peso_total)} </p>
                         <p className={styles.gadoMeta}>Peso da @: {formatNumber(gado.peso_arroba)} </p>
                         {gado.pendente ? <PendenteBadge pendente={gado.pendente} /> : null}
                     </div>
@@ -226,7 +249,7 @@ export default function NegocioDetailPage() {
                       <p className={styles.gadoAmountValue}>
                         {gado.valor_total !== null ? formatCurrency(gado.valor_total) : "—"}
                       </p>
-                      <p>Valor da cabeça</p>
+                      <p className={styles.gadoMeta}>Valor da cabeça</p>  
                     </div>
                   </>
                 );

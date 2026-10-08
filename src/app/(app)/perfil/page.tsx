@@ -21,15 +21,21 @@ export default function PerfilPage() {
       <PlaceholderScreen
         icon={User}
         title={usuario ? `${usuario.nome} ${usuario.sobrenome}` : "Perfil do usuário"}
-        description="Em breve você poderá alterar seus dados, e-mail e senha por aqui."
-        action={
-          <Button variant="brand-secondary" onClick={handleLogout}>
-            Sair
-          </Button>
-        }
+        description=""
+      
+        
+        
       />
+
+      
+
       {/* Só para Admin (visual): a API é quem impede o acesso dos demais. */}
       {usuario?.nivel_acesso === "Admin" ? <UsuariosSection /> : null}
+
+        <Button variant="brand-secondary" onClick={handleLogout}>
+            Sair
+          </Button>
+          
     </>
   );
 }

@@ -76,8 +76,8 @@
 }
 
 .cardMeta {
-  font-size: 0.8rem;
-  color: color-mix(in oklch, var(--color-ink) 70%, transparent);
+  font-size: 0.9rem;
+  color: #000;
 }
 
 .state {
