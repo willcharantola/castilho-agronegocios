@@ -49,6 +49,16 @@
   gap: 1.5rem;
 }
 
+.form input[type="date"] {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
 .fields {
   display: flex;
   flex-direction: column;

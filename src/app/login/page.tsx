@@ -41,9 +41,7 @@ export default async function LoginPage(props: PageProps<"/login">) {
           >
             Fazer Login
           </Button>
-          <Link href="/cadastro" className={styles.registerLink}>
-            Cadastrar nova conta
-          </Link>
+          
         </div>
       </div>
     </MobileScreen>
