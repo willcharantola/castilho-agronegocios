@@ -4,9 +4,14 @@
   gap: 1.25rem;
 }
 
+/* minmax(0, 1fr) em vez de 1fr: com 1fr a coluna não encolhe abaixo da largura mínima
+   do conteúdo, e no Safari um <input> (ex.: "Denominação", "Ano do Carimbo") tem largura
+   mínima de ~20 caracteres. Em iPhones estreitos isso alargava a linha, a coluna inteira
+   da tela crescia além da viewport e os campos de largura 100% (como a Data de Pesagem)
+   passavam da margem direita. */
 .row {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1rem;
 }
 

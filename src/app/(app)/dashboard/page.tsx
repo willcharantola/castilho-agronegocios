@@ -106,7 +106,7 @@ export default function DashboardPage() {
     <div className={cn(styles.page, "pt-safe")}>
       <h1 className={styles.title}>Dashboard</h1>
 
-      <div className={styles.filterRow}>
+      
         <div className={styles.filterField}>
           <label htmlFor="dataInicio" className={styles.filterLabel}>
             De
@@ -137,7 +137,7 @@ export default function DashboardPage() {
         <button type="button" className={styles.filterReset} onClick={resetarPeriodo}>
           Este mês
         </button>
-      </div>
+      
 
       {error ? <p className={styles.error}>{error}</p> : null}
 
@@ -166,13 +166,7 @@ export default function DashboardPage() {
         </p>
       ))}
 
-      <Fab
-        icon={FileText}
-        label="Gerar relatório"
-        onClick={handleGerarRelatorio}
-        disabled={gerandoRelatorio || !negocios || negocios.length === 0}
-        disabledTitle={gerandoRelatorio ? "Gerando relatório..." : "Nenhum negócio no período"}
-      />
+    
     </div>
   );
 }
