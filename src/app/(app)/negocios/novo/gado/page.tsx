@@ -153,7 +153,7 @@ export default function NovoNegocioGadoPage() {
   if (!data.negocioId) return null;
 
   return (
-    <div className={cn(styles.page)}>
+    <div className={cn(styles.page, "pt-safe")}>
   <BackLink href="/negocios/novo/informacoes" label="Informações" />
     
 

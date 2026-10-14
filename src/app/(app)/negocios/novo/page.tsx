@@ -52,7 +52,7 @@ export default function NovoNegocioFazendaPage() {
   );
 
   return (
-    <div className={cn(styles.page)}>
+    <div className={cn(styles.page, "pt-safe")}>
       <BackLink href="/" />
       <h1 className={styles.title}>Cadastrar Novo Negócio</h1>
       <ProgressSteps current={1} total={6} />

@@ -35,7 +35,7 @@ export default function NovoNegocioModalidadePage() {
   }
 
   return (
-    <div className={cn(styles.page)}>
+    <div className={cn(styles.page, "pt-safe")}>
       <BackLink href="/negocios/novo/comprador" />
       <h1 className={styles.title}>Cadastrar Novo Negócio</h1>
       <ProgressSteps current={4} total={6} />
