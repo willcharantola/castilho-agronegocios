@@ -97,3 +97,16 @@
 .stateError {
   color: var(--color-danger);
 }
+
+/* Telas maiores: lista (um item por linha) ocupando 90% da largura disponível, centralizada. */
+@media (min-width: 768px) and (min-height: 500px) {
+  .page {
+    width: 90%;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .searchWrap {
+    max-width: var(--form-max-width);
+  }
+}

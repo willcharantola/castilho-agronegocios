@@ -96,3 +96,16 @@
   font-size: 0.85rem;
   text-align: center;
 }
+
+/* Telas maiores: lista (um item por linha) ocupando 90% da largura disponível, centralizada. */
+@media (min-width: 768px) and (min-height: 500px) {
+  .page {
+    width: 90%;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .filterRow {
+    max-width: var(--form-max-width);
+  }
+}

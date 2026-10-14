@@ -8,3 +8,16 @@
   flex: 1;
   padding-bottom: 1.5rem;
 }
+
+/* Telas maiores: abre espaço para a barra lateral e alarga a coluna (antes 28rem, do MobileScreen). */
+@media (min-width: 768px) and (min-height: 500px) {
+  .shell {
+    padding-left: var(--sidebar-width);
+  }
+
+  .shell .content {
+    max-width: var(--content-max-width);
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}

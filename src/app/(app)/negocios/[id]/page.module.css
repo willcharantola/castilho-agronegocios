@@ -195,3 +195,27 @@
   font-size: 0.85rem;
   text-align: center;
 }
+
+/* Telas maiores: cartões e gados em lista (um por linha) ocupando 90% da largura disponível,
+   centralizada; os dados de cada gado se distribuem em colunas dentro da linha. */
+@media (min-width: 768px) and (min-height: 500px) {
+  .page {
+    width: 90%;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .gadoRow {
+    padding: 1rem;
+  }
+
+  .gadoInfo {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+    gap: 0.15rem 1rem;
+  }
+
+  .gadoName {
+    grid-column: 1 / -1;
+  }
+}
