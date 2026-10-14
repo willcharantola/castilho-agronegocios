@@ -3,6 +3,11 @@ import { normalizeGado } from "@/lib/api/gados";
 import { comCache } from "@/lib/offline/cache";
 import type { CreateNegocioInput, Negocio, NegocioDetail, OrigemOffline, UpdateNegocioInput } from "@/lib/api/types";
 
+/** Decimal opcional da API → number; ausente (ex.: listagem, cache antigo) → null. */
+function decimalOuNull(valor: number | string | null | undefined) {
+  return valor === null || valor === undefined ? null : Number(valor);
+}
+
 /** Ver comentário em `gados.ts#normalizeGado` — mesma questão de Decimal-como-string. */
 function normalizeNegocio(raw: Negocio): Negocio {
   return {
@@ -14,6 +19,13 @@ function normalizeNegocio(raw: Negocio): Negocio {
     porcentagem_comissao: raw.porcentagem_comissao === null ? null : Number(raw.porcentagem_comissao),
     comissao: raw.comissao === null ? null : Number(raw.comissao),
     valor_unidade: Number(raw.valor_unidade),
+    peso_total_quilos: decimalOuNull(raw.peso_total_quilos),
+    peso_total_arroba: decimalOuNull(raw.peso_total_arroba),
+    rendimento_medio: decimalOuNull(raw.rendimento_medio),
+    peso_medio_arroba: decimalOuNull(raw.peso_medio_arroba),
+    peso_medio_quilos: decimalOuNull(raw.peso_medio_quilos),
+    funrural: decimalOuNull(raw.funrural),
+    senar: decimalOuNull(raw.senar),
   };
 }
 

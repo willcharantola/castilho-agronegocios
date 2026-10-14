@@ -40,3 +40,19 @@
   font-weight: 600;
   color: var(--color-danger);
 }
+
+
+.form input[type="date"] {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.form input[type="date"]::-webkit-date-and-time-value {
+  text-align: center;
+  min-height: 1.2em;
+}

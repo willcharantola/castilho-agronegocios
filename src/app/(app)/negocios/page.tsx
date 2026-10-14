@@ -7,10 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Fab } from "@/components/fab";
 import { formatCurrency, formatDate, formatPercent } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { fetchNegocios } from "@/lib/api/negocios";
+import { fetchNegocio, fetchNegocios } from "@/lib/api/negocios";
 import { fetchFazendas } from "@/lib/api/fazendas";
 import { fetchCompradores } from "@/lib/api/compradores";
-import { gerarRelatorioNegocios } from "@/lib/relatorio";
+import { gerarRomaneios } from "@/lib/relatorio-romaneio";
 import type { Comprador, Fazenda, Negocio } from "@/lib/api/types";
 import { ApiError } from "@/lib/api-client";
 import { PendenteBadge } from "@/components/offline/pendente-badge";
@@ -44,6 +44,7 @@ export default function NegociosPage() {
 
   const [gerandoRelatorio, setGerandoRelatorio] = React.useState(false);
   const [relatorioError, setRelatorioError] = React.useState<string | null>(null);
+  const [relatorioAvisos, setRelatorioAvisos] = React.useState<string[]>([]);
 
   const fazendasPorId = React.useMemo(
     () => Object.fromEntries(fazendas.map((f) => [f.fazenda_id, f.nome_fazenda])),
@@ -103,9 +104,16 @@ export default function NegociosPage() {
     const sincronizados = filtrados?.filter((n) => !n.pendente);
     if (!sincronizados || sincronizados.length === 0) return;
     setRelatorioError(null);
+    setRelatorioAvisos([]);
     setGerandoRelatorio(true);
     try {
-      await gerarRelatorioNegocios(sincronizados, fazendasPorId);
+      // O romaneio precisa de gados, vendedor e dados bancários, que só vêm no detalhe.
+      const detalhes = await Promise.all(sincronizados.map((n) => fetchNegocio(n.negocio_id)));
+      const { avisos } = await gerarRomaneios(
+        detalhes,
+        Object.fromEntries(fazendas.map((f) => [f.fazenda_id, f]))
+      );
+      setRelatorioAvisos(avisos);
     } catch (err) {
       setRelatorioError(
         err instanceof ApiError || err instanceof Error ? err.message : "Erro ao gerar relatório."
@@ -228,6 +236,11 @@ export default function NegociosPage() {
       ) : null}
 
       {relatorioError ? <p className={styles.relatorioError}>{relatorioError}</p> : null}
+      {relatorioAvisos.map((aviso) => (
+        <p key={aviso} className={styles.relatorioAviso}>
+          {aviso}
+        </p>
+      ))}
 
       <Fab
         icon={FileText}

@@ -30,3 +30,16 @@ export function formatGenero(genero: string) {
 export function formatHora(iso: string | null | undefined) {
   return iso ? iso.slice(11, 16) : "";
 }
+
+/** Formata uma data local como "YYYY-MM-DD", sem passar por UTC (evita o
+ * clássico off-by-one de `toISOString()` perto da virada do dia). */
+export function toDateInputValue(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+export function startOfMonth(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth(), 1);
+}

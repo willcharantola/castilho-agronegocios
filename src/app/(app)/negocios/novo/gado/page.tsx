@@ -211,7 +211,7 @@ export default function NovoNegocioGadoPage() {
         <div className={styles.sessionList}>
           {negocio.gados.length > 0 ? (
             <>
-              <p className={styles.sessionTitle}>Gado cadastrado neste negócio (toque para editar)</p>
+              <p className={styles.sessionTitle}>Cabeças cadastradas</p>
               <div className={styles.sessionItems}>
                 {negocio.gados.map((gado) => (
                   <button

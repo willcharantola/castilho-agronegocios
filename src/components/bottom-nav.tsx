@@ -2,14 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { User, Home, Settings } from "lucide-react";
+import { User, Home, BarChart3 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import styles from "./bottom-nav.module.css";
 
 const TABS = [
   { href: "/perfil", icon: User, label: "Perfil" },
   { href: "/", icon: Home, label: "Início" },
-  { href: "/configuracoes", icon: Settings, label: "Configurações" },
+  { href: "/dashboard", icon: BarChart3, label: "Dashboard" },
 ];
 
 export function BottomNav() {
@@ -29,6 +29,7 @@ export function BottomNav() {
               className={cn(styles.tab, active && styles.tabActive)}
             >
               <Icon size={20} strokeWidth={2.25} />
+              <span className={styles.label}>{label}</span>
             </Link>
           );
         })}

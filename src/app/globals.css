@@ -27,6 +27,8 @@
 
   --shadow-color: rgb(43 66 14 / 25%);
   --font-heading: var(--font-sans);
+
+ 
 }
 
 *,
@@ -161,4 +163,10 @@ ol {
 
 .pt-safe {
   padding-top: max(env(safe-area-inset-top), 1rem);
+}
+
+@media (min-width: 768px) and (min-height: 500px) {
+  body {
+    padding-left: var(--sidebar-width);
+  }
 }

@@ -143,3 +143,9 @@
   font-size: 0.85rem;
   text-align: center;
 }
+
+.relatorioAviso {
+  color: var(--color-ink);
+  font-size: 0.85rem;
+  text-align: center;
+}
