@@ -7,7 +7,7 @@ import { Building2, Handshake, TrendingUp, Users, DollarSign, Warehouse, type Lu
 import Logo from "@/assets/logo-castilho.svg";
 import { Button } from "@/components/ui/button";
 import { TintedInput } from "@/components/form/tinted-input";
-import { formatCurrency } from "@/lib/format";
+import { formatCurrency, startOfMonth, toDateInputValue } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { fetchNegocios } from "@/lib/api/negocios";
 import { fetchFazendas } from "@/lib/api/fazendas";
@@ -45,19 +45,6 @@ function NavShortcut({ icon: Icon, label, count, href }: { icon: LucideIcon; lab
      
     </Link>
   );
-}
-
-/** Formata uma data local como "YYYY-MM-DD", sem passar por UTC (evita o
- * clássico off-by-one de `toISOString()` perto da virada do dia). */
-function toDateInputValue(date: Date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
-function startOfMonth(date: Date) {
-  return new Date(date.getFullYear(), date.getMonth(), 1);
 }
 
 export default function HomePage() {

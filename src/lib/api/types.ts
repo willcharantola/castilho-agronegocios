@@ -102,6 +102,21 @@ export type Negocio = {
   qtd_animais: number | null;
   mais_pesado: number | null;
   mais_leve: number | null;
+  // Campos do romaneio, calculados e gravados pela API (só vêm em GET /negocios/:id;
+  // na listagem e em negócios ainda só no aparelho ficam null). Pesos/rendimento são
+  // null sem gados (modalidade "cabeca"); funrural e senar, null sem valor_total.
+  /** Soma de `gado.peso_total`. */
+  peso_total_quilos: number | null;
+  /** Soma de `gado.peso_arroba`. */
+  peso_total_arroba: number | null;
+  /** Média simples de `gado.rendimento_carcaca` (0 a 100) — use `formatPercent`. */
+  rendimento_medio: number | null;
+  peso_medio_arroba: number | null;
+  peso_medio_quilos: number | null;
+  /** R$ — valor_total × 1,5%. */
+  funrural: number | null;
+  /** R$ — valor_total × 0,2%. */
+  senar: number | null;
 };
 
 export type Gado = {

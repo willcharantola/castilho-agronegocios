@@ -91,8 +91,12 @@ export default function NovoNegocioFazendaPage() {
               onClick={() => selecionar(fazenda)}
               className={cn(styles.card, "glass-panel")}
             >
-              <span className={styles.cardIcon}>
-                <Warehouse size={18} />
+                 <span className={styles.cardIcon}>
+                  {fazenda.marca_url ? (
+                  <img src={fazenda.marca_url} alt={fazenda.nome_fazenda} className={styles.cardImage}/>
+                  ) : (
+                  <Warehouse size={18} />
+                  )}
               </span>
               <div className={styles.cardInfo}>
                 <p className={styles.cardName}>{fazenda.nome_fazenda}</p>

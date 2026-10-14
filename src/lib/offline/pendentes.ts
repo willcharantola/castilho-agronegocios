@@ -109,6 +109,14 @@ export function negocioDePendente(r: RegistroSalvo): ComPendencia<Negocio> {
     qtd_animais: null,
     mais_pesado: null,
     mais_leve: null,
+    // Campos do romaneio: só existem após a sincronização (calculados pela API).
+    peso_total_quilos: null,
+    peso_total_arroba: null,
+    rendimento_medio: null,
+    peso_medio_arroba: null,
+    peso_medio_quilos: null,
+    funrural: null,
+    senar: null,
     pendente: info(r),
   };
 }

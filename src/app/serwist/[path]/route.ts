@@ -28,13 +28,19 @@ const PAGINAS_OFFLINE = [
   "/vendedores/novo/dados",
   "/compradores",
   "/compradores/novo",
+  "/dashboard",
 ];
 
 export const { dynamic, dynamicParams, revalidate, generateStaticParams, GET } = createSerwistRoute({
   additionalPrecacheEntries: PAGINAS_OFFLINE.map((url) => ({ url, revision })),
   swSrc: "src/app/sw.ts",
-  // Modelos .docx dos relatórios (3,3 MB) ficam de fora da instalação: gerar relatório
-  // depende de dados do servidor. São baixados normalmente quando usados online.
-  globIgnores: ["**/node_modules/**/*", "public/templates/**"],
+  // Modelos .docx dos relatórios antigos (3,3 MB) ficam de fora da instalação: gerar
+  // relatório depende de dados do servidor. São baixados normalmente quando usados online.
+  // Os do romaneio (~250 KB) entram, para o romaneio sair também sem conexão.
+  globIgnores: [
+    "**/node_modules/**/*",
+    "public/templates/modelo-relatorio.docx",
+    "public/templates/modelo-relatorio-negocio.docx",
+  ],
   useNativeEsbuild: true,
 });

@@ -8,12 +8,12 @@ import { BackLink } from "@/components/back-link";
 import { Button } from "@/components/ui/button";
 import { Fab } from "@/components/fab";
 import { ComissaoForm } from "@/components/comissao-form";
-import { formatCurrency, formatNumber, formatGenero, formatHora, formatDate} from "@/lib/format";
+import { formatCurrency, formatNumber, formatGenero, formatHora, formatDate, formatPercent } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { fetchNegocio } from "@/lib/api/negocios";
 import { fetchFazendas } from "@/lib/api/fazendas";
-import { gerarRelatorioNegocio } from "@/lib/relatorio";
-import type { NegocioDetail } from "@/lib/api/types";
+import { gerarRomaneios } from "@/lib/relatorio-romaneio";
+import type { Fazenda, NegocioDetail } from "@/lib/api/types";
 import { ApiError } from "@/lib/api-client";
 import { PendenteBadge } from "@/components/offline/pendente-badge";
 import { useVersaoSincronizacao } from "@/lib/offline/fila";
@@ -31,12 +31,14 @@ export default function NegocioDetailPage() {
   );
   // Recarrega quando a fila é sincronizada (os gados pendentes passam a vir da API).
   const versaoSincronizacao = useVersaoSincronizacao();
-  const [fazendaNome, setFazendaNome] = React.useState<string | null>(null);
+  const [fazenda, setFazenda] = React.useState<Fazenda | null>(null);
+  const fazendaNome = fazenda?.nome_fazenda ?? null;
   const [error, setError] = React.useState<string | null>(null);
   const [reloadKey, setReloadKey] = React.useState(0);
 
   const [gerandoRelatorio, setGerandoRelatorio] = React.useState(false);
   const [relatorioError, setRelatorioError] = React.useState<string | null>(null);
+  const [relatorioAvisos, setRelatorioAvisos] = React.useState<string[]>([]);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -50,9 +52,7 @@ export default function NegocioDetailPage() {
       .then(([negocioData, fazendasData]) => {
         if (cancelled) return;
         setNegocio(negocioData);
-        setFazendaNome(
-          fazendasData.find((f) => f.fazenda_id === negocioData.fazenda_id)?.nome_fazenda ?? null
-        );
+        setFazenda(fazendasData.find((f) => f.fazenda_id === negocioData.fazenda_id) ?? null);
       })
       .catch((err: unknown) => {
         if (cancelled) return;
@@ -73,13 +73,41 @@ export default function NegocioDetailPage() {
       ? negocio.gados.reduce((sum, g) => sum + (g.valor_total ?? 0), 0) / negocio.gados.length
       : 0);
 
+  // Campos do romaneio vêm calculados da API. Negócio ainda só no aparelho (id
+  // negativo): ficam "—" até a sincronização — o cálculo não é replicado aqui.
+  const sincronizado = (negocio?.negocio_id ?? 0) > 0;
+  const romaneio = (valor: number | null | undefined, formatar: (v: number) => string) =>
+    sincronizado && valor !== null && valor !== undefined ? formatar(valor) : "—";
+  const itensRomaneio: { label: string; valor: string }[] = negocio
+    ? [
+        // Pesos e rendimento não se aplicam à modalidade "cabeca" (sem pesagem).
+        ...(porCabeca
+          ? []
+          : [
+              { label: "Peso total (kg)", valor: romaneio(negocio.peso_total_quilos, (v) => formatNumber(v)) },
+              { label: "Peso total (@)", valor: romaneio(negocio.peso_total_arroba, (v) => formatNumber(v)) },
+              { label: "Rendimento médio", valor: romaneio(negocio.rendimento_medio, formatPercent) },
+              { label: "Peso médio (@)", valor: romaneio(negocio.peso_medio_arroba, (v) => formatNumber(v)) },
+              { label: "Peso médio (kg)", valor: romaneio(negocio.peso_medio_quilos, (v) => formatNumber(v)) },
+            ]),
+        { label: "Valor médio por cabeça", valor: romaneio(valorMedio, formatCurrency) },
+        { label: "Funrural (1,5%)", valor: romaneio(negocio.funrural, formatCurrency) },
+        { label: "Senar (0,2%)", valor: romaneio(negocio.senar, formatCurrency) },
+      ]
+    : [];
+
   async function handleGerarRelatorio() {
     if (!negocioServidor) return;
     setRelatorioError(null);
+    setRelatorioAvisos([]);
     setGerandoRelatorio(true);
     try {
       // Só o que já está no servidor: gados pendentes têm valores apenas estimados.
-      await gerarRelatorioNegocio(negocioServidor, fazendaNome ?? `Fazenda #${negocioServidor.fazenda_id}`);
+      const { avisos } = await gerarRomaneios(
+        [negocioServidor],
+        fazenda ? { [fazenda.fazenda_id]: fazenda } : {}
+      );
+      setRelatorioAvisos(avisos);
     } catch (err) {
       setRelatorioError(
         err instanceof ApiError || err instanceof Error ? err.message : "Erro ao gerar relatório."
@@ -181,13 +209,6 @@ export default function NegocioDetailPage() {
              
             </div>
 
-            <div className={styles.summaryFooter}>
-              <span>
-                Valor médio p/ cabeça: <b>{formatCurrency(valorMedio)}</b>
-              </span>
-            </div>
-
-           
 
 
             <div className={styles.summaryFooter}>
@@ -212,6 +233,18 @@ export default function NegocioDetailPage() {
                 Cabeça mais pesada: <b>{negocio.mais_pesado}</b>
               </span>
             </div>
+          </div>
+
+          <div className={cn(styles.summary, "glass-dark")}>
+            <p className={styles.romaneioTitle}>Resumo do romaneio</p>
+            <dl className={styles.romaneioGrid}>
+              {itensRomaneio.map((item) => (
+                <div key={item.label} className={styles.romaneioItem}>
+                  <dt className={styles.romaneioLabel}>{item.label}</dt>
+                  <dd className={styles.romaneioValue}>{item.valor}</dd>
+                </div>
+              ))}
+            </dl>
           </div>
 
           <ComissaoForm
@@ -277,6 +310,11 @@ export default function NegocioDetailPage() {
       ) : null}
 
       {relatorioError ? <p className={styles.relatorioError}>{relatorioError}</p> : null}
+      {relatorioAvisos.map((aviso) => (
+        <p key={aviso} className={styles.relatorioAviso}>
+          {aviso}
+        </p>
+      ))}
 
       <Fab
         icon={FileText}
