@@ -1,7 +1,7 @@
 .page {
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: 1rem;
 }
 
 .logo {
@@ -138,4 +138,55 @@
 .shortcutCount {
   font-size: 0.7rem;
  color: #fff;
+}
+
+
+
+/* Telas maiores: mais respiro; atalhos em uma linha só. */
+@media (min-width: 768px) and (min-height: 500px) {
+  .page {
+    gap: 2.5rem;
+  }
+
+  .logo {
+    height: 6.5rem;
+    width: 6.5rem;
+  }
+
+  .grid {
+    gap: 1rem;
+  }
+
+  .tile {
+    padding: 1.5rem;
+  }
+
+  .tileValue {
+    font-size: 1.75rem;
+  }
+
+  .tileLabel {
+    font-size: 0.85rem;
+  }
+
+  .shortcuts {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+  }
+
+  .shortcut {
+    padding: 1.5rem 0.75rem;
+  }
+
+  .shortcutLabel {
+    font-size: 0.9rem;
+  }
+
+  .actions {
+    align-items: center;
+  }
+
+  .actions > * {
+    max-width: var(--form-max-width);
+  }
 }

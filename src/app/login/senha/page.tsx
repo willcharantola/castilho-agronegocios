@@ -75,9 +75,7 @@ export default function LoginSenhaPage() {
                 autoFocus
                 {...register("senha")}
               />
-              <Link href="/recuperar-senha" className={styles.forgotLink}>
-                Esqueceu sua senha? <span className={styles.forgotHighlight}>Clique aqui.</span>
-              </Link>
+            
             </Field>
           </>
         }

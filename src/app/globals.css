@@ -28,6 +28,12 @@
   --shadow-color: rgb(43 66 14 / 25%);
   --font-heading: var(--font-sans);
 
+  /* Telas maiores: largura da barra lateral (bottom-nav) e da coluna de conteúdo. */
+  --sidebar-width: 14rem;
+  --content-max-width: 72rem;
+  /* Largura confortável para formulários de uma coluna. */
+  --form-max-width: 40rem;
+
  
 }
 
@@ -163,10 +169,4 @@ ol {
 
 .pt-safe {
   padding-top: max(env(safe-area-inset-top), 1rem);
-}
-
-@media (min-width: 768px) and (min-height: 500px) {
-  body {
-    padding-left: var(--sidebar-width);
-  }
 }

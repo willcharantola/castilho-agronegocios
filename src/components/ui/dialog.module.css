@@ -69,3 +69,22 @@
 .close:hover {
   background: color-mix(in oklch, var(--color-dark) 8%, transparent);
 }
+
+/* Telas maiores: modal centralizado em vez de folha presa à borda inferior. */
+@media (min-width: 768px) and (min-height: 500px) {
+  .popup {
+    top: 50%;
+    bottom: auto;
+    max-width: 32rem;
+    max-height: 85dvh;
+    transform: translate(-50%, -50%);
+    border-radius: 5px;
+    padding-bottom: 1.5rem;
+    box-shadow: 0 20px 50px -12px color-mix(in oklch, var(--color-dark) 40%, transparent);
+  }
+
+  .popup[data-starting-style],
+  .popup[data-ending-style] {
+    transform: translate(-50%, calc(-50% + 1rem));
+  }
+}

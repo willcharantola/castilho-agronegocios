@@ -24,7 +24,9 @@ export default function NegociosPage() {
   // (com os nomes de fazenda/comprador guardados no aparelho ao cadastrar).
   const registrosPendentes = usePendentes("negocio");
   const negocios = React.useMemo(
-    () => mesclarPendentes(negociosServidor, registrosPendentes.map(negocioDePendente)),
+    // A fila offline vem na ordem de sincronização (mais antigo primeiro); na tela, o
+    // mais recente fica no topo, como na lista do servidor.
+    () => mesclarPendentes(negociosServidor, registrosPendentes.map(negocioDePendente).reverse()),
     [negociosServidor, registrosPendentes]
   );
   const nomesPendentes = React.useMemo(

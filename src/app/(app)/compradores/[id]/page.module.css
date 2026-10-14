@@ -38,3 +38,13 @@
 .stateError {
   color: var(--color-danger);
 }
+
+/* Telas maiores: formulário em coluna centralizada, sem esticar os campos. */
+@media (min-width: 768px) and (min-height: 500px) {
+  .page {
+    width: 100%;
+    max-width: var(--form-max-width);
+    margin-left: auto;
+    margin-right: auto;
+  }
+}

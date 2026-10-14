@@ -37,3 +37,28 @@
 .button:hover:not(:disabled) {
   background: color-mix(in oklch, var(--color-dark) 90%, white);
 }
+
+/* Telas maiores: alinhado à coluna de conteúdo (à direita da barra lateral) e sem a barra inferior para contornar. */
+@media (min-width: 768px) and (min-height: 500px) {
+  /* width: auto (e não os 100% do celular): com left e right definidos, a faixa vai
+     da barra lateral até a borda direita; acima de max-width, as margens auto a centralizam. */
+  .wrap {
+    left: var(--sidebar-width);
+    width: auto;
+    bottom: 6.5rem;
+    max-width: var(--content-max-width);
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+
+  .stacked {
+    bottom: 1.5rem;
+  }
+
+  /* Alinha à borda direita das listas, que ocupam 90% da coluna (5% de recuo de cada
+     lado). `right` em % é relativo à caixa do .wrap incluindo o padding, então:
+     2rem (padding) + 5% da largura útil (100% - 4rem) = 5% + 1.8rem. */
+  .button {
+    right: calc(5% + 1.8rem);
+  }
+}
