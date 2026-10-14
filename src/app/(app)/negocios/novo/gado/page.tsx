@@ -153,11 +153,8 @@ export default function NovoNegocioGadoPage() {
   if (!data.negocioId) return null;
 
   return (
-    <div className={cn(styles.page, "pt-safe")}>
-      <BackLink
-        href={ehIdTemporario(data.negocioId) ? "/negocios" : `/negocios/${data.negocioId}`}
-        label={ehIdTemporario(data.negocioId) ? "Negócios" : "Ver negócio"}
-      />
+    <div className={cn(styles.page)}>
+  <BackLink href="/negocios/novo/informacoes" label="Informações" />
     
 
       {loadError ? <div className={cn(styles.state, styles.stateError, "glass-panel")}>{loadError}</div> : null}
@@ -169,7 +166,7 @@ export default function NovoNegocioGadoPage() {
               <Warehouse size={18} />
             </span>
             <div>
-              <p className={styles.summaryFarm}>Fazenda {data.fazendaNome}</p>
+              <p className={styles.summaryFarm}> {data.fazendaNome}</p>
               <p className={styles.summarySeller}>Vendedor: {negocio.vendedor.nome_vendedor}</p>
               <p className={styles.summarySeller}>Comprador: {negocio.comprador.nome_empresa}</p>
             </div>

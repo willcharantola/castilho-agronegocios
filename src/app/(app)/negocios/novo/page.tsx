@@ -52,11 +52,10 @@ export default function NovoNegocioFazendaPage() {
   );
 
   return (
-    <div className={cn(styles.page, "pt-safe")}>
+    <div className={cn(styles.page)}>
       <BackLink href="/" />
       <h1 className={styles.title}>Cadastrar Novo Negócio</h1>
       <ProgressSteps current={1} total={6} />
-      <p className={styles.subtitle}>Selecione a fazenda com a qual deseja realizar o negócio</p>
 
       <div className={styles.searchWrap}>
         <Search className={styles.searchIcon} size={18} />
@@ -100,9 +99,8 @@ export default function NovoNegocioFazendaPage() {
               </span>
               <div className={styles.cardInfo}>
                 <p className={styles.cardName}>{fazenda.nome_fazenda}</p>
-                <p className={styles.cardMeta}>
-                  Município: {fazenda.municipio} · I.E.: {fazenda.inscricao_estadual}
-                </p>
+                <p className={styles.cardMeta}>Município: {fazenda.municipio}</p>
+                 <p className={styles.cardMeta}>I.E.: {fazenda.inscricao_estadual}</p>
                 {fazenda.pendente ? <PendenteBadge pendente={fazenda.pendente} /> : null}
               </div>
             </button>
