@@ -35,7 +35,7 @@ export default function NovoNegocioModalidadePage() {
   }
 
   return (
-    <div className={cn(styles.page, "pt-safe")}>
+    <div className={cn(styles.page)}>
       <BackLink href="/negocios/novo/comprador" />
       <h1 className={styles.title}>Cadastrar Novo Negócio</h1>
       <ProgressSteps current={4} total={6} />
@@ -65,7 +65,7 @@ export default function NovoNegocioModalidadePage() {
               </span>
               <div className={styles.cardInfo}>
                 <p className={styles.cardName}>{MODALIDADE_LABELS[modalidade]}</p>
-                <p className={styles.cardMeta}>{descricao}</p>
+               
               </div>
               {selecionada ? <Check size={18} className={styles.cardCheck} /> : null}
             </button>

@@ -48,7 +48,7 @@ export default function NovoNegocioCompradorPage() {
   }
 
   return (
-    <div className={cn(styles.page, "pt-safe")}>
+    <div className={cn(styles.page)}>
       <BackLink href="/negocios/novo/vendedor" />
       <h1 className={styles.title}>Cadastrar Novo Negócio</h1>
       <ProgressSteps current={3} total={6} />
@@ -86,9 +86,8 @@ export default function NovoNegocioCompradorPage() {
               </span>
               <div className={styles.cardInfo}>
                 <p className={styles.cardName}>{comprador.nome_empresa}</p>
-                <p className={styles.cardMeta}>CNPJ: {comprador.cnpj}</p>
-                <p className={styles.cardMeta}>
-                  {comprador.municipio} · Contato: {comprador.pessoa_contato}
+                <p className={styles.cardMeta}>  {comprador.municipio}</p>
+                <p className={styles.cardMeta}>Contato: {comprador.pessoa_contato}
                 </p>
                 {comprador.pendente ? <PendenteBadge pendente={comprador.pendente} /> : null}
               </div>

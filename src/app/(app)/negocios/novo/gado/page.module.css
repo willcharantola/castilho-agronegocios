@@ -40,8 +40,8 @@
 }
 
 .summarySeller {
-  font-size: 0.75rem;
-  color: rgb(255 255 255 / 75%);
+  font-size: 0.9rem;
+  color: #fff;
 }
 
 .summaryStats {
@@ -50,7 +50,7 @@
   grid-template-columns: repeat(2, 1fr);
   gap: 0.5rem;
   text-align: center;
-  font-size: 0.75rem;
+  font-size: 0.9rem;
 }
 
 .summaryStatLabel {
@@ -72,7 +72,7 @@
 }
 
 .submitError {
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   font-weight: 600;
   color: var(--color-danger);
 }
@@ -158,13 +158,13 @@
 }
 
 .sessionMeta {
-  font-size: 0.75rem;
+  font-size: 0.9rem;
   color: color-mix(in oklch, var(--color-ink) 70%, transparent);
 }
 
 .sessionAmount {
   text-align: right;
-  font-size: 0.75rem;
+  font-size: 0.9rem;
 }
 
 .sessionAmountValue {
@@ -173,10 +173,11 @@
 }
 
 .finishButton {
-  margin-top: 0.5rem;
+  margin-top: 0.1rem;
   width: 100%;
-  color: var(--color-teal);
-  margin-bottom: 20%;
+  color: #fff;
+  margin-bottom: 40%;
+  background-color: #2B420E;
 }
 
 /* Telas maiores: formulário em coluna centralizada, sem esticar os campos. */
