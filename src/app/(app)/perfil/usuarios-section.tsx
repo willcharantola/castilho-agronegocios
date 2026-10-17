@@ -102,9 +102,6 @@ export function UsuariosSection() {
                   <span className={cn(styles.tag, usuario.nivel_acesso === "Admin" && styles.tagAdmin)}>
                     {NIVEL_LABELS[usuario.nivel_acesso]}
                   </span>
-                  {usuario.primeiro_acesso ? (
-                    <span className={cn(styles.tag, styles.tagPendente)}>Primeiro acesso pendente</span>
-                  ) : null}
                 </div>
               </div>
             </Link>

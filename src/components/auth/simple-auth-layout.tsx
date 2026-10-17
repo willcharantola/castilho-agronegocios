@@ -8,7 +8,7 @@ export function SimpleAuthLayout({
   subtitle,
   children,
 }: {
-  /** Omitido em telas sem volta (ex.: /primeiro-acesso). */
+  /** Omitido em telas sem volta. */
   backHref?: string;
   title: React.ReactNode;
   subtitle?: React.ReactNode;

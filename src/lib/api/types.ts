@@ -13,8 +13,6 @@ export type Usuario = {
   sobrenome: string;
   email: string;
   nivel_acesso: NivelAcesso;
-  /** true → precisa definir uma nova senha antes de usar o sistema (/primeiro-acesso). */
-  primeiro_acesso: boolean;
 };
 
 export type CreateUsuarioInput = Omit<Usuario, "usuario_id" | "empresa_id"> & { senha: string };

@@ -96,10 +96,6 @@
   color: var(--color-white);
 }
 
-.tagPendente {
-  background: color-mix(in oklch, var(--color-mauve) 35%, transparent);
-}
-
 .state {
   border-radius: 5px;
   padding: 2rem 1.25rem;

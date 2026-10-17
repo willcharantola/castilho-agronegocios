@@ -28,7 +28,6 @@ const camposBase = {
     .max(254, "Máximo de 254 caracteres.")
     .pipe(z.email("Informe um e-mail válido.")),
   nivel_acesso: z.enum(["Admin", "Normal"], { error: "Selecione o nível de acesso." }),
-  primeiro_acesso: z.boolean(),
 };
 const senhaValida = z
   .string()
@@ -72,10 +71,8 @@ export function UsuarioForm({
           email: usuario.email,
           nivel_acesso: usuario.nivel_acesso,
           senha: "",
-          primeiro_acesso: usuario.primeiro_acesso,
         }
-      : // "Primeiro acesso" não vem marcado: o administrador decide.
-        { senha: "", primeiro_acesso: false },
+      : { senha: "" },
   });
 
   async function enviar(values: UsuarioFormValues) {
@@ -144,14 +141,6 @@ export function UsuarioForm({
           />
           {edicao ? <p className={styles.help}>Deixe em branco para manter a senha atual.</p> : null}
         </Field>
-
-        <label className={styles.checkbox} htmlFor="primeiro_acesso">
-          <input id="primeiro_acesso" type="checkbox" {...register("primeiro_acesso")} />
-          <span>
-            <span className={styles.checkboxLabel}>Primeiro acesso</span>
-            <span className={styles.help}>Se marcado, o usuário deverá definir uma nova senha no primeiro login.</span>
-          </span>
-        </label>
       </div>
 
       {!online ? <p className={styles.help}>Indisponível sem internet.</p> : null}
