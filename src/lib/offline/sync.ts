@@ -5,13 +5,13 @@ import { createComprador } from "@/lib/api/compradores";
 import { createFazenda } from "@/lib/api/fazendas";
 import { createGado } from "@/lib/api/gados";
 import { concluirNegocio, createNegocio, updateNegocio } from "@/lib/api/negocios";
-import { createVendedor } from "@/lib/api/vendedores";
+import { createPecuarista } from "@/lib/api/pecuaristas";
 import type {
   CreateCompradorInput,
   CreateFazendaInput,
   CreateGadoOfflineInput,
   CreateNegocioInput,
-  CreateVendedorInput,
+  CreatePecuaristaInput,
   UpdateNegocioInput,
 } from "@/lib/api/types";
 import { offlineDb, ORDEM_SINCRONIZACAO, type EntidadeOffline, type RegistroPendente } from "./db";
@@ -24,8 +24,8 @@ type Payload = Record<string, unknown>;
 const ENVIAR: Record<EntidadeOffline, (payload: Payload, uuid: string) => Promise<number | null>> = {
   fazenda: async (p, uuid) =>
     (await createFazenda({ ...(p as CreateFazendaInput), uuid_origem: uuid })).fazenda_id,
-  vendedor: async (p, uuid) =>
-    (await createVendedor({ ...(p as CreateVendedorInput), uuid_origem: uuid })).vendedor_id,
+  pecuarista: async (p, uuid) =>
+    (await createPecuarista({ ...(p as CreatePecuaristaInput), uuid_origem: uuid })).pecuarista_id,
   comprador: async (p, uuid) =>
     (await createComprador({ ...(p as CreateCompradorInput), uuid_origem: uuid })).comprador_id,
   negocio: async (p, uuid) =>

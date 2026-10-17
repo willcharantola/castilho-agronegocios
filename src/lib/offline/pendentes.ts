@@ -6,13 +6,13 @@ import type {
   CreateCompradorInput,
   CreateFazendaInput,
   CreateNegocioInput,
-  CreateVendedorInput,
+  CreatePecuaristaInput,
   Fazenda,
   Gado,
   Genero,
   Negocio,
   NegocioDetail,
-  Vendedor,
+  Pecuarista,
 } from "@/lib/api/types";
 import type { RegistroPendente } from "./db";
 import { idTemporario, usePendentes, type RegistroSalvo } from "./fila";
@@ -39,23 +39,23 @@ export function fazendaDePendente(r: RegistroSalvo): ComPendencia<Fazenda> {
   };
 }
 
-export function vendedorDePendente(r: RegistroSalvo): ComPendencia<Vendedor> {
-  const p = r.payload as CreateVendedorInput;
+export function pecuaristaDePendente(r: RegistroSalvo): ComPendencia<Pecuarista> {
+  const p = r.payload as CreatePecuaristaInput;
   // Fazendas como aparecem na tela (ids reais ou temporários), guardadas ao enfileirar.
   const fazendas = (r.exibicao?.fazendas as { fazenda_id: number; nome_fazenda: string }[] | undefined) ?? [];
-  const vendedorId = idTemporario(r);
+  const pecuaristaId = idTemporario(r);
   return {
-    vendedor_id: vendedorId,
-    nome_vendedor: p.nome_vendedor,
+    pecuarista_id: pecuaristaId,
+    nome_pecuarista: p.nome_pecuarista,
     fisico_juridico: p.fisico_juridico,
     cpf_cnpj: p.cpf_cnpj,
     banco: p.banco,
     agencia: p.agencia,
     conta: p.conta,
     chave_pix: p.chave_pix,
-    vendedor_fazenda: fazendas.map((f) => ({
+    pecuarista_fazenda: fazendas.map((f) => ({
       fazenda_id: f.fazenda_id,
-      vendedor_id: vendedorId,
+      pecuarista_id: pecuaristaId,
       fazenda: { fazenda_id: f.fazenda_id, nome_fazenda: f.nome_fazenda } as Fazenda,
     })),
     pendente: info(r),
@@ -78,10 +78,10 @@ export function compradorDePendente(r: RegistroSalvo): ComPendencia<Comprador> {
 /** Nomes/ids como aparecem na tela, guardados ao enfileirar um negócio. */
 export type ExibicaoNegocio = {
   fazenda_id: number;
-  vendedor_id: number;
+  pecuarista_id: number;
   comprador_id: number;
   fazendaNome: string;
-  vendedorNome: string;
+  pecuaristaNome: string;
   compradorNome: string;
 };
 
@@ -92,7 +92,7 @@ export function negocioDePendente(r: RegistroSalvo): ComPendencia<Negocio> {
     negocio_id: idTemporario(r),
     empresa_id: p.empresa_id,
     fazenda_id: e.fazenda_id,
-    vendedor_id: e.vendedor_id,
+    pecuarista_id: e.pecuarista_id,
     comprador_id: e.comprador_id,
     hora_inicio_pesagem: null,
     hora_fim_pesagem: null,
@@ -162,9 +162,9 @@ export function useFazendasPendentes() {
   return useMemo(() => registros.map(fazendaDePendente), [registros]);
 }
 
-export function useVendedoresPendentes() {
-  const registros = usePendentes("vendedor");
-  return useMemo(() => registros.map(vendedorDePendente), [registros]);
+export function usePecuaristasPendentes() {
+  const registros = usePendentes("pecuarista");
+  return useMemo(() => registros.map(pecuaristaDePendente), [registros]);
 }
 
 export function useCompradoresPendentes() {

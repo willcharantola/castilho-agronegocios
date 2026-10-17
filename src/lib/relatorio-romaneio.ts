@@ -59,13 +59,16 @@ function nomeFazenda(negocio: NegocioDetail, fazenda: Fazenda | undefined) {
 }
 
 export function montarDadosCabecalho(negocio: NegocioDetail, fazenda: Fazenda | undefined): DadosDocumento {
-  const { vendedor } = negocio;
+  const { pecuarista } = negocio;
 
   return {
     "nome-fazenda": nomeFazenda(negocio, fazenda),
     "inscricao-estadual": fazenda?.inscricao_estadual ?? "",
     municipio: fazenda?.municipio ?? "",
-    "nome-vendedor": vendedor?.nome_vendedor ?? "",
+    "nome-pecuarista": pecuarista?.nome_pecuarista ?? "",
+    // Os dois .docx de romaneio ainda usam o placeholder antigo. Remover esta linha
+    // quando os modelos passarem a usar {{nome-pecuarista}}.
+    "nome-vendedor": pecuarista?.nome_pecuarista ?? "",
     "data-negocio": formatDate(negocio.data_negocio),
     "hora-inicio-pesagem": formatHora(negocio.hora_inicio_pesagem),
     "hora-fim-pesagem": formatHora(negocio.hora_fim_pesagem),
@@ -80,12 +83,12 @@ export function montarDadosCabecalho(negocio: NegocioDetail, fazenda: Fazenda | 
     funrural: campo(negocio.funrural, formatCurrency),
     senar: campo(negocio.senar, formatCurrency),
 
-    // Dados bancários do vendedor (o campo "Nome" reaproveita {{nome-vendedor}}).
-    "cpf-cnpj": vendedor?.cpf_cnpj ?? "",
-    banco: vendedor?.banco ?? "",
-    agencia: vendedor?.agencia ?? "",
-    conta: vendedor?.conta ?? "",
-    "chave-pix": vendedor?.chave_pix ?? "",
+    // Dados bancários do pecuarista (o campo "Nome" reaproveita {{nome-pecuarista}}).
+    "cpf-cnpj": pecuarista?.cpf_cnpj ?? "",
+    banco: pecuarista?.banco ?? "",
+    agencia: pecuarista?.agencia ?? "",
+    conta: pecuarista?.conta ?? "",
+    "chave-pix": pecuarista?.chave_pix ?? "",
   };
 }
 

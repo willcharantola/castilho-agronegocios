@@ -48,7 +48,7 @@ model Negocio {
   empresa_id          Int
   valor_total         Decimal?
   valor_medio         Decimal?
-  vendedor            String
+  pecuarista            String
   fazenda             String
   merchant            String
   comprador           String?
@@ -98,11 +98,11 @@ Não é necessário implementar criação, edição ou exclusão nesta etapa —
 
 **Tela: Lista de Negócios Cadastrados**
 - Lista todos os negócios vindos de `GET /api/negocios`
-- Exibir por card: fazenda, vendedor, data do negócio, comissão, quantidade de cabeças (seguir visual do mockup anexado anteriormente)
-- Não é obrigatório implementar filtros (por período/vendedor) nesta etapa — pode ser um `<select>` estático sem lógica funcional ainda, claramente sinalizado como placeholder
+- Exibir por card: fazenda, pecuarista, data do negócio, comissão, quantidade de cabeças (seguir visual do mockup anexado anteriormente)
+- Não é obrigatório implementar filtros (por período/pecuarista) nesta etapa — pode ser um `<select>` estático sem lógica funcional ainda, claramente sinalizado como placeholder
 
 **Tela: Detalhe do Negócio**
-- Ao clicar em um negócio da lista, mostrar os detalhes (fazenda, vendedor, rendimento de carcaça, valor por arroba, modalidade, valor médio por cabeça)
+- Ao clicar em um negócio da lista, mostrar os detalhes (fazenda, pecuarista, rendimento de carcaça, valor por arroba, modalidade, valor médio por cabeça)
 - Listar os gados vinculados àquele negócio (denominação, gênero, peso, valor total) — seguir o mockup da tela "Negócios Cadastrados" com a lista de "Nelore" etc.
 
 ### 3. Telas sem mockup definido (não construir agora)

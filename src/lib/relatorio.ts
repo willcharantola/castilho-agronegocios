@@ -40,7 +40,7 @@ export async function gerarRelatorioNegocios(
     "data-emissao": new Date().toLocaleDateString("pt-BR"),
     negocios: negocios.map((n) => ({
       fazenda: fazendasPorId[n.fazenda_id] ?? `Fazenda #${n.fazenda_id}`,
-      // `negocio` não tem mais `marchante` (nem vendedor_id) — pendente definir o que
+      // `negocio` não tem mais `marchante` (nem pecuarista_id) — pendente definir o que
       // vai nessa coluna do modelo .docx (ver alteracoes.md).
       marchante: "—",
       data_negocio: formatDate(n.data_negocio),

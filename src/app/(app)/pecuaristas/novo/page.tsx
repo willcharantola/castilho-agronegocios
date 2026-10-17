@@ -8,15 +8,15 @@ import { cn } from "@/lib/utils";
 import { fetchFazendas } from "@/lib/api/fazendas";
 import type { Fazenda } from "@/lib/api/types";
 import { ApiError } from "@/lib/api-client";
-import { useVendedorFlow } from "@/lib/flows/vendedor-flow";
+import { usePecuaristaFlow } from "@/lib/flows/pecuarista-flow";
 import { PendenteBadge } from "@/components/offline/pendente-badge";
 import { mesclarPendentes, useFazendasPendentes, type ComPendencia } from "@/lib/offline/pendentes";
 import styles from "./page.module.css";
 
-export default function NovoVendedorFazendaPage() {
+export default function NovoPecuaristaFazendaPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { update } = useVendedorFlow();
+  const { update } = usePecuaristaFlow();
   const [fazendas, setFazendas] = React.useState<Fazenda[] | null>(null);
   const [error, setError] = React.useState<string | null>(null);
   const [busca, setBusca] = React.useState("");
@@ -48,12 +48,12 @@ export default function NovoVendedorFazendaPage() {
       fazendaNome: preselecionada.nome_fazenda,
       returnTo: returnToParam,
     });
-    router.replace("/vendedores/novo/dados");
+    router.replace("/pecuaristas/novo/dados");
   }, [todas, fazendaIdParam, returnToParam, update, router]);
 
   function selecionar(fazenda: Fazenda) {
     update({ fazendaId: fazenda.fazenda_id, fazendaNome: fazenda.nome_fazenda, returnTo: returnToParam });
-    router.push("/vendedores/novo/dados");
+    router.push("/pecuaristas/novo/dados");
   }
 
   const buscaLower = busca.trim().toLowerCase();
@@ -63,9 +63,9 @@ export default function NovoVendedorFazendaPage() {
 
   return (
     <div className={cn(styles.page, "pt-safe")}>
-      <BackLink href="/vendedores" />
-      <h1 className={styles.title}>Cadastrar Novo Vendedor</h1>
-      <p className={styles.subtitle}>Selecione a fazenda a qual o vendedor pertence</p>
+      <BackLink href="/pecuaristas" />
+      <h1 className={styles.title}>Cadastrar Novo Pecuarista</h1>
+      <p className={styles.subtitle}>Selecione a fazenda a qual o pecuarista pertence</p>
 
       <div className={styles.searchWrap}>
         <Search className={styles.searchIcon} size={18} />
@@ -87,7 +87,7 @@ export default function NovoVendedorFazendaPage() {
         <div className={cn(styles.state, "glass-panel")}>
           {todas && todas.length > 0
             ? "Nenhuma fazenda encontrada para essa busca."
-            : "Nenhuma fazenda cadastrada ainda. Cadastre uma fazenda antes de adicionar um vendedor."}
+            : "Nenhuma fazenda cadastrada ainda. Cadastre uma fazenda antes de adicionar um pecuarista."}
         </div>
       ) : null}
 

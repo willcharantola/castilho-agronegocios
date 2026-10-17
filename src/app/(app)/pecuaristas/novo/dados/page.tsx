@@ -12,13 +12,13 @@ import { IconField } from "@/components/form/icon-field";
 import { TintedInput } from "@/components/form/tinted-input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { createVendedor } from "@/lib/api/vendedores";
+import { createPecuarista } from "@/lib/api/pecuaristas";
 import { fetchFazendas } from "@/lib/api/fazendas";
 import { FazendasChecklist } from "@/components/form/fazendas-checklist";
 import type { Fazenda } from "@/lib/api/types";
 import { ApiError } from "@/lib/api-client";
 import { FISICO_JURIDICO_LABELS } from "@/lib/labels";
-import { useVendedorFlow } from "@/lib/flows/vendedor-flow";
+import { usePecuaristaFlow } from "@/lib/flows/pecuarista-flow";
 import { enviarOuEnfileirar, referencias } from "@/lib/offline/fila";
 import { mesclarPendentes, useFazendasPendentes } from "@/lib/offline/pendentes";
 import { cn } from "@/lib/utils";
@@ -26,7 +26,7 @@ import fieldBox from "@/components/form/field-box.module.css";
 import styles from "./page.module.css";
 
 const schema = z.object({
-  nome_vendedor: z.string().min(2, "Informe o nome do vendedor.").max(50),
+  nome_pecuarista: z.string().min(2, "Informe o nome do pecuarista.").max(50),
   fisico_juridico: z.enum(["fisico", "juridico"], { error: "Selecione o tipo de pessoa." }),
   cpf_cnpj: z.string().min(1, "Informe o CPF/CNPJ.").max(20),
   banco: z.string().min(1, "Informe o banco.").max(20),
@@ -36,9 +36,9 @@ const schema = z.object({
 });
 type FormValues = z.infer<typeof schema>;
 
-export default function NovoVendedorDadosPage() {
+export default function NovoPecuaristaDadosPage() {
   const router = useRouter();
-  const { data, reset } = useVendedorFlow();
+  const { data, reset } = usePecuaristaFlow();
   const [submitError, setSubmitError] = React.useState<string | null>(null);
   const [fazendasServidor, setFazendas] = React.useState<Fazenda[]>([]);
   const fazendasPendentes = useFazendasPendentes();
@@ -46,7 +46,7 @@ export default function NovoVendedorDadosPage() {
     () => mesclarPendentes(fazendasServidor, fazendasPendentes) ?? [],
     [fazendasServidor, fazendasPendentes]
   );
-  // A fazenda escolhida no passo anterior já vem marcada; o vendedor pode atuar em várias (N:N).
+  // A fazenda escolhida no passo anterior já vem marcada; o pecuarista pode atuar em várias (N:N).
   const [fazendaIds, setFazendaIds] = React.useState<number[]>(data.fazendaId ? [data.fazendaId] : []);
   const {
     register,
@@ -60,7 +60,7 @@ export default function NovoVendedorDadosPage() {
   // queremos que isso dispare este redirecionamento de volta ao passo 1.
   const fazendaIdRef = React.useRef(data.fazendaId);
   React.useEffect(() => {
-    if (!fazendaIdRef.current) router.replace("/vendedores/novo");
+    if (!fazendaIdRef.current) router.replace("/pecuaristas/novo");
   }, [router]);
 
   React.useEffect(() => {
@@ -86,15 +86,15 @@ export default function NovoVendedorDadosPage() {
           fazendas.find((f) => f.fazenda_id === id)?.nome_fazenda ?? (id === data.fazendaId ? data.fazendaNome : ""),
       }));
       await enviarOuEnfileirar(
-        "vendedor",
+        "pecuarista",
         { ...values, ...(await referencias("fazenda", fazendaIds)) },
         (payload, uuid) =>
-          createVendedor({ ...(payload as FormValues & { fazenda_ids: number[] }), uuid_origem: uuid }),
+          createPecuarista({ ...(payload as FormValues & { fazenda_ids: number[] }), uuid_origem: uuid }),
         { exibicao: { fazendas: selecionadas } }
       );
       const returnTo = data.returnTo;
       reset();
-      router.push(returnTo ?? "/vendedores");
+      router.push(returnTo ?? "/pecuaristas");
     } catch (err) {
       setSubmitError(err instanceof ApiError || err instanceof Error ? err.message : "Erro ao salvar.");
     }
@@ -104,8 +104,8 @@ export default function NovoVendedorDadosPage() {
 
   return (
     <div className={cn(styles.page, "pt-safe")}>
-      <BackLink href="/vendedores/novo" />
-      <h1 className={styles.title}>Cadastrar Vendedor</h1>
+      <BackLink href="/pecuaristas/novo" />
+      <h1 className={styles.title}>Cadastrar Pecuarista</h1>
 
       <div className={cn(styles.fazendaCard, "glass-dark")}>
         <span className={styles.fazendaIcon}>
@@ -114,7 +114,7 @@ export default function NovoVendedorDadosPage() {
         <p className={styles.fazendaNome}>{data.fazendaNome}</p>
       </div>
 
-      <Field label="Fazendas do vendedor" htmlFor="fazendas">
+      <Field label="Fazendas do pecuarista" htmlFor="fazendas">
         <FazendasChecklist fazendas={fazendas} selected={fazendaIds} onChange={setFazendaIds} />
       </Field>
 
@@ -122,8 +122,8 @@ export default function NovoVendedorDadosPage() {
         <div className={styles.fields}>
           {submitError ? <p className={styles.submitError}>{submitError}</p> : null}
 
-          <IconField icon={User} label="Nome Vendedor" htmlFor="nome_vendedor" error={errors.nome_vendedor?.message}>
-            <TintedInput id="nome_vendedor" tint="pink" placeholder="Nome do vendedor" autoFocus {...register("nome_vendedor")} />
+          <IconField icon={User} label="Nome Pecuarista" htmlFor="nome_pecuarista" error={errors.nome_pecuarista?.message}>
+            <TintedInput id="nome_pecuarista" tint="pink" placeholder="Nome do pecuarista" autoFocus {...register("nome_pecuarista")} />
           </IconField>
 
           <Field label="Pessoa" htmlFor="fisico_juridico" error={errors.fisico_juridico?.message}>

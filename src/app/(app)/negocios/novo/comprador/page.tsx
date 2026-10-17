@@ -49,7 +49,7 @@ export default function NovoNegocioCompradorPage() {
 
   return (
     <div className={cn(styles.page, "pt-safe")}>
-      <BackLink href="/negocios/novo/vendedor" />
+      <BackLink href="/negocios/novo/pecuarista" />
       <h1 className={styles.title}>Cadastrar Novo Negócio</h1>
       <ProgressSteps current={3} total={6} />
 
@@ -98,7 +98,7 @@ export default function NovoNegocioCompradorPage() {
 
       {compradores ? (
         <Button
-          className={styles.novoVendedorButton}
+          className={styles.novoPecuaristaButton}
           variant="brand"
           render={<Link href="/compradores/novo?returnTo=/negocios/novo/comprador" />}
         >

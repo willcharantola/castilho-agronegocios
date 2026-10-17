@@ -6,26 +6,26 @@ import { Plus, Search, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Fab } from "@/components/fab";
 import { cn } from "@/lib/utils";
-import { fetchVendedores } from "@/lib/api/vendedores";
-import type { Vendedor } from "@/lib/api/types";
+import { fetchPecuaristas } from "@/lib/api/pecuaristas";
+import type { Pecuarista } from "@/lib/api/types";
 import { FISICO_JURIDICO_LABELS } from "@/lib/labels";
 import { ApiError } from "@/lib/api-client";
 import { PendenteBadge } from "@/components/offline/pendente-badge";
 import { useVersaoSincronizacao } from "@/lib/offline/fila";
-import { mesclarPendentes, useVendedoresPendentes } from "@/lib/offline/pendentes";
+import { mesclarPendentes, usePecuaristasPendentes } from "@/lib/offline/pendentes";
 import styles from "./page.module.css";
 
-function nomesDasFazendas(vendedor: Vendedor) {
-  return (vendedor.vendedor_fazenda ?? []).map((a) => a.fazenda.nome_fazenda).join(", ");
+function nomesDasFazendas(pecuarista: Pecuarista) {
+  return (pecuarista.pecuarista_fazenda ?? []).map((a) => a.fazenda.nome_fazenda).join(", ");
 }
 
-export default function VendedoresPage() {
-  const [vendedoresServidor, setVendedores] = React.useState<Vendedor[] | null>(null);
+export default function PecuaristasPage() {
+  const [pecuaristasServidor, setPecuaristas] = React.useState<Pecuarista[] | null>(null);
   // Cadastros feitos offline aparecem no topo, marcados como pendentes de sincronização.
-  const vendedoresPendentes = useVendedoresPendentes();
-  const vendedores = React.useMemo(
-    () => mesclarPendentes(vendedoresServidor, vendedoresPendentes),
-    [vendedoresServidor, vendedoresPendentes]
+  const pecuaristasPendentes = usePecuaristasPendentes();
+  const pecuaristas = React.useMemo(
+    () => mesclarPendentes(pecuaristasServidor, pecuaristasPendentes),
+    [pecuaristasServidor, pecuaristasPendentes]
   );
   const versaoSincronizacao = useVersaoSincronizacao();
   const [error, setError] = React.useState<string | null>(null);
@@ -35,13 +35,13 @@ export default function VendedoresPage() {
   React.useEffect(() => {
     let cancelled = false;
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setVendedores(null);
+    setPecuaristas(null);
     setError(null);
 
-    fetchVendedores()
-      .then((vendedoresData) => {
+    fetchPecuaristas()
+      .then((pecuaristasData) => {
         if (cancelled) return;
-        setVendedores(vendedoresData);
+        setPecuaristas(pecuaristasData);
       })
       .catch((err: unknown) => {
         if (cancelled) return;
@@ -54,33 +54,33 @@ export default function VendedoresPage() {
   }, [reloadKey, versaoSincronizacao]);
 
   const buscaLower = busca.trim().toLowerCase();
-  const filtrados = vendedores?.filter((v) => {
+  const filtrados = pecuaristas?.filter((v) => {
     if (buscaLower === "") return true;
     return (
-      v.nome_vendedor.toLowerCase().includes(buscaLower) ||
+      v.nome_pecuarista.toLowerCase().includes(buscaLower) ||
       nomesDasFazendas(v).toLowerCase().includes(buscaLower)
     );
   });
 
   return (
     <div className={cn(styles.page, "pt-safe")}>
-      <h1 className={styles.title}>Vendedores Cadastrados</h1>
+      <h1 className={styles.title}>Pecuaristas Cadastrados</h1>
 
       <div className={styles.searchWrap}>
         <Search className={styles.searchIcon} size={18} />
         <input
           className={cn(styles.searchInput, "glass-panel")}
-          placeholder="Buscar vendedor..."
+          placeholder="Buscar pecuarista..."
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
         />
       </div>
 
-      {vendedores === null && !error ? (
-        <div className={cn(styles.state, "glass-panel")}>Carregando vendedores...</div>
+      {pecuaristas === null && !error ? (
+        <div className={cn(styles.state, "glass-panel")}>Carregando pecuaristas...</div>
       ) : null}
 
-      {error && !vendedores ? (
+      {error && !pecuaristas ? (
         <div className={cn(styles.state, styles.stateError, "glass-panel")}>
           {error}
           <div>
@@ -93,21 +93,21 @@ export default function VendedoresPage() {
 
       {filtrados && filtrados.length === 0 ? (
         <div className={cn(styles.state, "glass-panel")}>
-          {vendedores && vendedores.length > 0
-            ? "Nenhum vendedor encontrado para essa busca."
-            : "Nenhum vendedor cadastrado ainda."}
+          {pecuaristas && pecuaristas.length > 0
+            ? "Nenhum pecuarista encontrado para essa busca."
+            : "Nenhum pecuarista cadastrado ainda."}
         </div>
       ) : null}
 
       {filtrados && filtrados.length > 0 ? (
         <div className={styles.list}>
-          {filtrados.map((vendedor) => (
+          {filtrados.map((pecuarista) => (
             <Link
-              key={vendedor.vendedor_id}
-              href={`/vendedores/${vendedor.vendedor_id}`}
+              key={pecuarista.pecuarista_id}
+              href={`/pecuaristas/${pecuarista.pecuarista_id}`}
               // Pendente: ainda não existe no servidor, então não há tela de edição para abrir.
-              aria-disabled={vendedor.pendente ? true : undefined}
-              onClick={vendedor.pendente ? (e) => e.preventDefault() : undefined}
+              aria-disabled={pecuarista.pendente ? true : undefined}
+              onClick={pecuarista.pendente ? (e) => e.preventDefault() : undefined}
               className={cn(styles.card, "glass-dark")}
             >
               <div className={styles.cardHeader}>
@@ -115,25 +115,25 @@ export default function VendedoresPage() {
                   <User size={18} />
                 </span>
                 <div className={styles.cardInfo}>
-                  <p className={styles.cardName}>{vendedor.nome_vendedor}</p>
-                  <p className={styles.cardMeta}> Pessoa: {FISICO_JURIDICO_LABELS[vendedor.fisico_juridico]} 
-                  <p className={styles.cardMeta}></p>CPF/CNPJ: {vendedor.cpf_cnpj}  </p>
-                  <p className={styles.cardMeta}> Fazendas: {nomesDasFazendas(vendedor) || "—"} </p>
-                  {vendedor.pendente ? <PendenteBadge pendente={vendedor.pendente} /> : null}
+                  <p className={styles.cardName}>{pecuarista.nome_pecuarista}</p>
+                  <p className={styles.cardMeta}> Pessoa: {FISICO_JURIDICO_LABELS[pecuarista.fisico_juridico]} 
+                  <p className={styles.cardMeta}></p>CPF/CNPJ: {pecuarista.cpf_cnpj}  </p>
+                  <p className={styles.cardMeta}> Fazendas: {nomesDasFazendas(pecuarista) || "—"} </p>
+                  {pecuarista.pendente ? <PendenteBadge pendente={pecuarista.pendente} /> : null}
                 </div>
               </div>
               <div className={styles.cardFooter}>
-                <span>Banco: {vendedor.banco}</span>
-                <span>Agência: {vendedor.agencia}</span>
-                <span>Conta: {vendedor.conta}</span>
-                  <span>Chave pix: {vendedor.chave_pix}</span>
+                <span>Banco: {pecuarista.banco}</span>
+                <span>Agência: {pecuarista.agencia}</span>
+                <span>Conta: {pecuarista.conta}</span>
+                  <span>Chave pix: {pecuarista.chave_pix}</span>
               </div>
             </Link>
           ))}
         </div>
       ) : null}
 
-      <Fab icon={Plus} label="Cadastrar vendedor" href="/vendedores/novo" />
+      <Fab icon={Plus} label="Cadastrar pecuarista" href="/pecuaristas/novo" />
     </div>
   );
 }

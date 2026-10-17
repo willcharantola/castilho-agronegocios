@@ -90,13 +90,13 @@ export default function NovoNegocioInformacoesPage() {
 
   React.useEffect(() => {
     if (!data.fazendaId) router.replace("/negocios/novo");
-    else if (!data.vendedorId) router.replace("/negocios/novo/vendedor");
+    else if (!data.pecuaristaId) router.replace("/negocios/novo/pecuarista");
     else if (!data.compradorId) router.replace("/negocios/novo/comprador");
     else if (!data.modalidade) router.replace("/negocios/novo/modalidade");
-  }, [data.fazendaId, data.vendedorId, data.compradorId, data.modalidade, router]);
+  }, [data.fazendaId, data.pecuaristaId, data.compradorId, data.modalidade, router]);
 
   async function onSubmit(values: FormValues) {
-    if (!data.fazendaId || !data.vendedorId || !data.compradorId || !data.modalidade) return;
+    if (!data.fazendaId || !data.pecuaristaId || !data.compradorId || !data.modalidade) return;
     const usuario = getUsuario();
     if (!usuario) {
       setSubmitError("Sessão inválida. Faça login novamente.");
@@ -104,14 +104,14 @@ export default function NovoNegocioInformacoesPage() {
     }
     setSubmitError(null);
     try {
-      // Fazenda/vendedor/comprador podem ter sido cadastrados offline (id negativo):
+      // Fazenda/pecuarista/comprador podem ter sido cadastrados offline (id negativo):
       // nesse caso o negócio também fica na fila, referenciando-os pelo uuid local.
       const exibicao: ExibicaoNegocio = {
         fazenda_id: data.fazendaId,
-        vendedor_id: data.vendedorId,
+        pecuarista_id: data.pecuaristaId,
         comprador_id: data.compradorId,
         fazendaNome: data.fazendaNome,
-        vendedorNome: data.vendedorNome,
+        pecuaristaNome: data.pecuaristaNome,
         compradorNome: data.compradorNome,
       };
       const envio = await enviarOuEnfileirar(
@@ -119,7 +119,7 @@ export default function NovoNegocioInformacoesPage() {
         {
           empresa_id: usuario.empresa_id,
           ...(await referencia("fazenda", data.fazendaId)),
-          ...(await referencia("vendedor", data.vendedorId)),
+          ...(await referencia("pecuarista", data.pecuaristaId)),
           ...(await referencia("comprador", data.compradorId)),
           modalidade: data.modalidade,
           tipo_gado: values.tipo_gado,
@@ -155,7 +155,7 @@ export default function NovoNegocioInformacoesPage() {
     }
   }
 
-  if (!data.fazendaId || !data.vendedorId || !data.compradorId || !data.modalidade) return null;
+  if (!data.fazendaId || !data.pecuaristaId || !data.compradorId || !data.modalidade) return null;
 
   return (
     <div className={cn(styles.page, "pt-safe")}>
@@ -171,7 +171,7 @@ export default function NovoNegocioInformacoesPage() {
         </span>
         <div> 
         <p className={styles.fazendaNome}>{data.fazendaNome}</p>
-         <p >Vendedor: {data.vendedorNome}</p>
+         <p >Pecuarista: {data.pecuaristaNome}</p>
          <p >Comprador: {data.compradorNome}</p>
          <p >Modalidade: {data.modalidade}</p>
 

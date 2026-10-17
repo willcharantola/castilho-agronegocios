@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import type { Fazenda } from "@/lib/api/types";
 import styles from "./fazendas-checklist.module.css";
 
-/** Multi-seleção de fazendas (relacionamento N:N vendedor ↔ fazenda). */
+/** Multi-seleção de fazendas (relacionamento N:N pecuarista ↔ fazenda). */
 export function FazendasChecklist({
   fazendas,
   selected,

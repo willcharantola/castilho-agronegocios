@@ -157,7 +157,7 @@ export default function NegocioDetailPage() {
 
             <div className={styles.summaryFooter}>
 
-               <span>Vendedor: {negocio.vendedor.nome_vendedor}</span>
+               <span>Pecuarista: {negocio.pecuarista.nome_pecuarista}</span>
               
              </div>
 

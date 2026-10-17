@@ -23,11 +23,11 @@ export default function NovoNegocioModalidadePage() {
 
   React.useEffect(() => {
     if (!data.fazendaId) router.replace("/negocios/novo");
-    else if (!data.vendedorId) router.replace("/negocios/novo/vendedor");
+    else if (!data.pecuaristaId) router.replace("/negocios/novo/pecuarista");
     else if (!data.compradorId) router.replace("/negocios/novo/comprador");
-  }, [data.fazendaId, data.vendedorId, data.compradorId, router]);
+  }, [data.fazendaId, data.pecuaristaId, data.compradorId, router]);
 
-  if (!data.fazendaId || !data.vendedorId || !data.compradorId) return null;
+  if (!data.fazendaId || !data.pecuaristaId || !data.compradorId) return null;
 
   function selecionar(modalidade: Modalidade) {
     update({ modalidade });

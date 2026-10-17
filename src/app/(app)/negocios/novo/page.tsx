@@ -39,11 +39,11 @@ export default function NovoNegocioFazendaPage() {
     update({
       fazendaId: fazenda.fazenda_id,
       fazendaNome: fazenda.nome_fazenda,
-      vendedorId: null,
-      vendedorNome: "",
+      pecuaristaId: null,
+      pecuaristaNome: "",
       negocioId: null,
     });
-    router.push("/negocios/novo/vendedor");
+    router.push("/negocios/novo/pecuarista");
   }
 
   const buscaLower = busca.trim().toLowerCase();

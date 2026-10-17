@@ -31,7 +31,7 @@ function negocioLocal(registro: RegistroSalvo): NegocioDetail {
   return {
     ...negocioDePendente(registro),
     gados: [],
-    vendedor: { nome_vendedor: e.vendedorNome } as NegocioDetail["vendedor"],
+    pecuarista: { nome_pecuarista: e.pecuaristaNome } as NegocioDetail["pecuarista"],
     comprador: { nome_empresa: e.compradorNome } as NegocioDetail["comprador"],
   };
 }
@@ -167,7 +167,7 @@ export default function NovoNegocioGadoPage() {
             </span>
             <div>
               <p className={styles.summaryFarm}> {data.fazendaNome}</p>
-              <p className={styles.summarySeller}>Vendedor: {negocio.vendedor.nome_vendedor}</p>
+              <p className={styles.summarySeller}>Pecuarista: {negocio.pecuarista.nome_pecuarista}</p>
               <p className={styles.summarySeller}>Comprador: {negocio.comprador.nome_empresa}</p>
             </div>
           </div>

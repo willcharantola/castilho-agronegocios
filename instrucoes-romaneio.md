@@ -13,7 +13,7 @@ Os dois arquivos já estão prontos e **com os placeholders inseridos pelo desen
 
 ## Comportamento
 
-- Para cada negócio da lista filtrada, buscar o detalhe (`fetchNegocio(id)`, que traz `gados`, `vendedor`, `comprador`) e gerar os **dois** arquivos.
+- Para cada negócio da lista filtrada, buscar o detalhe (`fetchNegocio(id)`, que traz `gados`, `pecuarista`, `comprador`) e gerar os **dois** arquivos.
 - Nome dos arquivos: `romaneio1-<fazenda>-<AAAA-MM-DD>.docx` e `romaneio2-<fazenda>-<AAAA-MM-DD>.docx` (sanitizar o nome da fazenda).
 - Se houver mais de um negócio filtrado, gerar um .zip (JSZip) com todos os arquivos; se for só um, baixar os dois .docx direto.
 - Manter estados `gerandoRelatorio` / `relatorioError` já existentes. Não precisa mudar a página além de continuar chamando a função.
@@ -24,8 +24,8 @@ Os dois arquivos já estão prontos e **com os placeholders inseridos pelo desen
 | Placeholder | Origem |
 |---|---|
 | `{propriedade}` | nome da fazenda |
-| `{ie}` | inscrição estadual (fazenda ou vendedor — verificar o tipo `Fazenda`/`Vendedor` em `@/lib/api/types`; vazio se não existir) |
-| `{proprietario}` | nome do vendedor |
+| `{ie}` | inscrição estadual (fazenda ou pecuarista — verificar o tipo `Fazenda`/`Pecuarista` em `@/lib/api/types`; vazio se não existir) |
+| `{proprietario}` | nome do pecuarista |
 | `{municipio}` | município da fazenda (vazio se não existir) |
 | `{data}` | `data_negocio` (dd/mm/aaaa) |
 | `{horario_inicial}` | `hora_inicio_pesagem` (HH:mm) |
@@ -38,14 +38,14 @@ Os dois arquivos já estão prontos e **com os placeholders inseridos pelo desen
 | `{valor_bruto}` | `valor_total` do negócio (moeda) |
 | `{funrural}` | `valor_total * 0,015` (moeda) |
 | `{senar}` | `valor_total * 0,002` (moeda) |
-| `{banco_nome}` | dados bancários do **vendedor** |
+| `{banco_nome}` | dados bancários do **pecuarista** |
 | `{banco_cpf}` | idem |
 | `{banco_banco}` | idem |
 | `{banco_agencia}` | idem |
 | `{banco_conta}` | idem |
 | `{banco_pix}` | idem |
 
-Os dados bancários já estão vinculados ao vendedor no banco. Ler os nomes reais dos campos em `Vendedor` (`@/lib/api/types` / schema Prisma) e mapear. Se a API ainda não retorna esses campos em `NegocioDetail.vendedor`, ajustar o `select`/`include` no backend.
+Os dados bancários já estão vinculados ao pecuarista no banco. Ler os nomes reais dos campos em `Pecuarista` (`@/lib/api/types` / schema Prisma) e mapear. Se a API ainda não retorna esses campos em `NegocioDetail.pecuarista`, ajustar o `select`/`include` no backend.
 
 `{conferente}` não é preenchido pelo sistema (fica em branco para assinatura).
 

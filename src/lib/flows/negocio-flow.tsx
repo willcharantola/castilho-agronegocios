@@ -6,8 +6,8 @@ import type { Modalidade, TipoGado, TipoLote } from "@/lib/api/types";
 export type NegocioFlowData = {
   fazendaId: number | null;
   fazendaNome: string;
-  vendedorId: number | null;
-  vendedorNome: string;
+  pecuaristaId: number | null;
+  pecuaristaNome: string;
   compradorId: number | null;
   compradorNome: string;
   modalidade: Modalidade | "";
@@ -27,8 +27,8 @@ export const { Provider: NegocioFlowProvider, useFlow: useNegocioFlow } =
   createFlowContext<NegocioFlowData>("castilho:negocio-novo", {
     fazendaId: null,
     fazendaNome: "",
-    vendedorId: null,
-    vendedorNome: "",
+    pecuaristaId: null,
+    pecuaristaNome: "",
     compradorId: null,
     compradorNome: "",
     modalidade: "",

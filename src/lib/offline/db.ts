@@ -8,7 +8,7 @@ import Dexie, { type Table } from "dexie";
  */
 export const ORDEM_SINCRONIZACAO = [
   "fazenda",
-  "vendedor",
+  "pecuarista",
   "comprador",
   "negocio",
   "negocio_atualizacao",
@@ -42,7 +42,7 @@ export interface RegistroPendente {
 }
 
 export interface CacheLeitura {
-  /** Ex.: "fazendas", "vendedores", "negocio:12". */
+  /** Ex.: "fazendas", "pecuaristas", "negocio:12". */
   chave: string;
   dados: unknown;
   atualizadoEm: number;
@@ -69,7 +69,64 @@ class OfflineDB extends Dexie {
       cache: "chave",
       mapeamentos: "uuid, idLocal",
     });
+    // v2: o cadastro passou a se chamar "pecuarista". O schema dos índices não muda;
+    // a versão nova existe para converter, uma única vez, o que já está no aparelho.
+    this.version(2)
+      .stores({
+        pendentes: "++id, uuid, entidade, status, [entidade+status]",
+        cache: "chave",
+        mapeamentos: "uuid, idLocal",
+      })
+      .upgrade(async (tx) => {
+        await tx
+          .table<RegistroPendente, number>("pendentes")
+          .toCollection()
+          .modify((registro) => {
+            registro.entidade = renomearTermoAntigo(registro.entidade) as EntidadeOffline;
+            registro.payload = renomearChaves(registro.payload) as Record<string, unknown>;
+            if (registro.exibicao) {
+              registro.exibicao = renomearChaves(registro.exibicao) as Record<string, unknown>;
+            }
+          });
+        await tx
+          .table<Mapeamento, string>("mapeamentos")
+          .toCollection()
+          .modify((mapeamento) => {
+            mapeamento.entidade = renomearTermoAntigo(mapeamento.entidade) as EntidadeOffline;
+          });
+        // `chave` é a chave primária (ex.: a lista de pecuaristas): regrava os itens em vez de alterá-los.
+        const cache = tx.table<CacheLeitura, string>("cache");
+        const itens = await cache.toArray();
+        await cache.clear();
+        await cache.bulkPut(
+          itens.map((item) => ({
+            ...item,
+            chave: renomearTermoAntigo(item.chave),
+            dados: renomearChaves(item.dados),
+          }))
+        );
+      });
   }
+}
+
+/** Migração v2: troca o termo antigo pelo novo (singular/plural, minúscula/maiúscula). */
+const TERMO_ANTIGO = /(v|V)endedor(es)?/g;
+
+function renomearTermoAntigo(texto: string): string {
+  return texto.replace(TERMO_ANTIGO, (_, inicial: string, plural?: string) =>
+    `${inicial === "V" ? "P" : "p"}ecuarista${plural ? "s" : ""}`
+  );
+}
+
+/** Renomeia as chaves de objetos (em qualquer nível); os valores não são alterados. */
+function renomearChaves(valor: unknown): unknown {
+  if (Array.isArray(valor)) return valor.map(renomearChaves);
+  if (valor !== null && typeof valor === "object" && Object.getPrototypeOf(valor) === Object.prototype) {
+    return Object.fromEntries(
+      Object.entries(valor).map(([chave, v]) => [renomearTermoAntigo(chave), renomearChaves(v)])
+    );
+  }
+  return valor;
 }
 
 export const offlineDb = new OfflineDB();

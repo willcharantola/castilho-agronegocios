@@ -8,24 +8,24 @@ import { BackLink } from "@/components/back-link";
 import { ProgressSteps } from "@/components/progress-steps";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { fetchVendedores } from "@/lib/api/vendedores";
-import type { Vendedor } from "@/lib/api/types";
+import { fetchPecuaristas } from "@/lib/api/pecuaristas";
+import type { Pecuarista } from "@/lib/api/types";
 import { FISICO_JURIDICO_LABELS } from "@/lib/labels";
 import { ApiError } from "@/lib/api-client";
 import { useNegocioFlow } from "@/lib/flows/negocio-flow";
 import { PendenteBadge } from "@/components/offline/pendente-badge";
-import { mesclarPendentes, useVendedoresPendentes, type ComPendencia } from "@/lib/offline/pendentes";
+import { mesclarPendentes, usePecuaristasPendentes, type ComPendencia } from "@/lib/offline/pendentes";
 import styles from "./page.module.css";
 
-export default function NovoNegocioVendedorPage() {
+export default function NovoNegocioPecuaristaPage() {
   const router = useRouter();
   const { data, update } = useNegocioFlow();
-  const [vendedoresServidor, setVendedores] = React.useState<Vendedor[] | null>(null);
-  // Inclui vendedores cadastrados offline ainda não sincronizados (id negativo).
-  const vendedoresPendentes = useVendedoresPendentes();
-  const vendedores = React.useMemo(
-    () => mesclarPendentes(vendedoresServidor, vendedoresPendentes),
-    [vendedoresServidor, vendedoresPendentes]
+  const [pecuaristasServidor, setPecuaristas] = React.useState<Pecuarista[] | null>(null);
+  // Inclui pecuaristas cadastrados offline ainda não sincronizados (id negativo).
+  const pecuaristasPendentes = usePecuaristasPendentes();
+  const pecuaristas = React.useMemo(
+    () => mesclarPendentes(pecuaristasServidor, pecuaristasPendentes),
+    [pecuaristasServidor, pecuaristasPendentes]
   );
   const [error, setError] = React.useState<string | null>(null);
 
@@ -34,8 +34,8 @@ export default function NovoNegocioVendedorPage() {
       router.replace("/negocios/novo");
       return;
     }
-    fetchVendedores()
-      .then(setVendedores)
+    fetchPecuaristas()
+      .then(setPecuaristas)
       .catch((err: unknown) => {
         setError(err instanceof ApiError || err instanceof Error ? err.message : "Erro ao carregar.");
       });
@@ -43,10 +43,10 @@ export default function NovoNegocioVendedorPage() {
 
   if (!data.fazendaId) return null;
 
-  const daFazenda = vendedores?.filter((v) => v.vendedor_fazenda?.some((a) => a.fazenda_id === data.fazendaId));
+  const daFazenda = pecuaristas?.filter((v) => v.pecuarista_fazenda?.some((a) => a.fazenda_id === data.fazendaId));
 
-  function selecionar(vendedor: Vendedor) {
-    update({ vendedorId: vendedor.vendedor_id, vendedorNome: vendedor.nome_vendedor });
+  function selecionar(pecuarista: Pecuarista) {
+    update({ pecuaristaId: pecuarista.pecuarista_id, pecuaristaNome: pecuarista.nome_pecuarista });
     router.push("/negocios/novo/comprador");
   }
 
@@ -63,28 +63,28 @@ export default function NovoNegocioVendedorPage() {
         <p className={styles.fazendaNome}>{data.fazendaNome}</p>
       </div>
 
-      <p className={styles.subtitle}>Vendedores cadastrados</p>
+      <p className={styles.subtitle}>Pecuaristas cadastrados</p>
 
-      {vendedores === null && !error ? (
-        <div className={cn(styles.state, "glass-panel")}>Carregando vendedores...</div>
+      {pecuaristas === null && !error ? (
+        <div className={cn(styles.state, "glass-panel")}>Carregando pecuaristas...</div>
       ) : null}
 
-      {error && !vendedores ? <div className={cn(styles.state, styles.stateError, "glass-panel")}>{error}</div> : null}
+      {error && !pecuaristas ? <div className={cn(styles.state, styles.stateError, "glass-panel")}>{error}</div> : null}
 
       {daFazenda && daFazenda.length === 0 ? (
         <div className={cn(styles.state, "glass-panel")}>
-          Nenhum vendedor cadastrado para esta fazenda ainda.
+          Nenhum pecuarista cadastrado para esta fazenda ainda.
           <div>
             <Button
-              className={styles.novoVendedorButton}
+              className={styles.novoPecuaristaButton}
               variant="brand"
               render={
                 <Link
-                  href={`/vendedores/novo?fazenda_id=${data.fazendaId}&returnTo=/negocios/novo/vendedor`}
+                  href={`/pecuaristas/novo?fazenda_id=${data.fazendaId}&returnTo=/negocios/novo/pecuarista`}
                 />
               }
             >
-              Cadastrar vendedor
+              Cadastrar pecuarista
             </Button>
           </div>
         </div>
@@ -92,22 +92,22 @@ export default function NovoNegocioVendedorPage() {
 
       {daFazenda && daFazenda.length > 0 ? (
         <div className={styles.list}>
-          {daFazenda.map((vendedor: ComPendencia<Vendedor>) => (
+          {daFazenda.map((pecuarista: ComPendencia<Pecuarista>) => (
             <button
-              key={vendedor.vendedor_id}
+              key={pecuarista.pecuarista_id}
               type="button"
-              onClick={() => selecionar(vendedor)}
+              onClick={() => selecionar(pecuarista)}
               className={cn(styles.card, "glass-dark")}
             >
               <span className={styles.cardIcon}>
                 <User size={18} />
               </span>
               <div className={styles.cardInfo}>
-                <p className={styles.cardName}>{vendedor.nome_vendedor}</p>
-                <p className={styles.cardMeta}> Pessoa: {FISICO_JURIDICO_LABELS[vendedor.fisico_juridico]}</p>
+                <p className={styles.cardName}>{pecuarista.nome_pecuarista}</p>
+                <p className={styles.cardMeta}> Pessoa: {FISICO_JURIDICO_LABELS[pecuarista.fisico_juridico]}</p>
                   
-                  <p className={styles.cardMeta}> CPF/CNPJ: {vendedor.cpf_cnpj}</p>
-                {vendedor.pendente ? <PendenteBadge pendente={vendedor.pendente} /> : null}
+                  <p className={styles.cardMeta}> CPF/CNPJ: {pecuarista.cpf_cnpj}</p>
+                {pecuarista.pendente ? <PendenteBadge pendente={pecuarista.pendente} /> : null}
               </div>
             </button>
           ))}

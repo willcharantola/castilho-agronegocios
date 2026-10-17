@@ -61,7 +61,7 @@ export async function atualizarPendente(
   });
 }
 
-type CampoReferencia = "fazenda" | "vendedor" | "comprador" | "negocio";
+type CampoReferencia = "fazenda" | "pecuarista" | "comprador" | "negocio";
 
 /**
  * Converte o id escolhido na tela (real ou temporário) nos campos do payload:

@@ -12,7 +12,7 @@ import styles from "./offline.module.css";
 
 const NOME_ENTIDADE: Record<EntidadeOffline, string> = {
   fazenda: "Fazenda",
-  vendedor: "Vendedor",
+  pecuarista: "Pecuarista",
   comprador: "Comprador",
   negocio: "Negócio",
   negocio_atualizacao: "Quantidade/valor por cabeça",
@@ -25,7 +25,7 @@ function descrever(r: RegistroSalvo): string {
   const e = r.exibicao ?? {};
   const detalhe =
     (p.nome_fazenda as string | undefined) ??
-    (p.nome_vendedor as string | undefined) ??
+    (p.nome_pecuarista as string | undefined) ??
     (p.nome_empresa as string | undefined) ??
     (p.denominacao as string | undefined) ??
     (r.entidade === "negocio"

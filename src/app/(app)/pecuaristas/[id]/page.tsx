@@ -12,7 +12,7 @@ import { IconField } from "@/components/form/icon-field";
 import { TintedInput } from "@/components/form/tinted-input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { fetchVendedor, updateVendedor } from "@/lib/api/vendedores";
+import { fetchPecuarista, updatePecuarista } from "@/lib/api/pecuaristas";
 import { fetchFazendas } from "@/lib/api/fazendas";
 import { FazendasChecklist } from "@/components/form/fazendas-checklist";
 import type { Fazenda } from "@/lib/api/types";
@@ -23,7 +23,7 @@ import fieldBox from "@/components/form/field-box.module.css";
 import styles from "./page.module.css";
 
 const schema = z.object({
-  nome_vendedor: z.string().min(2, "Informe o nome do vendedor.").max(50),
+  nome_pecuarista: z.string().min(2, "Informe o nome do pecuarista.").max(50),
   fisico_juridico: z.enum(["fisico", "juridico"], { error: "Selecione o tipo de pessoa." }),
   cpf_cnpj: z.string().min(1, "Informe o CPF/CNPJ.").max(20),
   banco: z.string().min(1, "Informe o banco.").max(20),
@@ -33,7 +33,7 @@ const schema = z.object({
 });
 type FormValues = z.infer<typeof schema>;
 
-export default function EditarVendedorPage() {
+export default function EditarPecuaristaPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const [fazendas, setFazendas] = React.useState<Fazenda[]>([]);
@@ -51,20 +51,20 @@ export default function EditarVendedorPage() {
 
   React.useEffect(() => {
     let cancelled = false;
-    Promise.all([fetchVendedor(params.id), fetchFazendas()])
-      .then(([vendedor, fazendasData]) => {
+    Promise.all([fetchPecuarista(params.id), fetchFazendas()])
+      .then(([pecuarista, fazendasData]) => {
         if (cancelled) return;
         reset({
-          nome_vendedor: vendedor.nome_vendedor,
-          fisico_juridico: vendedor.fisico_juridico,
-          cpf_cnpj: vendedor.cpf_cnpj,
-          banco: vendedor.banco,
-          agencia: vendedor.agencia,
-          conta: vendedor.conta,
-          chave_pix: vendedor.chave_pix,
+          nome_pecuarista: pecuarista.nome_pecuarista,
+          fisico_juridico: pecuarista.fisico_juridico,
+          cpf_cnpj: pecuarista.cpf_cnpj,
+          banco: pecuarista.banco,
+          agencia: pecuarista.agencia,
+          conta: pecuarista.conta,
+          chave_pix: pecuarista.chave_pix,
         });
         setFazendas(fazendasData);
-        setFazendaIds((vendedor.vendedor_fazenda ?? []).map((a) => a.fazenda_id));
+        setFazendaIds((pecuarista.pecuarista_fazenda ?? []).map((a) => a.fazenda_id));
         setLoaded(true);
       })
       .catch((err: unknown) => {
@@ -83,8 +83,8 @@ export default function EditarVendedorPage() {
     }
     setSubmitError(null);
     try {
-      await updateVendedor(params.id, { ...values, fazenda_ids: fazendaIds });
-      router.push("/vendedores");
+      await updatePecuarista(params.id, { ...values, fazenda_ids: fazendaIds });
+      router.push("/pecuaristas");
     } catch (err) {
       setSubmitError(err instanceof ApiError || err instanceof Error ? err.message : "Erro ao salvar.");
     }
@@ -92,10 +92,10 @@ export default function EditarVendedorPage() {
 
   return (
     <div className={cn(styles.page, "pt-safe")}>
-      <BackLink href="/vendedores" />
-      <h1 className={styles.title}>Editar Vendedor</h1>
+      <BackLink href="/pecuaristas" />
+      <h1 className={styles.title}>Editar Pecuarista</h1>
 
-      {!loaded && !loadError ? <div className={cn(styles.state, "glass-panel")}>Carregando vendedor...</div> : null}
+      {!loaded && !loadError ? <div className={cn(styles.state, "glass-panel")}>Carregando pecuarista...</div> : null}
       {loadError ? <div className={cn(styles.state, styles.stateError, "glass-panel")}>{loadError}</div> : null}
 
       {loaded ? (
@@ -104,12 +104,12 @@ export default function EditarVendedorPage() {
             <div className={styles.fields}>
               {submitError ? <p className={styles.submitError}>{submitError}</p> : null}
 
-              <Field label="Fazendas do vendedor" htmlFor="fazendas">
+              <Field label="Fazendas do pecuarista" htmlFor="fazendas">
                 <FazendasChecklist fazendas={fazendas} selected={fazendaIds} onChange={setFazendaIds} />
               </Field>
 
-              <IconField icon={User} label="Nome Vendedor" htmlFor="nome_vendedor" error={errors.nome_vendedor?.message}>
-                <TintedInput id="nome_vendedor" tint="pink" {...register("nome_vendedor")} />
+              <IconField icon={User} label="Nome Pecuarista" htmlFor="nome_pecuarista" error={errors.nome_pecuarista?.message}>
+                <TintedInput id="nome_pecuarista" tint="pink" {...register("nome_pecuarista")} />
               </IconField>
 
               <Field label="Pessoa" htmlFor="fisico_juridico" error={errors.fisico_juridico?.message}>

@@ -109,7 +109,7 @@ export default function NegociosPage() {
     setRelatorioAvisos([]);
     setGerandoRelatorio(true);
     try {
-      // O romaneio precisa de gados, vendedor e dados bancários, que só vêm no detalhe.
+      // O romaneio precisa de gados, pecuarista e dados bancários, que só vêm no detalhe.
       const detalhes = await Promise.all(sincronizados.map((n) => fetchNegocio(n.negocio_id)));
       const { avisos } = await gerarRomaneios(
         detalhes,

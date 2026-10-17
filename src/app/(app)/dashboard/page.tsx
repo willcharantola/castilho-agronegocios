@@ -89,7 +89,7 @@ export default function DashboardPage() {
     setRelatorioAvisos([]);
     setGerandoRelatorio(true);
     try {
-      // Romaneio de cada negócio do período (o romaneio precisa do detalhe: gados e vendedor).
+      // Romaneio de cada negócio do período (o romaneio precisa do detalhe: gados e pecuarista).
       const detalhes = await Promise.all(negocios.map((n) => fetchNegocio(n.negocio_id)));
       const { avisos } = await gerarRomaneios(detalhes, fazendasPorId);
       setRelatorioAvisos(avisos);

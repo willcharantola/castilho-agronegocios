@@ -13,7 +13,7 @@ import { IconField } from "@/components/form/icon-field";
 import { TintedInput } from "@/components/form/tinted-input";
 import { Button } from "@/components/ui/button";
 import { fetchFazenda, updateFazenda } from "@/lib/api/fazendas";
-import type { Vendedor } from "@/lib/api/types";
+import type { Pecuarista } from "@/lib/api/types";
 import { ApiError } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
 import styles from "./page.module.css";
@@ -34,7 +34,7 @@ export default function EditarFazendaPage() {
   const [loadError, setLoadError] = React.useState<string | null>(null);
   const [submitError, setSubmitError] = React.useState<string | null>(null);
   const [loaded, setLoaded] = React.useState(false);
-  const [vendedores, setVendedores] = React.useState<Vendedor[]>([]);
+  const [pecuaristas, setPecuaristas] = React.useState<Pecuarista[]>([]);
   const [enviandoMarca, setEnviandoMarca] = React.useState(false);
   // marca_url como veio da API: só é reenviada se mudar (trocada ou removida).
   const [marcaOriginal, setMarcaOriginal] = React.useState<string | null>(null);
@@ -59,7 +59,7 @@ export default function EditarFazendaPage() {
           marca_escrita: fazenda.marca_escrita ?? "",
         });
         setMarcaOriginal(fazenda.marca_url ?? null);
-        setVendedores((fazenda.vendedor_fazenda ?? []).map((a) => a.vendedor));
+        setPecuaristas((fazenda.pecuarista_fazenda ?? []).map((a) => a.pecuarista));
         setLoaded(true);
       })
       .catch((err: unknown) => {
@@ -132,13 +132,13 @@ export default function EditarFazendaPage() {
               <TintedInput id="marca_escrita" tint="pink" maxLength={10} {...register("marca_escrita")} />
             </IconField>
 
-            <Field label="Vendedores associados" htmlFor="vendedores">
-              {vendedores.length === 0 ? (
-                <p className={styles.state}>Nenhum vendedor associado a esta fazenda.</p>
+            <Field label="Pecuaristas associados" htmlFor="pecuaristas">
+              {pecuaristas.length === 0 ? (
+                <p className={styles.state}>Nenhum pecuarista associado a esta fazenda.</p>
               ) : (
                 <ul>
-                  {vendedores.map((v) => (
-                    <li key={v.vendedor_id}>{v.nome_vendedor}</li>
+                  {pecuaristas.map((v) => (
+                    <li key={v.pecuarista_id}>{v.nome_pecuarista}</li>
                   ))}
                 </ul>
               )}

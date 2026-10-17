@@ -35,9 +35,9 @@ npm install -D @types/file-saver
 
 Abrir o arquivo `modelo-relatorio.docx` e adicionar, no corpo do documento (abaixo do `{{nome-relatorio}}`), uma tabela com uma linha de cabeçalho fixa e uma linha de dados usando a sintaxe de loop do `docxtemplater`:
 
-| Fazenda | Vendedor | Data do Negócio | Modalidade | Valor Total | Comissão |
+| Fazenda | Pecuarista | Data do Negócio | Modalidade | Valor Total | Comissão |
 |---|---|---|---|---|---|
-| `{#negocios}{fazenda}` | `{vendedor}` | `{data_negocio}` | `{modalidade}` | `{valor_total}` | `{comissao}{/negocios}` |
+| `{#negocios}{fazenda}` | `{pecuarista}` | `{data_negocio}` | `{modalidade}` | `{valor_total}` | `{comissao}{/negocios}` |
 
 Na prática, isso significa: a **primeira célula** da linha de dados começa com `{#negocios}` (abre o loop) antes do placeholder `{fazenda}`, e a **última célula** da mesma linha termina com `{/negocios}` (fecha o loop) depois do placeholder `{comissao}`. O `docxtemplater` repete essa linha inteira da tabela para cada item do array `negocios` passado ao gerar o documento.
 
@@ -60,7 +60,7 @@ import { saveAs } from "file-saver";
 
 interface NegocioRelatorio {
   fazenda: string;
-  vendedor: string;
+  pecuarista: string;
   data_negocio: string;
   modalidade: string;
   valor_total: string;
@@ -82,7 +82,7 @@ async function gerarRelatorio(negociosFiltrados: NegocioRelatorio[]) {
     "data-emissao": new Date().toLocaleDateString("pt-BR"),
     negocios: negociosFiltrados.map((n) => ({
       fazenda: n.fazenda,
-      vendedor: n.vendedor,
+      pecuarista: n.pecuarista,
       data_negocio: new Date(n.data_negocio).toLocaleDateString("pt-BR"),
       modalidade: n.modalidade,
       valor_total: `R$ ${Number(n.valor_total).toFixed(2)}`,

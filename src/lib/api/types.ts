@@ -38,20 +38,20 @@ export type Fazenda = {
   marca_url: string | null;
   marca_escrita: string | null;
   /** Só vem em GET /fazendas/:id. */
-  vendedor_fazenda?: { fazenda_id: number; vendedor_id: number; vendedor: Vendedor }[];
+  pecuarista_fazenda?: { fazenda_id: number; pecuarista_id: number; pecuarista: Pecuarista }[];
 };
 
-export type Vendedor = {
-  vendedor_id: number;
-  nome_vendedor: string;
+export type Pecuarista = {
+  pecuarista_id: number;
+  nome_pecuarista: string;
   fisico_juridico: "fisico" | "juridico";
   cpf_cnpj: string;
   banco: string;
   agencia: string;
   conta: string;
   chave_pix: string;
-  /** Associações N:N com fazendas (tabela vendedor_fazenda). */
-  vendedor_fazenda?: { fazenda_id: number; vendedor_id: number; fazenda: Fazenda }[];
+  /** Associações N:N com fazendas (tabela pecuarista_fazenda). */
+  pecuarista_fazenda?: { fazenda_id: number; pecuarista_id: number; fazenda: Fazenda }[];
 };
 
 export type Comprador = {
@@ -72,7 +72,7 @@ export type Negocio = {
   negocio_id: number;
   empresa_id: number;
   fazenda_id: number;
-  vendedor_id: number;
+  pecuarista_id: number;
   comprador_id: number;
   /**
    * TIME do Postgres, serializado como ISO em 1970-01-01 — use `formatHora`. Registrados
@@ -140,7 +140,7 @@ export type Gado = {
 export type NegocioDetail = Negocio & {
   gados: Gado[];
   comprador: Comprador;
-  vendedor: Vendedor;
+  pecuarista: Pecuarista;
 };
 
 export type LoginResponse = {
@@ -167,8 +167,8 @@ export type CreateFazendaInput = {
 };
 export type UpdateFazendaInput = Partial<CreateFazendaInput>;
 
-export type CreateVendedorInput = {
-  nome_vendedor: string;
+export type CreatePecuaristaInput = {
+  nome_pecuarista: string;
   fisico_juridico: "fisico" | "juridico";
   cpf_cnpj: string;
   banco: string;
@@ -177,7 +177,7 @@ export type CreateVendedorInput = {
   chave_pix: string;
   fazenda_ids?: number[];
 };
-export type UpdateVendedorInput = Partial<CreateVendedorInput>;
+export type UpdatePecuaristaInput = Partial<CreatePecuaristaInput>;
 
 export type CreateCompradorInput = Omit<Comprador, "comprador_id">;
 export type UpdateCompradorInput = Partial<CreateCompradorInput>;
@@ -185,7 +185,7 @@ export type UpdateCompradorInput = Partial<CreateCompradorInput>;
 export type CreateNegocioInput = {
   empresa_id: number;
   fazenda_id: number;
-  vendedor_id: number;
+  pecuarista_id: number;
   comprador_id: number;
   modalidade: Modalidade;
   tipo_gado: TipoGado;
