@@ -111,10 +111,16 @@ export type Negocio = {
   rendimento_medio: number | null;
   peso_medio_arroba: number | null;
   peso_medio_quilos: number | null;
-  /** R$ — valor_total × 1,5%. */
+  /** R$ — valor_total × aliquota_funrural / 100. */
   funrural: number | null;
-  /** R$ — valor_total × 0,2%. */
+  /** R$ — valor_total × aliquota_senar / 100. */
   senar: number | null;
+  /**
+   * Alíquotas (%) usadas por este negócio, copiadas da empresa na criação — use
+   * `formatPercent`. null em negócios ainda só no aparelho.
+   */
+  aliquota_funrural: number | null;
+  aliquota_senar: number | null;
 };
 
 export type Gado = {
@@ -141,6 +147,12 @@ export type NegocioDetail = Negocio & {
   gados: Gado[];
   comprador: Comprador;
   pecuarista: Pecuarista;
+};
+
+/** Configurações > Impostos e taxas: alíquotas em % (1.5 = 1,5%). */
+export type Impostos = {
+  aliquota_funrural: number;
+  aliquota_senar: number;
 };
 
 export type LoginResponse = {

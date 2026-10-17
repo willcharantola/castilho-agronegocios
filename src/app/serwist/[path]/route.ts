@@ -29,6 +29,8 @@ const PAGINAS_OFFLINE = [
   "/compradores",
   "/compradores/novo",
   "/dashboard",
+  "/configuracoes",
+  "/configuracoes/impostos-e-taxas",
 ];
 
 export const { dynamic, dynamicParams, revalidate, generateStaticParams, GET } = createSerwistRoute({

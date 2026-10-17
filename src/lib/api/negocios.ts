@@ -26,6 +26,8 @@ function normalizeNegocio(raw: Negocio): Negocio {
     peso_medio_quilos: decimalOuNull(raw.peso_medio_quilos),
     funrural: decimalOuNull(raw.funrural),
     senar: decimalOuNull(raw.senar),
+    aliquota_funrural: decimalOuNull(raw.aliquota_funrural),
+    aliquota_senar: decimalOuNull(raw.aliquota_senar),
   };
 }
 

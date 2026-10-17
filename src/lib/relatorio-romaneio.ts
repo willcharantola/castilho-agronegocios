@@ -1,7 +1,15 @@
 import PizZip from "pizzip";
 import Docxtemplater from "docxtemplater";
 import { saveAs } from "file-saver";
-import { formatCurrency, formatDate, formatGenero, formatHora, formatNumber, formatPercent } from "@/lib/format";
+import {
+  formatCurrency,
+  formatDate,
+  formatDecimalCurto,
+  formatGenero,
+  formatHora,
+  formatNumber,
+  formatPercent,
+} from "@/lib/format";
 import type { Fazenda, Gado, NegocioDetail } from "@/lib/api/types";
 
 /**
@@ -15,7 +23,8 @@ import type { Fazenda, Gado, NegocioDetail } from "@/lib/api/types";
  * adicionados aos .docx:
  *
  * - Totais (os dois modelos): {{total-kg}} {{total-arroba}} {{rend-arroba}}
- *   {{media-peso}} {{media-arroba}} {{valor-bruto}} {{funrural}} {{senar}} — lidos
+ *   {{media-peso}} {{media-arroba}} {{valor-bruto}} {{funrural}} {{senar}}
+ *   {{aliquota_funrural}} {{aliquota_senar}} (alíquotas em %, ex.: "1,5") — lidos
  *   dos campos calculados pela API (peso_total_quilos, peso_total_arroba,
  *   rendimento_medio, peso_medio_quilos, peso_medio_arroba, valor_total, funrural,
  *   senar), nunca recalculados aqui.
@@ -82,6 +91,9 @@ export function montarDadosCabecalho(negocio: NegocioDetail, fazenda: Fazenda | 
     "valor-bruto": campo(negocio.valor_total, formatCurrency),
     funrural: campo(negocio.funrural, formatCurrency),
     senar: campo(negocio.senar, formatCurrency),
+    // Alíquotas do próprio negócio, sem "%" (o modelo traz "{{aliquota_funrural}}% Funrural:").
+    aliquota_funrural: campo(negocio.aliquota_funrural, formatDecimalCurto),
+    aliquota_senar: campo(negocio.aliquota_senar, formatDecimalCurto),
 
     // Dados bancários do pecuarista (o campo "Nome" reaproveita {{nome-pecuarista}}).
     "cpf-cnpj": pecuarista?.cpf_cnpj ?? "",

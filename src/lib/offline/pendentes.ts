@@ -117,6 +117,8 @@ export function negocioDePendente(r: RegistroSalvo): ComPendencia<Negocio> {
     peso_medio_quilos: null,
     funrural: null,
     senar: null,
+    aliquota_funrural: null,
+    aliquota_senar: null,
     pendente: info(r),
   };
 }

@@ -20,6 +20,11 @@ import { useVersaoSincronizacao } from "@/lib/offline/fila";
 import { comGadosPendentes, useGadosPendentes } from "@/lib/offline/pendentes";
 import styles from "./page.module.css";
 
+/** "Funrural (1,5%)" — alíquota gravada no próprio negócio; sem ela, só o nome. */
+function rotuloAliquota(nome: string, aliquota: number | null) {
+  return aliquota !== null ? `${nome} (${formatPercent(aliquota)})` : nome;
+}
+
 export default function NegocioDetailPage() {
   const params = useParams<{ id: string }>();
   const [negocioServidor, setNegocio] = React.useState<NegocioDetail | null>(null);
@@ -91,8 +96,8 @@ export default function NegocioDetailPage() {
               { label: "Peso médio (kg)", valor: romaneio(negocio.peso_medio_quilos, (v) => formatNumber(v)) },
             ]),
         { label: "Valor médio por cabeça", valor: romaneio(valorMedio, formatCurrency) },
-        { label: "Funrural (1,5%)", valor: romaneio(negocio.funrural, formatCurrency) },
-        { label: "Senar (0,2%)", valor: romaneio(negocio.senar, formatCurrency) },
+        { label: rotuloAliquota("Funrural", negocio.aliquota_funrural), valor: romaneio(negocio.funrural, formatCurrency) },
+        { label: rotuloAliquota("Senar", negocio.aliquota_senar), valor: romaneio(negocio.senar, formatCurrency) },
       ]
     : [];
 
