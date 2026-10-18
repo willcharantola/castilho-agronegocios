@@ -20,7 +20,6 @@ import { ApiError } from "@/lib/api-client";
 import { FISICO_JURIDICO_LABELS } from "@/lib/labels";
 import { cn } from "@/lib/utils";
 import fieldBox from "@/components/form/field-box.module.css";
-import styles from "./page.module.css";
 
 const schema = z.object({
   nome_pecuarista: z.string().min(2, "Informe o nome do pecuarista.").max(50),
@@ -91,18 +90,18 @@ export default function EditarPecuaristaPage() {
   }
 
   return (
-    <div className={cn(styles.page, "pt-safe")}>
+    <div className="page-container page-narrow pt-safe">
       <BackLink href="/pecuaristas" />
-      <h1 className={styles.title}>Editar Pecuarista</h1>
+      <h1 className="page-title">Editar Pecuarista</h1>
 
-      {!loaded && !loadError ? <div className={cn(styles.state, "glass-panel")}>Carregando pecuarista...</div> : null}
-      {loadError ? <div className={cn(styles.state, styles.stateError, "glass-panel")}>{loadError}</div> : null}
+      {!loaded && !loadError ? <div className="state-box glass-panel">Carregando pecuarista...</div> : null}
+      {loadError ? <div className="state-box state-error glass-panel">{loadError}</div> : null}
 
       {loaded ? (
         <>
-          <form onSubmit={handleSubmit(onSubmit)} className={styles.form}>
-            <div className={styles.fields}>
-              {submitError ? <p className={styles.submitError}>{submitError}</p> : null}
+          <form onSubmit={handleSubmit(onSubmit)} className="form-stack">
+            <div className="form-fields">
+              {submitError ? <p className="form-error">{submitError}</p> : null}
 
               <Field label="Fazendas do pecuarista" htmlFor="fazendas">
                 <FazendasChecklist fazendas={fazendas} selected={fazendaIds} onChange={setFazendaIds} />
@@ -142,7 +141,7 @@ export default function EditarPecuaristaPage() {
                 <TintedInput id="banco" tint="pink" {...register("banco")} />
               </IconField>
 
-              <div className={styles.row}>
+              <div className="form-row">
                 <Field label="Agência" htmlFor="agencia" error={errors.agencia?.message}>
                   <TintedInput id="agencia" tint="pink" {...register("agencia")} />
                 </Field>

@@ -1,0 +1,256 @@
+/*
+ * Estilos compartilhados entre as telas (ver docs/auditoria-css.md).
+ * Importado uma vez em app/layout.tsx, depois de globals.css. Nos componentes, usar a
+ * classe global junto das locais: className={cn("page-title", styles.algoEspecifico)}.
+ * Override de página fica no *.module.css (carregado depois) e nunca repete a mesma
+ * propriedade da classe global no mesmo elemento.
+ */
+
+/* ================================================================ Variáveis */
+
+:root {
+  /* Cantos dos cartões, campos de busca e caixas de estado. */
+  --radius-box: 5px;
+
+  /* Texto secundário sobre fundo claro (ink com transparência). */
+  --color-ink-muted: color-mix(in oklch, var(--color-ink) 70%, transparent);
+  --color-ink-soft: color-mix(in oklch, var(--color-ink) 50%, transparent);
+  --color-placeholder: color-mix(in oklch, var(--color-ink) 45%, transparent);
+
+  /* Fundo de ícones sobre cartões escuros (glass-dark). */
+  --color-on-dark-surface: rgb(255 255 255 / 15%);
+
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.85rem;
+  --font-size-md: 0.9rem;
+  --font-size-title: 1.25rem;
+}
+
+/* ================================================================ Tipografia */
+
+.page-title {
+  font-size: var(--font-size-title);
+  font-weight: 800;
+  color: var(--color-dark);
+}
+
+.section-title {
+  font-size: var(--font-size-md);
+  font-weight: 700;
+  color: var(--color-dark);
+}
+
+/* ================================================================ Layout de página */
+
+.page-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* Telas maiores (barra lateral): formulários em coluna centralizada; listas em 90%.
+   A condição de altura evita que um iPhone deitado vire layout de tablet. */
+@media (min-width: 768px) and (min-height: 500px) {
+  .page-narrow {
+    width: 100%;
+    max-width: var(--form-max-width);
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .page-wide {
+    width: 90%;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+/* ================================================================ Formulários */
+
+.form-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.form-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+.form-error {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-danger);
+}
+
+.field-error {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--color-danger);
+}
+
+/* iPhone: o input de data nativo ignora width/min-width e estoura a coluna. */
+.date-input-fix input[type="date"] {
+  -webkit-appearance: none;
+  appearance: none;
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.date-input-fix input[type="date"]::-webkit-date-and-time-value {
+  text-align: center;
+  min-height: 1.2em;
+}
+
+/* Busca no topo das listas. */
+.search-box {
+  position: relative;
+}
+
+.search-icon {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: var(--color-ink-soft);
+}
+
+.search-input {
+  height: 3rem;
+  width: 100%;
+  border-radius: var(--radius-box);
+  border: none;
+  padding: 0 1.25rem 0 2.75rem;
+  font-size: 0.95rem;
+  color: var(--color-ink);
+}
+
+.search-input::placeholder {
+  color: var(--color-placeholder);
+}
+
+@media (min-width: 768px) and (min-height: 500px) {
+  .search-box {
+    max-width: var(--form-max-width);
+  }
+}
+
+/* ================================================================ Cartões e listas */
+
+.card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.list-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border-radius: var(--radius-box);
+  padding: 0.9rem 1rem;
+  text-align: left;
+}
+
+/* Resumo do que já foi escolhido no fluxo (fazenda, pecuarista...). */
+.summary-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border-radius: var(--radius-box);
+  padding: 0.9rem 1rem;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.card-icon {
+  display: flex;
+  height: 2.5rem;
+  width: 2.5rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-box);
+  background: var(--color-dark);
+  color: var(--color-white);
+}
+
+.card-icon-on-dark {
+  display: flex;
+  height: 2.25rem;
+  width: 2.25rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-box);
+  background: var(--color-on-dark-surface);
+}
+
+.card-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.card-name {
+  font-weight: 800;
+  color: var(--color-dark);
+}
+
+.card-meta {
+  font-size: var(--font-size-md);
+  color: #000;
+}
+
+.card-meta-on-dark {
+  font-size: var(--font-size-md);
+  color: var(--color-white);
+}
+
+/* ================================================================ Estados (carregando / erro / vazio) */
+
+.state-box {
+  border-radius: var(--radius-box);
+  padding: 2rem 1.25rem;
+  text-align: center;
+  color: var(--color-ink);
+}
+
+/* Depois de .state-box: as duas vão juntas no mesmo elemento. */
+.state-error {
+  color: var(--color-danger);
+}
+
+/* Mensagens da geração de relatórios. */
+.report-error {
+  font-size: var(--font-size-sm);
+  color: var(--color-danger);
+  text-align: center;
+}
+
+.report-notice {
+  font-size: var(--font-size-sm);
+  color: var(--color-ink);
+  text-align: center;
+}
+
+/* ================================================================ Botões utilitários */
+
+.retry-button {
+  margin-top: 0.75rem;
+}

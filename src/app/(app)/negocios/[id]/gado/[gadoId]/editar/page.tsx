@@ -52,10 +52,10 @@ export default function EditarGadoPage() {
   }
 
   return (
-    <div className={cn(styles.page, "pt-safe")}>
+    <div className={cn("page-container page-narrow", styles.page, "pt-safe")}>
       <BackLink href={`/negocios/${params.id}`} />
       <div>
-        <h1 className={styles.title}>Editar Gado</h1>
+        <h1 className="page-title">Editar Gado</h1>
         {negocio ? (
           <p className={styles.subtitle}>
             Modalidade: {MODALIDADE_LABELS[negocio.modalidade]} · Valores recalculados ao salvar
@@ -63,8 +63,8 @@ export default function EditarGadoPage() {
         ) : null}
       </div>
 
-      {!gado && !loadError ? <div className={cn(styles.state, "glass-panel")}>Carregando gado...</div> : null}
-      {loadError ? <div className={cn(styles.state, styles.stateError, "glass-panel")}>{loadError}</div> : null}
+      {!gado && !loadError ? <div className="state-box glass-panel">Carregando gado...</div> : null}
+      {loadError ? <div className="state-box state-error glass-panel">{loadError}</div> : null}
 
       {negocio && gado ? (
         <GadoForm

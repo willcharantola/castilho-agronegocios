@@ -65,7 +65,7 @@ export default function LoginSenhaPage() {
         onSubmit={handleSubmit(onSubmit)}
         fields={
           <>
-            {authError ? <p className={styles.authError}>{authError}</p> : null}
+            {authError ? <p className="form-error">{authError}</p> : null}
             <Field label="Senha" htmlFor="senha" error={errors.senha?.message}>
               <PasswordField
                 id="senha"

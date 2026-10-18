@@ -103,12 +103,12 @@ export default function NovoPecuaristaDadosPage() {
   if (!data.fazendaId) return null;
 
   return (
-    <div className={cn(styles.page, "pt-safe")}>
+    <div className="page-container page-narrow pt-safe">
       <BackLink href="/pecuaristas/novo" />
-      <h1 className={styles.title}>Cadastrar Pecuarista</h1>
+      <h1 className="page-title">Cadastrar Pecuarista</h1>
 
-      <div className={cn(styles.fazendaCard, "glass-dark")}>
-        <span className={styles.fazendaIcon}>
+      <div className="summary-card glass-dark">
+        <span className="card-icon-on-dark">
           <Warehouse size={18} />
         </span>
         <p className={styles.fazendaNome}>{data.fazendaNome}</p>
@@ -118,9 +118,9 @@ export default function NovoPecuaristaDadosPage() {
         <FazendasChecklist fazendas={fazendas} selected={fazendaIds} onChange={setFazendaIds} />
       </Field>
 
-      <form onSubmit={handleSubmit(onSubmit)} className={styles.form}>
-        <div className={styles.fields}>
-          {submitError ? <p className={styles.submitError}>{submitError}</p> : null}
+      <form onSubmit={handleSubmit(onSubmit)} className="form-stack">
+        <div className="form-fields">
+          {submitError ? <p className="form-error">{submitError}</p> : null}
 
           <IconField icon={User} label="Nome Pecuarista" htmlFor="nome_pecuarista" error={errors.nome_pecuarista?.message}>
             <TintedInput id="nome_pecuarista" tint="pink" placeholder="Nome do pecuarista" autoFocus {...register("nome_pecuarista")} />
@@ -156,7 +156,7 @@ export default function NovoPecuaristaDadosPage() {
             <TintedInput id="banco" tint="pink" placeholder="Ex: Banco do Brasil" {...register("banco")} />
           </IconField>
 
-          <div className={styles.row}>
+          <div className="form-row">
             <Field label="Agência" htmlFor="agencia" error={errors.agencia?.message}>
               <TintedInput id="agencia" tint="pink" {...register("agencia")} />
             </Field>

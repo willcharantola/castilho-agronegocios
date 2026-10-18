@@ -14,8 +14,6 @@ import { Button } from "@/components/ui/button";
 import { createFazenda } from "@/lib/api/fazendas";
 import { ApiError } from "@/lib/api-client";
 import { enviarOuEnfileirar } from "@/lib/offline/fila";
-import { cn } from "@/lib/utils";
-import styles from "./page.module.css";
 
 const schema = z.object({
   nome_fazenda: z.string().min(2, "Informe o nome da fazenda.").max(50),
@@ -58,13 +56,13 @@ export default function NovaFazendaPage() {
   }
 
   return (
-    <div className={cn(styles.page, "pt-safe")}>
+    <div className="page-container page-narrow pt-safe">
       <BackLink href="/fazendas" />
-      <h1 className={styles.title}>Cadastrar Fazenda</h1>
+      <h1 className="page-title">Cadastrar Fazenda</h1>
 
-      <form onSubmit={handleSubmit(onSubmit)} className={styles.form}>
-        <div className={styles.fields}>
-          {submitError ? <p className={styles.submitError}>{submitError}</p> : null}
+      <form onSubmit={handleSubmit(onSubmit)} className="form-stack">
+        <div className="form-fields">
+          {submitError ? <p className="form-error">{submitError}</p> : null}
 
           <Controller
             control={control}

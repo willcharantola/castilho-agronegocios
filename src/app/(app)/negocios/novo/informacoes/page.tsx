@@ -158,7 +158,7 @@ export default function NovoNegocioInformacoesPage() {
   if (!data.fazendaId || !data.pecuaristaId || !data.compradorId || !data.modalidade) return null;
 
   return (
-    <div className={cn(styles.page, "pt-safe")}>
+    <div className="page-container page-narrow pt-safe">
       <BackLink href="/negocios/novo/modalidade" />
       
       <ProgressSteps current={5} total={6} />
@@ -166,7 +166,7 @@ export default function NovoNegocioInformacoesPage() {
       <div className={cn(styles.fazendaCard, "glass-dark")}>
 
         <div className={styles.fazendaCabecalho}> 
-        <span className={styles.fazendaIcon}>
+        <span className="card-icon-on-dark">
           <Warehouse size={18} />
         </span>
         <div> 
@@ -181,14 +181,14 @@ export default function NovoNegocioInformacoesPage() {
         
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className={styles.form}>
-        <div className={styles.fields}>
-          {submitError ? <p className={styles.submitError}>{submitError}</p> : null}
+      <form onSubmit={handleSubmit(onSubmit)} className="form-stack date-input-fix">
+        <div className="form-fields">
+          {submitError ? <p className="form-error">{submitError}</p> : null}
 
         
      
 
-          <div className={styles.row}>
+          <div className="form-row">
             <Field label="Tipo de Gado" htmlFor="tipo_gado" error={errors.tipo_gado?.message}>
               <Controller
                 control={control}

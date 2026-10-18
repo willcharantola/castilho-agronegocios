@@ -52,15 +52,15 @@ export default function NovoNegocioFazendaPage() {
   );
 
   return (
-    <div className={cn(styles.page, "pt-safe")}>
+    <div className="page-container page-wide pt-safe">
       <BackLink href="/" />
-      <h1 className={styles.title}>Cadastrar Novo Negócio</h1>
+      <h1 className={cn("page-title", styles.title)}>Cadastrar Novo Negócio</h1>
       <ProgressSteps current={1} total={6} />
 
-      <div className={styles.searchWrap}>
-        <Search className={styles.searchIcon} size={18} />
+      <div className="search-box">
+        <Search className="search-icon" size={18} />
         <input
-          className={cn(styles.searchInput, "glass-panel")}
+          className="search-input glass-panel"
           placeholder="Buscar fazenda..."
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
@@ -68,13 +68,13 @@ export default function NovoNegocioFazendaPage() {
       </div>
 
       {fazendas === null && !error ? (
-        <div className={cn(styles.state, "glass-panel")}>Carregando fazendas...</div>
+        <div className="state-box glass-panel">Carregando fazendas...</div>
       ) : null}
 
-      {error && !fazendas ? <div className={cn(styles.state, styles.stateError, "glass-panel")}>{error}</div> : null}
+      {error && !fazendas ? <div className="state-box state-error glass-panel">{error}</div> : null}
 
       {filtradas && filtradas.length === 0 ? (
-        <div className={cn(styles.state, "glass-panel")}>
+        <div className="state-box glass-panel">
           {fazendas && fazendas.length > 0
             ? "Nenhuma fazenda encontrada para essa busca."
             : "Nenhuma fazenda cadastrada ainda. Cadastre uma fazenda antes de criar um negócio."}
@@ -82,25 +82,25 @@ export default function NovoNegocioFazendaPage() {
       ) : null}
 
       {filtradas && filtradas.length > 0 ? (
-        <div className={styles.list}>
+        <div className="card-list">
           {filtradas.map((fazenda: ComPendencia<Fazenda>) => (
             <button
               key={fazenda.fazenda_id}
               type="button"
               onClick={() => selecionar(fazenda)}
-              className={cn(styles.card, "glass-panel")}
+              className={cn("list-card", styles.card, "glass-panel")}
             >
-                 <span className={styles.cardIcon}>
+                 <span className="card-icon">
                   {fazenda.marca_url ? (
                   <img src={fazenda.marca_url} alt={fazenda.nome_fazenda} className={styles.cardImage}/>
                   ) : (
                   <Warehouse size={18} />
                   )}
               </span>
-              <div className={styles.cardInfo}>
-                <p className={styles.cardName}>{fazenda.nome_fazenda}</p>
-                <p className={styles.cardMeta}>Município: {fazenda.municipio}</p>
-                 <p className={styles.cardMeta}>I.E.: {fazenda.inscricao_estadual}</p>
+              <div className="card-info">
+                <p className="card-name">{fazenda.nome_fazenda}</p>
+                <p className="card-meta">Município: {fazenda.municipio}</p>
+                 <p className="card-meta">I.E.: {fazenda.inscricao_estadual}</p>
                 {fazenda.pendente ? <PendenteBadge pendente={fazenda.pendente} /> : null}
               </div>
             </button>

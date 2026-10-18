@@ -85,11 +85,11 @@ export function UsuarioForm({
   }
 
   return (
-    <form onSubmit={handleSubmit(enviar)} className={styles.form}>
-      <div className={styles.fields}>
-        {submitError ? <p className={styles.submitError}>{submitError}</p> : null}
+    <form onSubmit={handleSubmit(enviar)} className="form-fields">
+      <div className="form-fields">
+        {submitError ? <p className="form-error">{submitError}</p> : null}
 
-        <div className={styles.row}>
+        <div className="form-row">
           <Field label="Nome" htmlFor="nome" error={errors.nome?.message}>
             <TintedInput id="nome" tint="pink" autoComplete="off" {...register("nome")} />
           </Field>

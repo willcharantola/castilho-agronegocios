@@ -66,10 +66,10 @@ export default function AdicionarGadoPage() {
   }
 
   return (
-    <div className={cn(styles.page, "pt-safe")}>
+    <div className={cn("page-container page-narrow", styles.page, "pt-safe")}>
       <BackLink href={`/negocios/${params.id}`} />
       <div>
-        <h1 className={styles.title}>Adicionar Gado</h1>
+        <h1 className="page-title">Adicionar Gado</h1>
         {negocio ? (
           <p className={styles.subtitle}>
             Modalidade: {MODALIDADE_LABELS[negocio.modalidade]} · {negocio.gados.length} cabeça(s) cadastrada(s)
@@ -77,8 +77,8 @@ export default function AdicionarGadoPage() {
         ) : null}
       </div>
 
-      {!negocio && !loadError ? <div className={cn(styles.state, "glass-panel")}>Carregando negócio...</div> : null}
-      {loadError ? <div className={cn(styles.state, styles.stateError, "glass-panel")}>{loadError}</div> : null}
+      {!negocio && !loadError ? <div className="state-box glass-panel">Carregando negócio...</div> : null}
+      {loadError ? <div className="state-box state-error glass-panel">{loadError}</div> : null}
 
       {negocio ? (
         <GadoForm

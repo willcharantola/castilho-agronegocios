@@ -3,6 +3,7 @@ import { Nunito } from "next/font/google";
 import { SerwistProvider } from "@serwist/turbopack/react";
 import { BackgroundDecor } from "@/components/background-decor";
 import "./globals.css";
+import "./shared.css";
 
 const nunito = Nunito({
   variable: "--font-sans",

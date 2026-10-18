@@ -20,9 +20,9 @@ export default function NovoUsuarioPage() {
   if (!admin) return null;
 
   return (
-    <div className={cn(styles.page, "pt-safe")}>
+    <div className={cn("page-container page-narrow", styles.page, "pt-safe")}>
       <BackLink href="/perfil" />
-      <h1 className={styles.title}>Cadastrar Usuário</h1>
+      <h1 className="page-title">Cadastrar Usuário</h1>
       <UsuarioForm onSubmit={cadastrar} />
     </div>
   );

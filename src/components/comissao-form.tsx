@@ -84,7 +84,7 @@ export function ComissaoForm({
       ) : (
         <p className={styles.hint}>Nenhuma comissão definida para este negócio.</p>
       )}
-      {error ? <p className={styles.error}>{error}</p> : null}
+      {error ? <p className="form-error">{error}</p> : null}
       {sucesso ? <p className={styles.success}>Comissão atualizada.</p> : null}
     </form>
   );

@@ -48,46 +48,46 @@ export default function NovoNegocioCompradorPage() {
   }
 
   return (
-    <div className={cn(styles.page, "pt-safe")}>
+    <div className="page-container page-wide pt-safe">
       <BackLink href="/negocios/novo/pecuarista" />
-      <h1 className={styles.title}>Cadastrar Novo Negócio</h1>
+      <h1 className={cn("page-title", styles.title)}>Cadastrar Novo Negócio</h1>
       <ProgressSteps current={3} total={6} />
 
-      <div className={cn(styles.fazendaCard, "glass-dark")}>
-        <span className={styles.fazendaIcon}>
+      <div className="summary-card glass-dark">
+        <span className="card-icon-on-dark">
           <Warehouse size={18} />
         </span>
         <p className={styles.fazendaNome}>{data.fazendaNome}</p>
       </div>
 
-      <p className={styles.subtitle}>Selecione o comprador</p>
+      <p className="section-title">Selecione o comprador</p>
 
       {compradores === null && !error ? (
-        <div className={cn(styles.state, "glass-panel")}>Carregando compradores...</div>
+        <div className="state-box glass-panel">Carregando compradores...</div>
       ) : null}
 
-      {error && !compradores ? <div className={cn(styles.state, styles.stateError, "glass-panel")}>{error}</div> : null}
+      {error && !compradores ? <div className="state-box state-error glass-panel">{error}</div> : null}
 
       {compradores && compradores.length === 0 ? (
-        <div className={cn(styles.state, "glass-panel")}>Nenhum comprador cadastrado ainda.</div>
+        <div className="state-box glass-panel">Nenhum comprador cadastrado ainda.</div>
       ) : null}
 
       {compradores && compradores.length > 0 ? (
-        <div className={styles.list}>
+        <div className="card-list">
           {compradores.map((comprador: ComPendencia<Comprador>) => (
             <button
               key={comprador.comprador_id}
               type="button"
               onClick={() => selecionar(comprador)}
-              className={cn(styles.card, "glass-dark")}
+              className={cn("list-card", styles.card, "glass-dark")}
             >
-              <span className={styles.cardIcon}>
+              <span className="card-icon-on-dark">
                 <Building2 size={18} />
               </span>
-              <div className={styles.cardInfo}>
+              <div className="card-info">
                 <p className={styles.cardName}>{comprador.nome_empresa}</p>
-                <p className={styles.cardMeta}>  {comprador.municipio}</p>
-                <p className={styles.cardMeta}>Contato: {comprador.pessoa_contato}
+                <p className="card-meta-on-dark">  {comprador.municipio}</p>
+                <p className="card-meta-on-dark">Contato: {comprador.pessoa_contato}
                 </p>
                 {comprador.pendente ? <PendenteBadge pendente={comprador.pendente} /> : null}
               </div>

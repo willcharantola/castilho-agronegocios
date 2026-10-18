@@ -15,17 +15,11 @@
   width: 4rem;
   align-items: center;
   justify-content: center;
-  border-radius: 5px;
-}
-
-.title {
-  font-size: 1.25rem;
-  font-weight: 800;
-  color: var(--color-dark);
+  border-radius: var(--radius-box);
 }
 
 .description {
   max-width: 20rem;
-  font-size: 0.9rem;
-  color: color-mix(in oklch, var(--color-ink) 70%, transparent);
+  font-size: var(--font-size-md);
+  color: var(--color-ink-muted);
 }

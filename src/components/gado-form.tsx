@@ -140,7 +140,7 @@ export function GadoForm({
   const id = (name: string) => `${idPrefix}${name}`;
 
   return (
-    <form onSubmit={handleSubmit(submit)} className={styles.form}>
+    <form onSubmit={handleSubmit(submit)} className="form-fields date-input-fix">
       <div className={styles.row}>
         <Field label="Denominação" htmlFor={id("denominacao")} error={errors.denominacao?.message}>
           <TintedInput id={id("denominacao")} tint="pink" placeholder="Ex: Nelore" {...register("denominacao")} />
@@ -273,7 +273,7 @@ export function GadoForm({
         <span className={styles.totalValue}>{formatCurrency(valorTotal)}</span>
       </div>
 
-      {submitError ? <p className={styles.submitError}>{submitError}</p> : null}
+      {submitError ? <p className="form-error">{submitError}</p> : null}
 
       <Button type="submit" variant="brand" size="xl" className="w-full" disabled={isSubmitting}>
         {isSubmitting ? submittingLabel : submitLabel}

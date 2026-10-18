@@ -63,13 +63,13 @@ export default function PecuaristasPage() {
   });
 
   return (
-    <div className={cn(styles.page, "pt-safe")}>
-      <h1 className={styles.title}>Pecuaristas Cadastrados</h1>
+    <div className={cn("page-container page-wide", styles.page, "pt-safe")}>
+      <h1 className="page-title">Pecuaristas Cadastrados</h1>
 
-      <div className={styles.searchWrap}>
-        <Search className={styles.searchIcon} size={18} />
+      <div className="search-box">
+        <Search className="search-icon" size={18} />
         <input
-          className={cn(styles.searchInput, "glass-panel")}
+          className="search-input glass-panel"
           placeholder="Buscar pecuarista..."
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
@@ -77,14 +77,14 @@ export default function PecuaristasPage() {
       </div>
 
       {pecuaristas === null && !error ? (
-        <div className={cn(styles.state, "glass-panel")}>Carregando pecuaristas...</div>
+        <div className="state-box glass-panel">Carregando pecuaristas...</div>
       ) : null}
 
       {error && !pecuaristas ? (
-        <div className={cn(styles.state, styles.stateError, "glass-panel")}>
+        <div className="state-box state-error glass-panel">
           {error}
           <div>
-            <Button className={styles.retryButton} variant="brand" onClick={() => setReloadKey((k) => k + 1)}>
+            <Button className="retry-button" variant="brand" onClick={() => setReloadKey((k) => k + 1)}>
               Tentar novamente
             </Button>
           </div>
@@ -92,7 +92,7 @@ export default function PecuaristasPage() {
       ) : null}
 
       {filtrados && filtrados.length === 0 ? (
-        <div className={cn(styles.state, "glass-panel")}>
+        <div className="state-box glass-panel">
           {pecuaristas && pecuaristas.length > 0
             ? "Nenhum pecuarista encontrado para essa busca."
             : "Nenhum pecuarista cadastrado ainda."}
@@ -100,7 +100,7 @@ export default function PecuaristasPage() {
       ) : null}
 
       {filtrados && filtrados.length > 0 ? (
-        <div className={styles.list}>
+        <div className="card-list">
           {filtrados.map((pecuarista) => (
             <Link
               key={pecuarista.pecuarista_id}
@@ -110,15 +110,15 @@ export default function PecuaristasPage() {
               onClick={pecuarista.pendente ? (e) => e.preventDefault() : undefined}
               className={cn(styles.card, "glass-dark")}
             >
-              <div className={styles.cardHeader}>
-                <span className={styles.cardIcon}>
+              <div className="card-header">
+                <span className="card-icon-on-dark">
                   <User size={18} />
                 </span>
-                <div className={styles.cardInfo}>
+                <div className="card-info">
                   <p className={styles.cardName}>{pecuarista.nome_pecuarista}</p>
-                  <p className={styles.cardMeta}> Pessoa: {FISICO_JURIDICO_LABELS[pecuarista.fisico_juridico]} 
-                  <p className={styles.cardMeta}></p>CPF/CNPJ: {pecuarista.cpf_cnpj}  </p>
-                  <p className={styles.cardMeta}> Fazendas: {nomesDasFazendas(pecuarista) || "—"} </p>
+                  <p className="card-meta-on-dark"> Pessoa: {FISICO_JURIDICO_LABELS[pecuarista.fisico_juridico]} 
+                  <p className="card-meta-on-dark"></p>CPF/CNPJ: {pecuarista.cpf_cnpj}  </p>
+                  <p className="card-meta-on-dark"> Fazendas: {nomesDasFazendas(pecuarista) || "—"} </p>
                   {pecuarista.pendente ? <PendenteBadge pendente={pecuarista.pendente} /> : null}
                 </div>
               </div>

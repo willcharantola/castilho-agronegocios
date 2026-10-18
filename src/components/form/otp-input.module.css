@@ -14,7 +14,7 @@
 .box {
   height: 4rem;
   width: 3.5rem;
-  border-radius: 5px;
+  border-radius: var(--radius-box);
   border: 2px solid color-mix(in oklch, var(--color-olive) 40%, transparent);
   background: color-mix(in oklch, var(--color-field-green) 70%, transparent);
   text-align: center;
@@ -30,10 +30,4 @@
 .box:focus-visible {
   border-color: var(--color-olive);
   box-shadow: 0 0 0 3px color-mix(in oklch, var(--color-olive) 30%, transparent);
-}
-
-.error {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--color-danger);
 }

@@ -22,55 +22,18 @@
   height: 2.5rem;
   margin-bottom: 0;
   padding: 0 0.9rem;
-  font-size: 0.85rem;
+  font-size: var(--font-size-sm);
 }
 
 .hint {
   font-size: 0.8rem;
-  color: color-mix(in oklch, var(--color-ink) 70%, transparent);
-}
-
-.list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.card {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  border-radius: 5px;
-  padding: 0.9rem 1rem;
-  text-align: left;
-}
-
-.cardIcon {
-  display: flex;
-  height: 2.5rem;
-  width: 2.5rem;
-  flex-shrink: 0;
-  align-items: center;
-  justify-content: center;
-  border-radius: 5px;
-  background: var(--color-dark);
-  color: var(--color-white);
-}
-
-.cardInfo {
-  flex: 1;
-  min-width: 0;
-}
-
-.cardName {
-  font-weight: 800;
-  color: var(--color-dark);
+  color: var(--color-ink-muted);
 }
 
 .cardMeta {
   overflow: hidden;
   font-size: 0.8rem;
-  color: color-mix(in oklch, var(--color-ink) 70%, transparent);
+  color: var(--color-ink-muted);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -83,7 +46,7 @@
 }
 
 .tag {
-  border-radius: 5px;
+  border-radius: var(--radius-box);
   padding: 0.1rem 0.45rem;
   background: color-mix(in oklch, var(--color-olive) 18%, transparent);
   color: var(--color-dark);
@@ -94,28 +57,4 @@
 .tagAdmin {
   background: var(--color-dark);
   color: var(--color-white);
-}
-
-.state {
-  border-radius: 5px;
-  padding: 2rem 1.25rem;
-  text-align: center;
-  color: var(--color-ink);
-}
-
-.stateError {
-  color: var(--color-danger);
-}
-
-.retryButton {
-  margin-top: 0.75rem;
-}
-
-/* Telas maiores: lista (um item por linha) ocupando 90% da largura disponível, centralizada. */
-@media (min-width: 768px) and (min-height: 500px) {
-  .section {
-    width: 90%;
-    margin-left: auto;
-    margin-right: auto;
-  }
 }

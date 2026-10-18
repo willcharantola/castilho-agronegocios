@@ -153,22 +153,22 @@ export default function NovoNegocioGadoPage() {
   if (!data.negocioId) return null;
 
   return (
-    <div className={cn(styles.page, "pt-safe")}>
+    <div className={cn("page-narrow", styles.page, "pt-safe")}>
   <BackLink href="/negocios/novo/informacoes" label="Informações" />
     
 
-      {loadError ? <div className={cn(styles.state, styles.stateError, "glass-panel")}>{loadError}</div> : null}
+      {loadError ? <div className="state-box state-error glass-panel">{loadError}</div> : null}
 
       {negocio ? (
         <div className={cn(styles.summary, "glass-dark")}>
-          <div className={styles.summaryHeader}>
-            <span className={styles.summaryIcon}>
+          <div className="card-header">
+            <span className="card-icon-on-dark">
               <Warehouse size={18} />
             </span>
             <div>
               <p className={styles.summaryFarm}> {data.fazendaNome}</p>
-              <p className={styles.summarySeller}>Pecuarista: {negocio.pecuarista.nome_pecuarista}</p>
-              <p className={styles.summarySeller}>Comprador: {negocio.comprador.nome_empresa}</p>
+              <p className="card-meta-on-dark">Pecuarista: {negocio.pecuarista.nome_pecuarista}</p>
+              <p className="card-meta-on-dark">Comprador: {negocio.comprador.nome_empresa}</p>
             </div>
           </div>
           <div className={styles.summaryStats}>
@@ -208,7 +208,7 @@ export default function NovoNegocioGadoPage() {
         <div className={styles.sessionList}>
           {negocio.gados.length > 0 ? (
             <>
-              <p className={styles.sessionTitle}>Cabeças cadastradas</p>
+              <p className="section-title">Cabeças cadastradas</p>
               <div className={styles.sessionItems}>
                 {negocio.gados.map((gado) => (
                   <button

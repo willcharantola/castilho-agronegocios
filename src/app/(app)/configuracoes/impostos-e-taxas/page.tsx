@@ -11,7 +11,6 @@ import { Button } from "@/components/ui/button";
 import { getUsuario } from "@/lib/api-client";
 import { fetchImpostos, updateImpostos } from "@/lib/api/configuracoes";
 import { mensagemDeErro } from "@/lib/offline/rede";
-import { cn } from "@/lib/utils";
 import styles from "./page.module.css";
 
 const aliquota = (nome: string) =>
@@ -76,21 +75,21 @@ export default function ImpostosETaxasPage() {
   }
 
   return (
-    <div className={cn(styles.page, "pt-safe")}>
+    <div className="page-container page-narrow pt-safe">
       <BackLink href="/configuracoes" />
-      <h1 className={styles.title}>Impostos e taxas</h1>
+      <h1 className="page-title">Impostos e taxas</h1>
       <p className={styles.subtitle}>
         Alíquotas aplicadas sobre o valor total dos negócios criados a partir de agora. Os negócios já
         cadastrados mantêm as alíquotas com que foram criados.
       </p>
 
-      {!loaded && !loadError ? <div className={cn(styles.state, "glass-panel")}>Carregando alíquotas...</div> : null}
-      {loadError ? <div className={cn(styles.state, styles.stateError, "glass-panel")}>{loadError}</div> : null}
+      {!loaded && !loadError ? <div className="state-box glass-panel">Carregando alíquotas...</div> : null}
+      {loadError ? <div className="state-box state-error glass-panel">{loadError}</div> : null}
 
       {loaded ? (
-        <form onSubmit={handleSubmit(onSubmit)} className={styles.form}>
-          <div className={styles.fields}>
-            {submitError ? <p className={styles.submitError}>{submitError}</p> : null}
+        <form onSubmit={handleSubmit(onSubmit)} className="form-stack">
+          <div className="form-fields">
+            {submitError ? <p className="form-error">{submitError}</p> : null}
 
             {CAMPOS.map(({ name, label }) => (
               <Field key={name} label={label} htmlFor={name} error={errors[name]?.message}>

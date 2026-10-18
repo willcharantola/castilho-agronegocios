@@ -123,17 +123,17 @@ export default function NegocioDetailPage() {
   }
 
   return (
-    <div className={cn(styles.page, "pt-safe")}>
+    <div className={cn("page-wide", styles.page, "pt-safe")}>
       <BackLink href="/negocios" />
 
-      {!negocio && !error ? <div className={cn(styles.state, "glass-panel")}>Carregando negócio...</div> : null}
+      {!negocio && !error ? <div className="state-box glass-panel">Carregando negócio...</div> : null}
 
       {error ? (
-        <div className={cn(styles.state, styles.stateError, "glass-panel")}>
+        <div className="state-box state-error glass-panel">
           {error}
           <div>
             <Button
-              className={styles.retryButton}
+              className="retry-button"
               variant="brand"
               onClick={() => setReloadKey((k) => k + 1)}
             >
@@ -146,8 +146,8 @@ export default function NegocioDetailPage() {
       {negocio ? (
         <>
           <div className={cn(styles.summary, "glass-dark")}>
-            <div className={styles.summaryHeader}>
-              <span className={styles.summaryIcon}>
+            <div className="card-header">
+              <span className="card-icon-on-dark">
                 <Warehouse size={18} />
               </span>
               <div>
@@ -263,7 +263,7 @@ export default function NegocioDetailPage() {
 
 
           {porCabeca && negocio.gados.length === 0 ? null : negocio.gados.length === 0 ? (
-            <div className={cn(styles.state, "glass-panel")}>Nenhum gado cadastrado neste negócio.</div>
+            <div className="state-box glass-panel">Nenhum gado cadastrado neste negócio.</div>
           ) : (
             <div className={styles.gadoList}>
               {negocio.gados.map((gado) => {
@@ -314,9 +314,9 @@ export default function NegocioDetailPage() {
         </>
       ) : null}
 
-      {relatorioError ? <p className={styles.relatorioError}>{relatorioError}</p> : null}
+      {relatorioError ? <p className="report-error">{relatorioError}</p> : null}
       {relatorioAvisos.map((aviso) => (
-        <p key={aviso} className={styles.relatorioAviso}>
+        <p key={aviso} className="report-notice">
           {aviso}
         </p>
       ))}

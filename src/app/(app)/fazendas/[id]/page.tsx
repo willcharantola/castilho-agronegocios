@@ -15,8 +15,6 @@ import { Button } from "@/components/ui/button";
 import { fetchFazenda, updateFazenda } from "@/lib/api/fazendas";
 import type { Pecuarista } from "@/lib/api/types";
 import { ApiError } from "@/lib/api-client";
-import { cn } from "@/lib/utils";
-import styles from "./page.module.css";
 
 const schema = z.object({
   nome_fazenda: z.string().min(2, "Informe o nome da fazenda.").max(50),
@@ -89,17 +87,17 @@ export default function EditarFazendaPage() {
   }
 
   return (
-    <div className={cn(styles.page, "pt-safe")}>
+    <div className="page-container page-narrow pt-safe">
       <BackLink href="/fazendas" />
-      <h1 className={styles.title}>Editar Fazenda</h1>
+      <h1 className="page-title">Editar Fazenda</h1>
 
-      {!loaded && !loadError ? <div className={cn(styles.state, "glass-panel")}>Carregando fazenda...</div> : null}
-      {loadError ? <div className={cn(styles.state, styles.stateError, "glass-panel")}>{loadError}</div> : null}
+      {!loaded && !loadError ? <div className="state-box glass-panel">Carregando fazenda...</div> : null}
+      {loadError ? <div className="state-box state-error glass-panel">{loadError}</div> : null}
 
       {loaded ? (
-        <form onSubmit={handleSubmit(onSubmit)} className={styles.form}>
-          <div className={styles.fields}>
-            {submitError ? <p className={styles.submitError}>{submitError}</p> : null}
+        <form onSubmit={handleSubmit(onSubmit)} className="form-stack">
+          <div className="form-fields">
+            {submitError ? <p className="form-error">{submitError}</p> : null}
 
             <Controller
               control={control}
@@ -134,7 +132,7 @@ export default function EditarFazendaPage() {
 
             <Field label="Pecuaristas associados" htmlFor="pecuaristas">
               {pecuaristas.length === 0 ? (
-                <p className={styles.state}>Nenhum pecuarista associado a esta fazenda.</p>
+                <p className="state-box">Nenhum pecuarista associado a esta fazenda.</p>
               ) : (
                 <ul>
                   {pecuaristas.map((v) => (

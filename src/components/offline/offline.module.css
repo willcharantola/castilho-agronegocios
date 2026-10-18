@@ -6,7 +6,7 @@
   flex-direction: column;
   gap: 0.5rem;
   margin-bottom: 1rem;
-  border-radius: 5px;
+  border-radius: var(--radius-box);
   padding: 0.6rem 0.75rem;
   background: var(--color-dark);
   color: var(--color-white);
@@ -30,7 +30,7 @@
   height: 2rem;
   margin-bottom: 0;
   padding: 0 0.75rem;
-  font-size: 0.75rem;
+  font-size: var(--font-size-xs);
 }
 
 .girando {
@@ -67,7 +67,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
-  border-radius: 5px;
+  border-radius: var(--radius-box);
   padding: 0.6rem;
   background: rgb(255 255 255 / 10%);
 }
@@ -78,7 +78,7 @@
 }
 
 .erroMotivo {
-  font-size: 0.75rem;
+  font-size: var(--font-size-xs);
   color: #fecaca;
 }
 
@@ -96,7 +96,7 @@
   align-items: center;
   gap: 0.25rem;
   width: fit-content;
-  border-radius: 5px;
+  border-radius: var(--radius-box);
   padding: 0.1rem 0.4rem;
   background: color-mix(in oklch, var(--color-mauve) 30%, transparent);
   color: var(--color-dark);

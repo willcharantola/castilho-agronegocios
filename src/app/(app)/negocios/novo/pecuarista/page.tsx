@@ -51,28 +51,28 @@ export default function NovoNegocioPecuaristaPage() {
   }
 
   return (
-    <div className={cn(styles.page, "pt-safe")}>
+    <div className="page-container page-wide pt-safe">
       <BackLink href="/negocios/novo" />
-      <h1 className={styles.title}>Cadastrar Novo Negócio</h1>
+      <h1 className={cn("page-title", styles.title)}>Cadastrar Novo Negócio</h1>
       <ProgressSteps current={2} total={6} />
 
-      <div className={cn(styles.fazendaCard, "glass-dark")}>
-        <span className={styles.fazendaIcon}>
+      <div className="summary-card glass-dark">
+        <span className="card-icon-on-dark">
           <Warehouse size={18} />
         </span>
         <p className={styles.fazendaNome}>{data.fazendaNome}</p>
       </div>
 
-      <p className={styles.subtitle}>Pecuaristas cadastrados</p>
+      <p className="section-title">Pecuaristas cadastrados</p>
 
       {pecuaristas === null && !error ? (
-        <div className={cn(styles.state, "glass-panel")}>Carregando pecuaristas...</div>
+        <div className="state-box glass-panel">Carregando pecuaristas...</div>
       ) : null}
 
-      {error && !pecuaristas ? <div className={cn(styles.state, styles.stateError, "glass-panel")}>{error}</div> : null}
+      {error && !pecuaristas ? <div className="state-box state-error glass-panel">{error}</div> : null}
 
       {daFazenda && daFazenda.length === 0 ? (
-        <div className={cn(styles.state, "glass-panel")}>
+        <div className="state-box glass-panel">
           Nenhum pecuarista cadastrado para esta fazenda ainda.
           <div>
             <Button
@@ -91,22 +91,22 @@ export default function NovoNegocioPecuaristaPage() {
       ) : null}
 
       {daFazenda && daFazenda.length > 0 ? (
-        <div className={styles.list}>
+        <div className="card-list">
           {daFazenda.map((pecuarista: ComPendencia<Pecuarista>) => (
             <button
               key={pecuarista.pecuarista_id}
               type="button"
               onClick={() => selecionar(pecuarista)}
-              className={cn(styles.card, "glass-dark")}
+              className={cn("list-card", styles.card, "glass-dark")}
             >
-              <span className={styles.cardIcon}>
+              <span className="card-icon-on-dark">
                 <User size={18} />
               </span>
-              <div className={styles.cardInfo}>
+              <div className="card-info">
                 <p className={styles.cardName}>{pecuarista.nome_pecuarista}</p>
-                <p className={styles.cardMeta}> Pessoa: {FISICO_JURIDICO_LABELS[pecuarista.fisico_juridico]}</p>
+                <p className="card-meta-on-dark"> Pessoa: {FISICO_JURIDICO_LABELS[pecuarista.fisico_juridico]}</p>
                   
-                  <p className={styles.cardMeta}> CPF/CNPJ: {pecuarista.cpf_cnpj}</p>
+                  <p className="card-meta-on-dark"> CPF/CNPJ: {pecuarista.cpf_cnpj}</p>
                 {pecuarista.pendente ? <PendenteBadge pendente={pecuarista.pendente} /> : null}
               </div>
             </button>

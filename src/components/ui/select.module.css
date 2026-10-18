@@ -40,7 +40,7 @@
   width: var(--anchor-width);
   min-width: 10rem;
   overflow-y: auto;
-  border-radius: 5px;
+  border-radius: var(--radius-box);
   background: var(--color-white);
   color: var(--color-ink);
   box-shadow: 0 12px 30px -8px rgb(43 66 14 / 30%);
@@ -54,8 +54,8 @@
   gap: 0.5rem;
   width: 100%;
   padding: 0.5rem 0.6rem;
-  border-radius: 5px;
-  font-size: 0.9rem;
+  border-radius: var(--radius-box);
+  font-size: var(--font-size-md);
   cursor: default;
   outline: none;
 }

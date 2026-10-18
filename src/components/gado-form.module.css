@@ -1,9 +1,3 @@
-.form {
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-}
-
 /* minmax(0, 1fr) em vez de 1fr: com 1fr a coluna não encolhe abaixo da largura mínima
    do conteúdo, e no Safari um <input> (ex.: "Denominação", "Ano do Carimbo") tem largura
    mínima de ~20 caracteres. Em iPhones estreitos isso alargava a linha, a coluna inteira
@@ -25,7 +19,7 @@
 }
 
 .totalLabel {
-  font-size: 0.9rem;
+  font-size: var(--font-size-md);
   font-weight: 700;
   color: var(--color-dark);
 }
@@ -38,26 +32,4 @@
 
 .readOnlyField {
   opacity: 1;
-}
-
-.submitError {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--color-danger);
-}
-
-
-.form input[type="date"] {
-  display: block;
-  width: 100%;
-  min-width: 0;
-  max-width: 100%;
-  box-sizing: border-box;
-  -webkit-appearance: none;
-  appearance: none;
-}
-
-.form input[type="date"]::-webkit-date-and-time-value {
-  text-align: center;
-  min-height: 1.2em;
 }

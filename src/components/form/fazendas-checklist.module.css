@@ -8,7 +8,7 @@
   display: flex;
   align-items: center;
   gap: 0.6rem;
-  border-radius: 5px;
+  border-radius: var(--radius-box);
   padding: 0.7rem 0.9rem;
   cursor: pointer;
 }
@@ -35,6 +35,6 @@
 }
 
 .empty {
-  font-size: 0.85rem;
+  font-size: var(--font-size-sm);
   opacity: 0.7;
 }
