@@ -29,8 +29,8 @@ export default function NovoNegocioCompradorPage() {
   const [error, setError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
-    if (!data.fazendaId) {
-      router.replace("/negocios/novo");
+    if (!data.pecuaristaId || !data.fazendaId) {
+      router.replace(data.pecuaristaId ? "/negocios/novo/fazenda" : "/negocios/novo");
       return;
     }
     fetchCompradores()
@@ -38,7 +38,7 @@ export default function NovoNegocioCompradorPage() {
       .catch((err: unknown) => {
         setError(err instanceof ApiError || err instanceof Error ? err.message : "Erro ao carregar.");
       });
-  }, [data.fazendaId, router]);
+  }, [data.pecuaristaId, data.fazendaId, router]);
 
   if (!data.fazendaId) return null;
 
@@ -49,9 +49,9 @@ export default function NovoNegocioCompradorPage() {
 
   return (
     <div className="page-container page-wide pt-safe">
-      <BackLink href="/negocios/novo/pecuarista" />
+      <BackLink href="/negocios/novo/fazenda" />
       <h1 className={cn("page-title", styles.title)}>Cadastrar Novo Negócio</h1>
-      <ProgressSteps current={3} total={6} />
+      <ProgressSteps current={3} total={7} />
 
       <div className="summary-card glass-dark">
         <span className="card-icon-on-dark">

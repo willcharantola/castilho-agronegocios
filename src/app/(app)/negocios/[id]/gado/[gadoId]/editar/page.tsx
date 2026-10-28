@@ -70,6 +70,7 @@ export default function EditarGadoPage() {
         <GadoForm
           modalidade={negocio.modalidade}
           valorUnidade={negocio.valor_unidade}
+          rendimentos={negocio}
           defaultValues={gadoParaFormInput(gado)}
           submitLabel="Salvar Alterações"
           submittingLabel="Salvando..."

@@ -4,12 +4,32 @@
   color: var(--color-ink-muted);
 }
 
-.card {
-  width: 100%;
-  cursor: pointer;
+.fazendaNome {
+  font-weight: 800;
 }
 
-.cardMeta {
-  font-size: 0.8rem;
+.resumo {
+  flex: 1;
+  min-width: 0;
+}
+
+.editarDados {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  color: inherit;
+}
+
+.remover {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border: none;
+  background: transparent;
   color: var(--color-ink-muted);
+  cursor: pointer;
 }

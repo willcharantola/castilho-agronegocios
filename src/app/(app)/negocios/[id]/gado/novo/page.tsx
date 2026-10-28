@@ -3,14 +3,13 @@
 import * as React from "react";
 import { useParams, useRouter } from "next/navigation";
 import { BackLink } from "@/components/back-link";
-import { GadoForm, formValuesParaInput, type GadoFormValues } from "@/components/gado-form";
+import { GadoForm, estimarGado, formValuesParaInput, type GadoFormValues } from "@/components/gado-form";
 import { createGado } from "@/lib/api/gados";
 import { fetchNegocio } from "@/lib/api/negocios";
 import { ApiError } from "@/lib/api-client";
 import { MODALIDADE_LABELS } from "@/lib/labels";
 import { cn } from "@/lib/utils";
 import type { CreateGadoInput, NegocioDetail } from "@/lib/api/types";
-import { estimarValoresGado } from "@/lib/calculo-gado";
 import { enviarOuEnfileirar } from "@/lib/offline/fila";
 import { horaLocalAtual } from "@/lib/offline/rede";
 import styles from "../gado-page.module.css";
@@ -45,7 +44,6 @@ export default function AdicionarGadoPage() {
   async function cadastrar(values: GadoFormValues) {
     if (!negocio) return;
     const input = formValuesParaInput(values);
-    const estimado = estimarValoresGado(negocio.modalidade, input.peso_total, input.rendimento_carcaca, negocio.valor_unidade);
     // Sem conexão, o gado fica na fila (com a hora da pesagem do aparelho) e aparece no
     // detalhe do negócio como pendente de sincronização.
     await enviarOuEnfileirar(
@@ -53,12 +51,7 @@ export default function AdicionarGadoPage() {
       { negocio_id: negocio.negocio_id, ...input },
       (payload, uuid) => createGado({ ...(payload as CreateGadoInput), uuid_origem: uuid }),
       {
-        exibicao: {
-          negocio_id: negocio.negocio_id,
-          peso_calculo: estimado.pesoCalculo,
-          peso_arroba: estimado.pesoArroba,
-          valor_total: estimado.valorTotal,
-        },
+        exibicao: { negocio_id: negocio.negocio_id, ...estimarGado(negocio, input) },
         extrasFila: { horario_pesagem: horaLocalAtual() },
       }
     );
@@ -84,6 +77,7 @@ export default function AdicionarGadoPage() {
         <GadoForm
           modalidade={negocio.modalidade}
           valorUnidade={negocio.valor_unidade}
+          rendimentos={negocio}
           submitLabel="Cadastrar"
           submittingLabel="Cadastrando..."
           onSubmit={cadastrar}

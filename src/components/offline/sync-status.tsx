@@ -65,7 +65,8 @@ export function SyncStatus() {
   const [sincronizando, setSincronizando] = React.useState(false);
   const [verErros, setVerErros] = React.useState(false);
 
-  const comErro = registros.filter((r) => r.status === "erro");
+  // "revisao": item antigo que ficou incompleto após a mudança do modelo de dados.
+  const comErro = registros.filter((r) => r.status === "erro" || r.status === "revisao");
   const aguardando = registros.length - comErro.length;
 
   if (online && registros.length === 0) return null;
@@ -121,7 +122,7 @@ export function SyncStatus() {
         <>
           <button type="button" className={styles.erroToggle} onClick={() => setVerErros((v) => !v)}>
             <TriangleAlert size={14} aria-hidden />
-            {comErro.length} cadastro(s) recusado(s) pelo servidor — {verErros ? "ocultar" : "ver motivo"}
+            {comErro.length} cadastro(s) recusado(s) ou para revisar — {verErros ? "ocultar" : "ver motivo"}
           </button>
           {verErros ? (
             <ul className={styles.erroLista}>
@@ -130,15 +131,18 @@ export function SyncStatus() {
                   <p className={styles.erroTitulo}>{descrever(r)}</p>
                   <p className={styles.erroMotivo}>{r.erroMensagem}</p>
                   <div className={styles.erroAcoes}>
-                    <Button
-                      type="button"
-                      variant="brand"
-                      className={styles.barButton}
-                      disabled={!online}
-                      onClick={() => void tentarNovamente(r.id)}
-                    >
-                      Tentar de novo
-                    </Button>
+                    {/* Incompleto: reenviar daria o mesmo erro — só corrigir ou descartar. */}
+                    {r.status === "erro" ? (
+                      <Button
+                        type="button"
+                        variant="brand"
+                        className={styles.barButton}
+                        disabled={!online}
+                        onClick={() => void tentarNovamente(r.id)}
+                      >
+                        Tentar de novo
+                      </Button>
+                    ) : null}
                     <Button
                       type="button"
                       variant="ghost"

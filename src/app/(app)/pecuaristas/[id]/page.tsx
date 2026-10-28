@@ -1,44 +1,29 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { Banknote, CreditCard, User } from "lucide-react";
-import { useForm, Controller } from "react-hook-form";
+import { Pencil, Plus, Warehouse } from "lucide-react";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { BackLink } from "@/components/back-link";
-import { Field } from "@/components/form/field";
-import { IconField } from "@/components/form/icon-field";
-import { TintedInput } from "@/components/form/tinted-input";
+import { PecuaristaFields, pecuaristaSchema, type PecuaristaFormValues } from "@/components/pecuarista-fields";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { fetchPecuarista, updatePecuarista } from "@/lib/api/pecuaristas";
-import { fetchFazendas } from "@/lib/api/fazendas";
-import { FazendasChecklist } from "@/components/form/fazendas-checklist";
+import { desvincularFazenda, fetchPecuarista, updatePecuarista } from "@/lib/api/pecuaristas";
 import type { Fazenda } from "@/lib/api/types";
 import { ApiError } from "@/lib/api-client";
-import { FISICO_JURIDICO_LABELS } from "@/lib/labels";
+import { mensagemDeErro } from "@/lib/offline/rede";
 import { cn } from "@/lib/utils";
-import fieldBox from "@/components/form/field-box.module.css";
-
-const schema = z.object({
-  nome_pecuarista: z.string().min(2, "Informe o nome do pecuarista.").max(50),
-  fisico_juridico: z.enum(["fisico", "juridico"], { error: "Selecione o tipo de pessoa." }),
-  cpf_cnpj: z.string().min(1, "Informe o CPF/CNPJ.").max(20),
-  banco: z.string().min(1, "Informe o banco.").max(20),
-  agencia: z.string().min(1, "Informe a agência.").max(5),
-  conta: z.string().min(1, "Informe a conta.").max(10),
-  chave_pix: z.string().min(1, "Informe a chave PIX.").max(50),
-});
-type FormValues = z.infer<typeof schema>;
+import styles from "./page.module.css";
 
 export default function EditarPecuaristaPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const [fazendas, setFazendas] = React.useState<Fazenda[]>([]);
-  const [fazendaIds, setFazendaIds] = React.useState<number[]>([]);
   const [loadError, setLoadError] = React.useState<string | null>(null);
   const [submitError, setSubmitError] = React.useState<string | null>(null);
+  const [vinculoError, setVinculoError] = React.useState<string | null>(null);
+  const [desvinculando, setDesvinculando] = React.useState<number | null>(null);
   const [loaded, setLoaded] = React.useState(false);
   const {
     register,
@@ -46,12 +31,12 @@ export default function EditarPecuaristaPage() {
     control,
     reset,
     formState: { errors, isSubmitting },
-  } = useForm<FormValues>({ resolver: zodResolver(schema) });
+  } = useForm<PecuaristaFormValues>({ resolver: zodResolver(pecuaristaSchema) });
 
   React.useEffect(() => {
     let cancelled = false;
-    Promise.all([fetchPecuarista(params.id), fetchFazendas()])
-      .then(([pecuarista, fazendasData]) => {
+    fetchPecuarista(params.id)
+      .then((pecuarista) => {
         if (cancelled) return;
         reset({
           nome_pecuarista: pecuarista.nome_pecuarista,
@@ -62,8 +47,7 @@ export default function EditarPecuaristaPage() {
           conta: pecuarista.conta,
           chave_pix: pecuarista.chave_pix,
         });
-        setFazendas(fazendasData);
-        setFazendaIds((pecuarista.pecuarista_fazenda ?? []).map((a) => a.fazenda_id));
+        setFazendas((pecuarista.pecuarista_fazenda ?? []).map((v) => v.fazenda));
         setLoaded(true);
       })
       .catch((err: unknown) => {
@@ -75,17 +59,29 @@ export default function EditarPecuaristaPage() {
     };
   }, [params.id, reset]);
 
-  async function onSubmit(values: FormValues) {
-    if (fazendaIds.length === 0) {
-      setSubmitError("Selecione ao menos uma fazenda.");
-      return;
-    }
+  async function onSubmit(values: PecuaristaFormValues) {
     setSubmitError(null);
     try {
-      await updatePecuarista(params.id, { ...values, fazenda_ids: fazendaIds });
+      // Só os dados: os vínculos com fazendas têm ações próprias abaixo.
+      await updatePecuarista(params.id, values);
       router.push("/pecuaristas");
     } catch (err) {
-      setSubmitError(err instanceof ApiError || err instanceof Error ? err.message : "Erro ao salvar.");
+      setSubmitError(mensagemDeErro(err));
+    }
+  }
+
+  async function desvincular(fazenda: Fazenda) {
+    if (!window.confirm(`Desvincular a fazenda "${fazenda.nome_fazenda}" deste pecuarista?`)) return;
+    setVinculoError(null);
+    setDesvinculando(fazenda.fazenda_id);
+    try {
+      // A API recusa (409) se houver negócio deste pecuarista com esta fazenda.
+      const atualizado = await desvincularFazenda(params.id, fazenda.fazenda_id);
+      setFazendas((atualizado.pecuarista_fazenda ?? []).map((v) => v.fazenda));
+    } catch (err) {
+      setVinculoError(mensagemDeErro(err, "Erro ao desvincular."));
+    } finally {
+      setDesvinculando(null);
     }
   }
 
@@ -99,60 +95,64 @@ export default function EditarPecuaristaPage() {
 
       {loaded ? (
         <>
+          <section className={styles.fazendas}>
+            <p className="section-title">Fazendas vinculadas</p>
+            {vinculoError ? <p className="form-error">{vinculoError}</p> : null}
+            {fazendas.length === 0 ? (
+              <div className="state-box glass-panel">Nenhuma fazenda vinculada.</div>
+            ) : (
+              <div className="card-list">
+                {fazendas.map((fazenda) => (
+                  <div key={fazenda.fazenda_id} className={cn("list-card", "glass-panel")}>
+                    <span className="card-icon">
+                      {fazenda.marca_url ? (
+                        <img src={fazenda.marca_url} alt={fazenda.nome_fazenda} className={styles.cardImage} />
+                      ) : (
+                        <Warehouse size={18} />
+                      )}
+                    </span>
+                    <div className="card-info">
+                      <p className="card-name">{fazenda.nome_fazenda}</p>
+                      <p className="card-meta">
+                        {fazenda.municipio} · I.E.: {fazenda.inscricao_estadual}
+                      </p>
+                      {/* Precisa de ao menos uma fazenda: a última não é desvinculada. */}
+                      {fazendas.length > 1 ? (
+                        <button
+                          type="button"
+                          className={styles.desvincular}
+                          onClick={() => desvincular(fazenda)}
+                          disabled={desvinculando !== null}
+                        >
+                          {desvinculando === fazenda.fazenda_id ? "Desvinculando..." : "Desvincular"}
+                        </button>
+                      ) : null}
+                    </div>
+                    <Link
+                      href={`/fazendas/${fazenda.fazenda_id}`}
+                      className={styles.editarFazenda}
+                      aria-label={`Editar ${fazenda.nome_fazenda}`}
+                    >
+                      <Pencil size={16} />
+                    </Link>
+                  </div>
+                ))}
+              </div>
+            )}
+            <Button
+              variant="brand"
+              className={styles.adicionarFazenda}
+              render={<Link href={`/pecuaristas/${params.id}/fazendas/nova`} />}
+            >
+              <Plus size={16} aria-hidden /> Adicionar fazenda
+            </Button>
+          </section>
+
           <form onSubmit={handleSubmit(onSubmit)} className="form-stack">
             <div className="form-fields">
+              <p className="section-title">Dados do pecuarista</p>
               {submitError ? <p className="form-error">{submitError}</p> : null}
-
-              <Field label="Fazendas do pecuarista" htmlFor="fazendas">
-                <FazendasChecklist fazendas={fazendas} selected={fazendaIds} onChange={setFazendaIds} />
-              </Field>
-
-              <IconField icon={User} label="Nome Pecuarista" htmlFor="nome_pecuarista" error={errors.nome_pecuarista?.message}>
-                <TintedInput id="nome_pecuarista" tint="pink" {...register("nome_pecuarista")} />
-              </IconField>
-
-              <Field label="Pessoa" htmlFor="fisico_juridico" error={errors.fisico_juridico?.message}>
-                <Controller
-                  control={control}
-                  name="fisico_juridico"
-                  render={({ field }) => (
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <SelectTrigger id="fisico_juridico" className={cn(fieldBox.box, fieldBox.pink)}>
-                        <SelectValue>
-                          {(value: "fisico" | "juridico" | null) =>
-                            value ? FISICO_JURIDICO_LABELS[value] : "Selecione"
-                          }
-                        </SelectValue>
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="fisico">{FISICO_JURIDICO_LABELS.fisico}</SelectItem>
-                        <SelectItem value="juridico">{FISICO_JURIDICO_LABELS.juridico}</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-              </Field>
-
-              <IconField icon={CreditCard} label="CPF/CNPJ" htmlFor="cpf_cnpj" error={errors.cpf_cnpj?.message}>
-                <TintedInput id="cpf_cnpj" tint="pink" {...register("cpf_cnpj")} />
-              </IconField>
-
-              <IconField icon={Banknote} label="Banco" htmlFor="banco" error={errors.banco?.message}>
-                <TintedInput id="banco" tint="pink" {...register("banco")} />
-              </IconField>
-
-              <div className="form-row">
-                <Field label="Agência" htmlFor="agencia" error={errors.agencia?.message}>
-                  <TintedInput id="agencia" tint="pink" {...register("agencia")} />
-                </Field>
-                <Field label="Conta" htmlFor="conta" error={errors.conta?.message}>
-                  <TintedInput id="conta" tint="pink" {...register("conta")} />
-                </Field>
-              </div>
-
-              <Field label="Chave Pix" htmlFor="chave_pix" error={errors.chave_pix?.message}>
-                <TintedInput id="chave_pix" tint="pink" {...register("chave_pix")} />
-              </Field>
+              <PecuaristaFields register={register} control={control} errors={errors} />
             </div>
 
             <Button type="submit" variant="brand" size="xl" className="w-full" disabled={isSubmitting}>

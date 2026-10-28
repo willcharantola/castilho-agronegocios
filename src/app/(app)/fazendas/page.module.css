@@ -8,3 +8,9 @@
   object-fit: cover;
   border-radius: var(--radius-box);
 }
+
+.dica {
+  font-size: var(--font-size-sm);
+  color: var(--color-ink-muted);
+  text-align: center;
+}

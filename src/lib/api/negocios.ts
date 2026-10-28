@@ -28,6 +28,10 @@ function normalizeNegocio(raw: Negocio): Negocio {
     senar: decimalOuNull(raw.senar),
     aliquota_funrural: decimalOuNull(raw.aliquota_funrural),
     aliquota_senar: decimalOuNull(raw.aliquota_senar),
+    porcentagem_rendimento_nelore: Number(raw.porcentagem_rendimento_nelore),
+    porcentagem_rendimento_anelorado: Number(raw.porcentagem_rendimento_anelorado),
+    porcentagem_rendimento_angus: Number(raw.porcentagem_rendimento_angus),
+    porcentagem_rendimento_composto: Number(raw.porcentagem_rendimento_composto),
   };
 }
 
@@ -66,6 +70,10 @@ export async function concluirNegocio(id: number | string, horaFim?: string) {
   return normalizeNegocio(negocio);
 }
 
+/**
+ * PATCH /negocios/:id. Mudar os percentuais de rendimento (ou o valor por unidade) faz a
+ * API recalcular todos os animais; mudar o tipo_negocio recalcula Funrural e Senar.
+ */
 export async function updateNegocio(id: number | string, input: UpdateNegocioInput) {
   const negocio = await apiFetch<Negocio>(`/negocios/${id}`, { method: "PATCH", body: JSON.stringify(input) });
   return normalizeNegocio(negocio);

@@ -8,11 +8,14 @@ import { BackLink } from "@/components/back-link";
 import { Button } from "@/components/ui/button";
 import { Fab } from "@/components/fab";
 import { ComissaoForm } from "@/components/comissao-form";
+import { TipoNegocioForm } from "@/components/tipo-negocio-form";
 import { formatCurrency, formatNumber, formatGenero, formatHora, formatDate, formatPercent } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { fetchNegocio } from "@/lib/api/negocios";
 import { fetchFazendas } from "@/lib/api/fazendas";
 import { gerarRomaneios } from "@/lib/relatorio-romaneio";
+import { rendimentoDaRaca } from "@/lib/calculo-gado";
+import { MODALIDADE_LABELS, RACAS_RENDIMENTO, TIPO_GADO_LABELS, TIPO_NEGOCIO_LABELS } from "@/lib/labels";
 import type { Fazenda, NegocioDetail } from "@/lib/api/types";
 import { ApiError } from "@/lib/api-client";
 import { PendenteBadge } from "@/components/offline/pendente-badge";
@@ -71,6 +74,7 @@ export default function NegocioDetailPage() {
 
   // Modalidade "cabeca": sem pesagem nem gados individuais — o valor por cabeça é o próprio valor_unidade.
   const porCabeca = negocio?.modalidade === "cabeca";
+  const porArroba = negocio?.modalidade === "arroba";
   const valorMedio =
     negocio?.valor_medio ??
     (porCabeca ? negocio.valor_unidade : null) ??
@@ -175,7 +179,16 @@ export default function NegocioDetailPage() {
 
              <div className={styles.summaryFooter}>
 
-               <span>Modalidade: {negocio.modalidade}</span>
+               <span>Modalidade: {MODALIDADE_LABELS[negocio.modalidade]}</span>
+             </div>
+
+             <div className={styles.summaryFooter}>
+               <span>Tipo de negócio: {TIPO_NEGOCIO_LABELS[negocio.tipo_negocio] ?? "—"}</span>
+             </div>
+
+             <div className={styles.summaryFooter}>
+               <span>Gado: {TIPO_GADO_LABELS[negocio.tipo_gado] ?? negocio.tipo_gado}</span>
+               <span>Carimbo (média): {negocio.media_carimbo || "—"}</span>
               
              </div>
 
@@ -252,6 +265,50 @@ export default function NegocioDetailPage() {
             </dl>
           </div>
 
+          {porArroba ? (
+            <div className={cn(styles.summary, "glass-dark")}>
+              <p className={styles.romaneioTitle}>Rendimentos por categoria</p>
+              <dl className={styles.romaneioGrid}>
+                {RACAS_RENDIMENTO.map((raca) => (
+                  <div key={raca} className={styles.romaneioItem}>
+                    <dt className={styles.romaneioLabel}>{raca}</dt>
+                    <dd className={styles.romaneioValue}>{formatPercent(rendimentoDaRaca(negocio, raca))}</dd>
+                  </div>
+                ))}
+              </dl>
+              {/* Negócio ainda só no aparelho não tem tela própria. */}
+              {sincronizado ? (
+                <Button
+                  variant="brand"
+                  className={styles.editarRendimentos}
+                  render={<Link href={`/negocios/${negocio.negocio_id}/rendimentos`} />}
+                >
+                  <Pencil size={14} aria-hidden /> Editar rendimentos
+                </Button>
+              ) : null}
+            </div>
+          ) : null}
+
+          {sincronizado ? (
+            <TipoNegocioForm
+              key={negocio.tipo_negocio}
+              negocioId={negocio.negocio_id}
+              tipoNegocio={negocio.tipo_negocio}
+              onUpdated={(atualizado) =>
+                setNegocio((atual) =>
+                  atual
+                    ? {
+                        ...atual,
+                        tipo_negocio: atualizado.tipo_negocio,
+                        funrural: atualizado.funrural,
+                        senar: atualizado.senar,
+                      }
+                    : atual
+                )
+              }
+            />
+          ) : null}
+
           <ComissaoForm
             negocioId={negocio.negocio_id}
             porcentagem={negocio.porcentagem_comissao}
@@ -276,7 +333,9 @@ export default function NegocioDetailPage() {
                       <p className={styles.gadoName}>{gado.denominacao}</p>
 
                       <p className={styles.gadoMeta}> Gênero: {formatGenero(gado.genero)}  </p>
-                       <p className={styles.gadoMeta}> Rend.: {formatNumber(gado.rendimento_carcaca, 0)}%</p>
+                       {porArroba && gado.rendimento_carcaca !== null ? (
+                         <p className={styles.gadoMeta}> Rend.: {formatPercent(gado.rendimento_carcaca)}</p>
+                       ) : null}
                        <p className={styles.gadoMeta}>Peso p/ cálculo: {formatNumber(gado.peso_calculo)}</p>
                        <p className={styles.gadoMeta}>   {gado.horario_pesagem ? ` Pesado às ${formatHora(gado.horario_pesagem)}` : null} </p>
                        <p className={styles.gadoMeta}>Peso total: {formatNumber(gado.peso_total)} </p>

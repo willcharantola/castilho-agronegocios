@@ -2,118 +2,57 @@
 
 import * as React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Search, Warehouse } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { BackLink } from "@/components/back-link";
-import { cn } from "@/lib/utils";
-import { fetchFazendas } from "@/lib/api/fazendas";
-import type { Fazenda } from "@/lib/api/types";
-import { ApiError } from "@/lib/api-client";
+import { ProgressSteps } from "@/components/progress-steps";
+import { PecuaristaFields, pecuaristaSchema, type PecuaristaFormValues } from "@/components/pecuarista-fields";
+import { Button } from "@/components/ui/button";
 import { usePecuaristaFlow } from "@/lib/flows/pecuarista-flow";
-import { PendenteBadge } from "@/components/offline/pendente-badge";
-import { mesclarPendentes, useFazendasPendentes, type ComPendencia } from "@/lib/offline/pendentes";
 import styles from "./page.module.css";
 
-export default function NovoPecuaristaFazendaPage() {
+/** Etapa 1 de 2: dados do pecuarista. Nada é salvo até concluir a etapa 2. */
+export default function NovoPecuaristaDadosPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { update } = usePecuaristaFlow();
-  const [fazendas, setFazendas] = React.useState<Fazenda[] | null>(null);
-  const [error, setError] = React.useState<string | null>(null);
-  const [busca, setBusca] = React.useState("");
+  const { data, update } = usePecuaristaFlow();
+  const {
+    register,
+    handleSubmit,
+    control,
+    formState: { errors },
+  } = useForm<PecuaristaFormValues>({
+    resolver: zodResolver(pecuaristaSchema),
+    defaultValues: data.dados ?? undefined,
+  });
 
-  const fazendaIdParam = searchParams.get("fazenda_id");
+  // ?returnTo= (ex.: vindo do cadastro de negócio) só é lido ao entrar no fluxo.
   const returnToParam = searchParams.get("returnTo");
-
   React.useEffect(() => {
-    fetchFazendas()
-      .then(setFazendas)
-      .catch((err: unknown) => {
-        setError(err instanceof ApiError || err instanceof Error ? err.message : "Erro ao carregar.");
-      });
-  }, []);
+    if (returnToParam) update({ returnTo: returnToParam });
+  }, [returnToParam, update]);
 
-  // Fazendas do servidor + as cadastradas offline ainda não sincronizadas.
-  const fazendasPendentes = useFazendasPendentes();
-  const todas = React.useMemo(() => mesclarPendentes(fazendas, fazendasPendentes), [fazendas, fazendasPendentes]);
-
-  // Pré-seleção via ?fazenda_id= (vindo do fluxo de negócio) — pode ser uma fazenda pendente (id negativo).
-  const preselecionou = React.useRef(false);
-  React.useEffect(() => {
-    if (!fazendaIdParam || preselecionou.current || !todas) return;
-    const preselecionada = todas.find((f) => f.fazenda_id === Number(fazendaIdParam));
-    if (!preselecionada) return;
-    preselecionou.current = true;
-    update({
-      fazendaId: preselecionada.fazenda_id,
-      fazendaNome: preselecionada.nome_fazenda,
-      returnTo: returnToParam,
-    });
-    router.replace("/pecuaristas/novo/dados");
-  }, [todas, fazendaIdParam, returnToParam, update, router]);
-
-  function selecionar(fazenda: Fazenda) {
-    update({ fazendaId: fazenda.fazenda_id, fazendaNome: fazenda.nome_fazenda, returnTo: returnToParam });
-    router.push("/pecuaristas/novo/dados");
+  function onSubmit(values: PecuaristaFormValues) {
+    update({ dados: values });
+    router.push("/pecuaristas/novo/fazendas");
   }
 
-  const buscaLower = busca.trim().toLowerCase();
-  const filtradas = todas?.filter(
-    (f) => buscaLower === "" || f.nome_fazenda.toLowerCase().includes(buscaLower)
-  );
-
   return (
-    <div className="page-container page-wide pt-safe">
-      <BackLink href="/pecuaristas" />
-      <h1 className="page-title">Cadastrar Novo Pecuarista</h1>
-      <p className={styles.subtitle}>Selecione a fazenda a qual o pecuarista pertence</p>
+    <div className="page-container page-narrow pt-safe">
+      <BackLink href={data.returnTo ?? "/pecuaristas"} />
+      <h1 className="page-title">Cadastrar Pecuarista</h1>
+      <ProgressSteps current={1} total={2} />
+      <p className={styles.subtitle}>Etapa 1 de 2 — Dados do pecuarista</p>
 
-      <div className="search-box">
-        <Search className="search-icon" size={18} />
-        <input
-          className="search-input glass-panel"
-          placeholder="Buscar fazenda..."
-          value={busca}
-          onChange={(e) => setBusca(e.target.value)}
-        />
-      </div>
-
-      {todas === null && !error ? (
-        <div className="state-box glass-panel">Carregando fazendas...</div>
-      ) : null}
-
-      {error && !todas ? <div className="state-box state-error glass-panel">{error}</div> : null}
-
-      {filtradas && filtradas.length === 0 ? (
-        <div className="state-box glass-panel">
-          {todas && todas.length > 0
-            ? "Nenhuma fazenda encontrada para essa busca."
-            : "Nenhuma fazenda cadastrada ainda. Cadastre uma fazenda antes de adicionar um pecuarista."}
+      <form onSubmit={handleSubmit(onSubmit)} className="form-stack">
+        <div className="form-fields">
+          <PecuaristaFields register={register} control={control} errors={errors} autoFocus />
         </div>
-      ) : null}
 
-      {filtradas && filtradas.length > 0 ? (
-        <div className="card-list">
-          {filtradas.map((fazenda: ComPendencia<Fazenda>) => (
-            <button
-              key={fazenda.fazenda_id}
-              type="button"
-              onClick={() => selecionar(fazenda)}
-              className={cn("list-card", styles.card, "glass-panel")}
-            >
-              <span className="card-icon">
-                <Warehouse size={18} />
-              </span>
-              <div className="card-info">
-                <p className="card-name">{fazenda.nome_fazenda}</p>
-                <p className={styles.cardMeta}>
-                  Município: {fazenda.municipio} · I.E.: {fazenda.inscricao_estadual}
-                </p>
-                {fazenda.pendente ? <PendenteBadge pendente={fazenda.pendente} /> : null}
-              </div>
-            </button>
-          ))}
-        </div>
-      ) : null}
+        <Button type="submit" variant="brand" size="xl" className="w-full">
+          Próximo: fazendas
+        </Button>
+      </form>
     </div>
   );
 }

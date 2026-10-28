@@ -6,15 +6,14 @@ import { Beef, Pencil, Warehouse } from "lucide-react";
 import { BackLink } from "@/components/back-link";
 import { ProgressSteps } from "@/components/progress-steps";
 import { Button } from "@/components/ui/button";
-import { GadoForm, formValuesParaInput, type GadoFormValues } from "@/components/gado-form";
+import { GadoForm, estimarGado, formValuesParaInput, type GadoFormValues } from "@/components/gado-form";
 import { GadoEditDialog } from "@/components/gado-edit-dialog";
-import { formatCurrency, formatNumber, formatGenero } from "@/lib/format";
+import { formatCurrency, formatNumber, formatGenero, formatPercent } from "@/lib/format";
 import { createGado } from "@/lib/api/gados";
 import { concluirNegocio, fetchNegocio } from "@/lib/api/negocios";
 import { ApiError } from "@/lib/api-client";
 import { useLiveQuery } from "dexie-react-hooks";
 import { PendenteBadge } from "@/components/offline/pendente-badge";
-import { estimarValoresGado } from "@/lib/calculo-gado";
 import { offlineDb } from "@/lib/offline/db";
 import { enviarOuEnfileirar, ehIdTemporario, referencia, type RegistroSalvo } from "@/lib/offline/fila";
 import { comGadosPendentes, negocioDePendente, useGadosPendentes, type ExibicaoNegocio } from "@/lib/offline/pendentes";
@@ -103,7 +102,6 @@ export default function NovoNegocioGadoPage() {
   async function cadastrar(values: GadoFormValues) {
     if (!data.negocioId || !negocio) return;
     const input = formValuesParaInput(values);
-    const estimado = estimarValoresGado(negocio.modalidade, input.peso_total, input.rendimento_carcaca, negocio.valor_unidade);
     // Sem conexão (ou com o negócio ainda só no aparelho), o gado vai para a fila com a
     // hora da pesagem capturada agora no aparelho — a sincronização pode ser bem depois.
     const envio = await enviarOuEnfileirar(
@@ -111,12 +109,7 @@ export default function NovoNegocioGadoPage() {
       { ...(await referencia("negocio", data.negocioId)), ...input },
       (payload, uuid) => createGado({ ...(payload as CreateGadoInput), uuid_origem: uuid }),
       {
-        exibicao: {
-          negocio_id: data.negocioId,
-          peso_calculo: estimado.pesoCalculo,
-          peso_arroba: estimado.pesoArroba,
-          valor_total: estimado.valorTotal,
-        },
+        exibicao: { negocio_id: data.negocioId, ...estimarGado(negocio, input) },
         extrasFila: { horario_pesagem: horaLocalAtual() },
       }
     );
@@ -154,9 +147,11 @@ export default function NovoNegocioGadoPage() {
 
   return (
     <div className={cn("page-narrow", styles.page, "pt-safe")}>
-  <BackLink href="/negocios/novo/informacoes" label="Informações" />
-    
-
+      <BackLink
+        href={modalidade === "arroba" ? "/negocios/novo/rendimentos" : "/negocios/novo/informacoes"}
+        label={modalidade === "arroba" ? "Rendimentos" : "Informações"}
+      />
+      
       {loadError ? <div className="state-box state-error glass-panel">{loadError}</div> : null}
 
       {negocio ? (
@@ -197,6 +192,7 @@ export default function NovoNegocioGadoPage() {
         <GadoForm
           modalidade={negocio.modalidade}
           valorUnidade={negocio.valor_unidade}
+          rendimentos={negocio}
           submitLabel="Cadastrar"
           submittingLabel="Cadastrando..."
           resetAfterSubmit
@@ -224,7 +220,11 @@ export default function NovoNegocioGadoPage() {
                     <div className={styles.sessionInfo}>
                       <p className={styles.sessionName}>{gado.denominacao}</p>
                       <p className={styles.sessionMeta}>
-                        {formatGenero(gado.genero)} · Peso p/ cálculo: {formatNumber(gado.peso_calculo)}
+                        {formatGenero(gado.genero)}
+                        {gado.rendimento_carcaca !== null && modalidade === "arroba"
+                          ? ` · Rend.: ${formatPercent(gado.rendimento_carcaca)}`
+                          : null}{" "}
+                        · Peso p/ cálculo: {formatNumber(gado.peso_calculo)}
                       </p>
                       {gado.pendente ? <PendenteBadge pendente={gado.pendente} /> : null}
                     </div>
@@ -256,8 +256,7 @@ export default function NovoNegocioGadoPage() {
       {negocio ? (
         <GadoEditDialog
           gado={gadoEmEdicao}
-          modalidade={negocio.modalidade}
-          valorUnidade={negocio.valor_unidade}
+          negocio={negocio}
           onClose={() => setGadoEmEdicao(null)}
           onSaved={carregarNegocio}
         />

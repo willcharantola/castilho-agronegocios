@@ -165,3 +165,8 @@
     grid-column: 1 / -1;
   }
 }
+
+.editarRendimentos {
+  align-self: flex-start;
+  gap: 0.4rem;
+}

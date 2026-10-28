@@ -22,8 +22,8 @@ export default function NovoNegocioModalidadePage() {
   const { data, update } = useNegocioFlow();
 
   React.useEffect(() => {
-    if (!data.fazendaId) router.replace("/negocios/novo");
-    else if (!data.pecuaristaId) router.replace("/negocios/novo/pecuarista");
+    if (!data.pecuaristaId) router.replace("/negocios/novo");
+    else if (!data.fazendaId) router.replace("/negocios/novo/fazenda");
     else if (!data.compradorId) router.replace("/negocios/novo/comprador");
   }, [data.fazendaId, data.pecuaristaId, data.compradorId, router]);
 
@@ -38,7 +38,7 @@ export default function NovoNegocioModalidadePage() {
     <div className="page-container page-wide pt-safe">
       <BackLink href="/negocios/novo/comprador" />
       <h1 className={cn("page-title", styles.title)}>Cadastrar Novo Negócio</h1>
-      <ProgressSteps current={4} total={6} />
+      <ProgressSteps current={4} total={7} />
 
       <div className="summary-card glass-dark">
         <span className="card-icon-on-dark">

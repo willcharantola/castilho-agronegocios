@@ -97,7 +97,7 @@ export default function NovoNegocioQuantidadeCabecasPage() {
         label={ehIdTemporario(data.negocioId) ? "Negócios" : "Ver negócio"}
       />
       <h1 className={cn("page-title", styles.title)}>Cadastrar Novo Negócio</h1>
-      <ProgressSteps current={6} total={6} />
+      <ProgressSteps current={7} total={7} />
 
       <div className="summary-card glass-dark">
         <span className="card-icon-on-dark">

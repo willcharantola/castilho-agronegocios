@@ -2,9 +2,8 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { Plus, Search, Warehouse } from "lucide-react";
+import { Search, Warehouse } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Fab } from "@/components/fab";
 import { cn } from "@/lib/utils";
 import { fetchFazendas } from "@/lib/api/fazendas";
 import type { Fazenda } from "@/lib/api/types";
@@ -125,7 +124,10 @@ export default function FazendasPage() {
         </div>
       ) : null}
 
-      <Fab icon={Plus} label="Cadastrar fazenda" href="/fazendas/novo" />
+      {/* Sem cadastro avulso: a fazenda nasce dentro de um pecuarista. */}
+      <p className={styles.dica}>
+        Para cadastrar uma fazenda, use o cadastro do pecuarista ou &quot;Adicionar fazenda&quot; na tela dele.
+      </p>
     </div>
   );
 }

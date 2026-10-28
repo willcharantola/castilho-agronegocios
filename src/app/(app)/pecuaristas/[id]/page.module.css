@@ -1,3 +1,39 @@
-.fazendaNome {
-  font-weight: 800;
+.fazendas {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.cardImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: var(--radius-box);
+}
+
+.editarFazenda {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  color: var(--color-dark);
+}
+
+.desvincular {
+  align-self: flex-start;
+  margin-top: 0.25rem;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--color-ink-muted);
+  font: inherit;
+  font-size: var(--font-size-xs);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.adicionarFazenda {
+  align-self: flex-start;
+  gap: 0.4rem;
 }
