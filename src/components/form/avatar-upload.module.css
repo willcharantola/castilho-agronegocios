@@ -81,19 +81,19 @@
 }
 
 .label {
-  font-size: 0.85rem;
+  font-size: var(--font-size-sm);
   font-weight: 700;
   color: var(--color-dark);
 }
 
 .hint {
-  font-size: 0.75rem;
-  color: color-mix(in oklch, var(--color-ink) 70%, transparent);
+  font-size: var(--font-size-xs);
+  color: var(--color-ink-muted);
   text-align: center;
 }
 
 .error {
-  font-size: 0.75rem;
+  font-size: var(--font-size-xs);
   font-weight: 600;
   color: var(--color-danger);
   text-align: center;

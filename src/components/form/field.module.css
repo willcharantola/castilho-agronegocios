@@ -5,13 +5,7 @@
 }
 
 .label {
-  font-size: 0.9rem;
+  font-size: var(--font-size-md);
   font-weight: 700;
   color: var(--color-dark);
-}
-
-.error {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--color-danger);
 }

@@ -109,7 +109,7 @@ export default function NegociosPage() {
     setRelatorioAvisos([]);
     setGerandoRelatorio(true);
     try {
-      // O romaneio precisa de gados, vendedor e dados bancários, que só vêm no detalhe.
+      // O romaneio precisa de gados, pecuarista e dados bancários, que só vêm no detalhe.
       const detalhes = await Promise.all(sincronizados.map((n) => fetchNegocio(n.negocio_id)));
       const { avisos } = await gerarRomaneios(
         detalhes,
@@ -126,13 +126,13 @@ export default function NegociosPage() {
   }
 
   return (
-    <div className={cn(styles.page, "pt-safe")}>
-      <h1 className={styles.title}>Negócios Cadastrados</h1>
+    <div className={cn("page-container page-wide", styles.page, "pt-safe")}>
+      <h1 className="page-title">Negócios Cadastrados</h1>
 
-      <div className={styles.searchWrap}>
-        <Search className={styles.searchIcon} size={18} />
+      <div className="search-box">
+        <Search className="search-icon" size={18} />
         <input
-          className={cn(styles.searchInput, "glass-panel")}
+          className="search-input glass-panel"
           placeholder="Buscar por fazenda ou comprador..."
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
@@ -161,15 +161,15 @@ export default function NegociosPage() {
       </div>
 
       {negocios === null && !error ? (
-        <div className={cn(styles.state, "glass-panel")}>Carregando negócios...</div>
+        <div className="state-box glass-panel">Carregando negócios...</div>
       ) : null}
 
       {error && !negocios ? (
-        <div className={cn(styles.state, styles.stateError, "glass-panel")}>
+        <div className="state-box state-error glass-panel">
           {error}
           <div>
             <Button
-              className={styles.retryButton}
+              className="retry-button"
               variant="brand"
               onClick={() => setReloadKey((k) => k + 1)}
             >
@@ -180,7 +180,7 @@ export default function NegociosPage() {
       ) : null}
 
       {filtrados && filtrados.length === 0 ? (
-        <div className={cn(styles.state, "glass-panel")}>
+        <div className="state-box glass-panel">
           {negocios && negocios.length > 0
             ? "Nenhum negócio encontrado para essa busca/filtro."
             : "Nenhum negócio cadastrado ainda."}
@@ -188,7 +188,7 @@ export default function NegociosPage() {
       ) : null}
 
       {filtrados && filtrados.length > 0 ? (
-        <div className={styles.list}>
+        <div className="card-list">
           {filtrados.map((negocio) => (
             <Link
               key={negocio.negocio_id}
@@ -196,34 +196,34 @@ export default function NegociosPage() {
               // Pendente: ainda não existe no servidor, então não há tela de detalhe para abrir.
               aria-disabled={negocio.pendente ? true : undefined}
               onClick={negocio.pendente ? (e) => e.preventDefault() : undefined}
-              className={cn(styles.card, "glass-panel")}
+              className="list-card glass-panel"
             >
-              <span className={styles.cardIcon}>
+              <span className="card-icon">
                 <Warehouse size={18} />
               </span>
-              <div className={styles.cardInfo}>
+              <div className="card-info">
 
-                <p className={styles.cardFarm}>
+                <p className="card-name">
                   {nomesPendentes[negocio.negocio_id]?.fazendaNome ??
                     fazendasPorId[negocio.fazenda_id] ??
                     `Fazenda #${negocio.fazenda_id}`}
                 </p>
 
-                <p className={styles.cardMeta}>
+                <p className="card-meta">
                   Comprador:{" "}
                   {nomesPendentes[negocio.negocio_id]?.compradorNome ??
                     compradoresPorId[negocio.comprador_id] ??
                     `#${negocio.comprador_id}`}{" "}
                   
                 </p>
-                <p className={styles.cardMeta}>{formatDate(negocio.data_negocio)}</p>
+                <p className="card-meta">{formatDate(negocio.data_negocio)}</p>
 
-                 <p className={styles.cardMeta}>
+                 <p className="card-meta">
                   Comissão: {negocio.comissao !== null ? formatCurrency(negocio.comissao) : "—"}
                   
                 </p>
 
-                <p className={styles.cardMeta}>Cabeças negociadas: {negocio.qtd_animais ?? "—"}</p>
+                <p className="card-meta">Cabeças negociadas: {negocio.qtd_animais ?? "—"}</p>
                 {negocio.pendente ? <PendenteBadge pendente={negocio.pendente} /> : null}
               </div>
               <div className={styles.cardAmount}>
@@ -237,9 +237,9 @@ export default function NegociosPage() {
         </div>
       ) : null}
 
-      {relatorioError ? <p className={styles.relatorioError}>{relatorioError}</p> : null}
+      {relatorioError ? <p className="report-error">{relatorioError}</p> : null}
       {relatorioAvisos.map((aviso) => (
-        <p key={aviso} className={styles.relatorioAviso}>
+        <p key={aviso} className="report-notice">
           {aviso}
         </p>
       ))}

@@ -45,7 +45,7 @@ export function UsuariosSection() {
   }, [reloadKey]);
 
   return (
-    <section className={styles.section}>
+    <section className={cn("page-wide", styles.section)}>
       <div className={styles.sectionHeader}>
         <h2 className={styles.sectionTitle}>Usuários do sistema</h2>
         <Button
@@ -61,14 +61,14 @@ export function UsuariosSection() {
       {!online ? <p className={styles.hint}>Gestão de usuários indisponível sem internet.</p> : null}
 
       {usuarios === null && !error ? (
-        <div className={cn(styles.state, "glass-panel")}>Carregando usuários...</div>
+        <div className="state-box glass-panel">Carregando usuários...</div>
       ) : null}
 
       {error ? (
-        <div className={cn(styles.state, styles.stateError, "glass-panel")}>
+        <div className="state-box state-error glass-panel">
           {error}
           <div>
-            <Button className={styles.retryButton} variant="brand" onClick={() => setReloadKey((k) => k + 1)}>
+            <Button className="retry-button" variant="brand" onClick={() => setReloadKey((k) => k + 1)}>
               Tentar novamente
             </Button>
           </div>
@@ -76,11 +76,11 @@ export function UsuariosSection() {
       ) : null}
 
       {usuarios && usuarios.length === 0 ? (
-        <div className={cn(styles.state, "glass-panel")}>Nenhum usuário cadastrado.</div>
+        <div className="state-box glass-panel">Nenhum usuário cadastrado.</div>
       ) : null}
 
       {usuarios && usuarios.length > 0 ? (
-        <div className={styles.list}>
+        <div className="card-list">
           {usuarios.map((usuario) => (
             <Link
               key={usuario.usuario_id}
@@ -88,13 +88,13 @@ export function UsuariosSection() {
               // Sem internet não há como editar: o card fica só para leitura.
               aria-disabled={!online || undefined}
               onClick={online ? undefined : (e) => e.preventDefault()}
-              className={cn(styles.card, "glass-panel")}
+              className="list-card glass-panel"
             >
-              <span className={styles.cardIcon}>
+              <span className="card-icon">
                 <UserRound size={18} />
               </span>
-              <div className={styles.cardInfo}>
-                <p className={styles.cardName}>
+              <div className="card-info">
+                <p className="card-name">
                   {usuario.nome} {usuario.sobrenome}
                 </p>
                 <p className={styles.cardMeta}>{usuario.email}</p>
@@ -102,9 +102,6 @@ export function UsuariosSection() {
                   <span className={cn(styles.tag, usuario.nivel_acesso === "Admin" && styles.tagAdmin)}>
                     {NIVEL_LABELS[usuario.nivel_acesso]}
                   </span>
-                  {usuario.primeiro_acesso ? (
-                    <span className={cn(styles.tag, styles.tagPendente)}>Primeiro acesso pendente</span>
-                  ) : null}
                 </div>
               </div>
             </Link>

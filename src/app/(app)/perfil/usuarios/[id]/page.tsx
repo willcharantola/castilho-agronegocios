@@ -68,12 +68,12 @@ export default function EditarUsuarioPage() {
   if (!admin) return null;
 
   return (
-    <div className={cn(styles.page, "pt-safe")}>
+    <div className={cn("page-container page-narrow", styles.page, "pt-safe")}>
       <BackLink href="/perfil" />
-      <h1 className={styles.title}>Editar Usuário</h1>
+      <h1 className="page-title">Editar Usuário</h1>
 
-      {!usuario && !loadError ? <div className={cn(styles.state, "glass-panel")}>Carregando usuário...</div> : null}
-      {loadError ? <div className={cn(styles.state, styles.stateError, "glass-panel")}>{loadError}</div> : null}
+      {!usuario && !loadError ? <div className="state-box glass-panel">Carregando usuário...</div> : null}
+      {loadError ? <div className="state-box state-error glass-panel">{loadError}</div> : null}
 
       {usuario ? (
         <UsuarioForm
@@ -83,7 +83,7 @@ export default function EditarUsuarioPage() {
             // A própria conta não pode ser excluída (a API também recusa).
             proprioUsuario ? null : (
               <>
-                {excluirError ? <p className={styles.submitError}>{excluirError}</p> : null}
+                {excluirError ? <p className="form-error">{excluirError}</p> : null}
                 <Button
                   type="button"
                   variant="ghost"

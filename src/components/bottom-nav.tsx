@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { User, Home, BarChart3 } from "lucide-react";
+import { User, Home, BarChart3, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 import styles from "./bottom-nav.module.css";
 
@@ -10,6 +10,7 @@ const TABS = [
   { href: "/perfil", icon: User, label: "Perfil" },
   { href: "/", icon: Home, label: "Início" },
   { href: "/dashboard", icon: BarChart3, label: "Dashboard" },
+  { href: "/configuracoes", icon: Settings, label: "Configurações" },
 ];
 
 export function BottomNav() {

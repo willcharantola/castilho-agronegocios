@@ -1,31 +1,67 @@
 "use client";
 
-import { ApiError, PRIMEIRO_ACESSO_PENDENTE } from "@/lib/api-client";
+import { ApiError } from "@/lib/api-client";
 import { createComprador } from "@/lib/api/compradores";
 import { createFazenda } from "@/lib/api/fazendas";
 import { createGado } from "@/lib/api/gados";
 import { concluirNegocio, createNegocio, updateNegocio } from "@/lib/api/negocios";
-import { createVendedor } from "@/lib/api/vendedores";
+import { createPecuarista } from "@/lib/api/pecuaristas";
 import type {
   CreateCompradorInput,
   CreateFazendaInput,
   CreateGadoOfflineInput,
   CreateNegocioInput,
-  CreateVendedorInput,
+  DadosPecuaristaInput,
+  Fazenda,
+  FazendaDoPecuaristaInput,
   UpdateNegocioInput,
 } from "@/lib/api/types";
 import { offlineDb, ORDEM_SINCRONIZACAO, type EntidadeOffline, type RegistroPendente } from "./db";
-import { DependenciaPendenteError, EVENTO_SINCRONIZADO, resolverReferencias, type RegistroSalvo } from "./fila";
+import {
+  DependenciaPendenteError,
+  EVENTO_SINCRONIZADO,
+  idTemporarioFazendaAninhada,
+  resolverReferencias,
+  uuidsReferenciados,
+  type RegistroSalvo,
+} from "./fila";
 import { ehErroDeRede, semConexao } from "./rede";
 
 type Payload = Record<string, unknown>;
 
+/**
+ * Pecuarista + fazendas num único POST (a API grava tudo numa transação). As fazendas
+ * novas guardam o próprio uuid_origem: depois do envio, mapeia o id local de cada uma
+ * para o id real, para quem as referencia (ex.: um negócio criado offline).
+ */
+async function enviarPecuarista(p: Payload, uuid: string, registroId: number) {
+  const { fazendas, ...dados } = p as DadosPecuaristaInput & { fazendas: FazendaDoPecuaristaInput[] };
+  const pecuarista = await createPecuarista({ ...dados, fazendas, uuid_origem: uuid });
+  const criadas = (pecuarista.pecuarista_fazenda ?? []).map((v) => v.fazenda as Fazenda & { uuid_origem?: string });
+  await Promise.all(
+    fazendas.map(async (item, indice) => {
+      const uuidFazenda = "uuid_origem" in item ? item.uuid_origem : undefined;
+      const fazenda = uuidFazenda ? criadas.find((f) => f.uuid_origem === uuidFazenda) : undefined;
+      if (!uuidFazenda || !fazenda) return;
+      await offlineDb.mapeamentos.put({
+        uuid: uuidFazenda,
+        idLocal: -idTemporarioFazendaAninhada(registroId, indice),
+        entidade: "fazenda",
+        idReal: fazenda.fazenda_id,
+      });
+    })
+  );
+  return pecuarista.pecuarista_id;
+}
+
 /** Envia um registro já com as referências resolvidas; devolve o id real criado (se houver). */
-const ENVIAR: Record<EntidadeOffline, (payload: Payload, uuid: string) => Promise<number | null>> = {
+const ENVIAR: Record<
+  EntidadeOffline,
+  (payload: Payload, uuid: string, registroId: number) => Promise<number | null>
+> = {
   fazenda: async (p, uuid) =>
     (await createFazenda({ ...(p as CreateFazendaInput), uuid_origem: uuid })).fazenda_id,
-  vendedor: async (p, uuid) =>
-    (await createVendedor({ ...(p as CreateVendedorInput), uuid_origem: uuid })).vendedor_id,
+  pecuarista: enviarPecuarista,
   comprador: async (p, uuid) =>
     (await createComprador({ ...(p as CreateCompradorInput), uuid_origem: uuid })).comprador_id,
   negocio: async (p, uuid) =>
@@ -63,7 +99,7 @@ async function enviarRegistro(registro: RegistroSalvo): Promise<ResultadoRegistr
   }
 
   try {
-    const idReal = await ENVIAR[registro.entidade](payload, registro.uuid);
+    const idReal = await ENVIAR[registro.entidade](payload, registro.uuid, registro.id);
     await offlineDb.transaction("rw", offlineDb.pendentes, offlineDb.mapeamentos, async () => {
       if (idReal != null) {
         await offlineDb.mapeamentos.put({
@@ -77,11 +113,11 @@ async function enviarRegistro(registro: RegistroSalvo): Promise<ResultadoRegistr
     });
     return "enviado";
   } catch (err) {
-    // Sem rede, sessão expirada ou primeiro acesso pendente (apiFetch já redireciona): o registro volta
+    // Sem rede ou sessão expirada (apiFetch já redireciona): o registro volta
     // para a fila intacto e a rodada para — tentar o resto agora só falharia igual.
     if (
       ehErroDeRede(err) ||
-      (err instanceof ApiError && (err.status === 401 || err.code === PRIMEIRO_ACESSO_PENDENTE))
+      (err instanceof ApiError && err.status === 401)
     ) {
       await offlineDb.pendentes.update(registro.id, { status: "pendente" });
       return "parar";
@@ -151,12 +187,7 @@ async function dependentes(registro: RegistroPendente): Promise<RegistroSalvo[]>
     const uuid = fila.shift()!;
     for (const r of todos) {
       if (encontrados.includes(r)) continue;
-      const referencia = Object.entries(r.payload).some(
-        ([chave, valor]) =>
-          (chave.endsWith("_uuid_local") && valor === uuid) ||
-          (chave.endsWith("_uuids_locais") && Array.isArray(valor) && valor.includes(uuid))
-      );
-      if (referencia) {
+      if (uuidsReferenciados(r.payload).includes(uuid)) {
         encontrados.push(r);
         fila.push(r.uuid);
       }

@@ -1,14 +1,5 @@
 .page {
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
   padding-bottom: 5rem;
-}
-
-.title {
-  font-size: 1.25rem;
-  font-weight: 800;
-  color: var(--color-dark);
 }
 
 /* No celular, as duas datas dividem a linha e o "Este mês" vai para a linha de baixo:
@@ -28,25 +19,8 @@
   gap: 0.3rem;
 }
 
-/* Mesma correção das outras telas: sem isso o Safari mantém a largura mínima do
-   controle de data e ignora o width do campo. */
-.filterField input[type="date"] {
-  display: block;
-  width: 100%;
-  min-width: 0;
-  max-width: 100%;
-  box-sizing: border-box;
-  -webkit-appearance: none;
-  appearance: none;
-}
-
-.filterField input[type="date"]::-webkit-date-and-time-value {
-  text-align: center;
-  min-height: 1.2em;
-}
-
 .filterLabel {
-  font-size: 0.75rem;
+  font-size: var(--font-size-xs);
   font-weight: 700;
   color: color-mix(in oklch, var(--color-ink) 65%, transparent);
 }
@@ -54,77 +28,43 @@
 .filterReset {
   flex-shrink: 0;
   height: 2.5rem;
-  border-radius: 5px;
+  border-radius: var(--radius-box);
   border: none;
   background-color: #2b420e;
   color: #fff;
-  font-size: 0.75rem;
+  font-size: var(--font-size-xs);
   font-weight: 600;
   padding: 0 0.75rem;
   white-space: nowrap;
   grid-column: 1 / -1;
 }
 
-.list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
 .row {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  border-radius: 5px;
+  border-radius: var(--radius-box);
   padding: 1rem;
-}
-
-.rowIcon {
-  display: flex;
-  height: 2.5rem;
-  width: 2.5rem;
-  flex-shrink: 0;
-  align-items: center;
-  justify-content: center;
-  border-radius: 5px;
-  background: var(--color-dark);
-  color: var(--color-white);
 }
 
 .rowLabel {
   flex: 1;
   min-width: 0;
-  font-size: 0.9rem;
+  font-size: var(--font-size-md);
   font-weight: 600;
-  color: color-mix(in oklch, var(--color-ink) 70%, transparent);
+  color: var(--color-ink-muted);
 }
 
 .rowValue {
   flex-shrink: 0;
-  font-size: 1.25rem;
+  font-size: var(--font-size-title);
   font-weight: 800;
   color: var(--color-dark);
 }
 
-.error {
-  color: var(--color-danger);
-  font-size: 0.85rem;
-  text-align: center;
-}
-
-.aviso {
-  color: var(--color-ink);
-  font-size: 0.85rem;
-  text-align: center;
-}
-
 /* Telas maiores: lista (um item por linha) ocupando 90% da largura disponível, centralizada. */
 @media (min-width: 768px) and (min-height: 500px) {
-  .page {
-    width: 90%;
-    margin-left: auto;
-    margin-right: auto;
-  }
+  
 
   /* Com espaço sobrando, o "Este mês" volta para a mesma linha das datas. */
   .filterRow {

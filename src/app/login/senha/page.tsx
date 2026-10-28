@@ -43,8 +43,7 @@ export default function LoginSenhaPage() {
     try {
       const { access_token, usuario } = await login(data.email, values.senha);
       setSession(access_token, usuario);
-      // Primeiro acesso: precisa definir uma nova senha antes de entrar no sistema.
-      router.push(usuario.primeiro_acesso ? "/primeiro-acesso" : "/");
+      router.push("/");
     } catch (err) {
       setAuthError(err instanceof Error ? err.message : "Não foi possível entrar.");
       setLoading(false);
@@ -66,7 +65,7 @@ export default function LoginSenhaPage() {
         onSubmit={handleSubmit(onSubmit)}
         fields={
           <>
-            {authError ? <p className={styles.authError}>{authError}</p> : null}
+            {authError ? <p className="form-error">{authError}</p> : null}
             <Field label="Senha" htmlFor="senha" error={errors.senha?.message}>
               <PasswordField
                 id="senha"

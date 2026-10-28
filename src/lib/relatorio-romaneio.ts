@@ -1,8 +1,18 @@
 import PizZip from "pizzip";
 import Docxtemplater from "docxtemplater";
 import { saveAs } from "file-saver";
-import { formatCurrency, formatDate, formatGenero, formatHora, formatNumber, formatPercent } from "@/lib/format";
+import {
+  formatCurrency,
+  formatDate,
+  formatDecimalCurto,
+  formatGenero,
+  formatHora,
+  formatNumber,
+  formatPercent,
+} from "@/lib/format";
 import type { Fazenda, Gado, NegocioDetail } from "@/lib/api/types";
+import { rendimentoDaRaca } from "@/lib/calculo-gado";
+import { RACAS_RENDIMENTO } from "@/lib/labels";
 
 /**
  * Romaneio de pesagens: um negócio gera dois arquivos, um por modelo (solução
@@ -15,14 +25,23 @@ import type { Fazenda, Gado, NegocioDetail } from "@/lib/api/types";
  * adicionados aos .docx:
  *
  * - Totais (os dois modelos): {{total-kg}} {{total-arroba}} {{rend-arroba}}
- *   {{media-peso}} {{media-arroba}} {{valor-bruto}} {{funrural}} {{senar}} — lidos
+ *   {{media-peso}} {{media-arroba}} {{valor-bruto}} {{funrural}} {{senar}}
+ *   {{aliquota_funrural}} {{aliquota_senar}} (alíquotas em %, ex.: "1,5") — lidos
  *   dos campos calculados pela API (peso_total_quilos, peso_total_arroba,
  *   rendimento_medio, peso_medio_quilos, peso_medio_arroba, valor_total, funrural,
- *   senar), nunca recalculados aqui.
+ *   senar), nunca recalculados aqui. {{rend-arroba}} é o rendimento médio do
+ *   negócio (ponderado pelo peso); funrural/senar já vêm conforme o tipo de negócio
+ *   (zero sai "R$ 0,00").
+ * - Cabeçalho, novos: {{tipo-negocio}} {{media-carimbo}} {{rend-nelore}}
+ *   {{rend-anelorado}} {{rend-angus}} {{rend-composto}} (os quatro só na modalidade
+ *   "arroba"; nas demais saem em branco).
  * - Modelo 1, linha da tabela "Cabeças Negociadas": {{#gados}} na primeira
- *   célula e {{/gados}} na última, com {{denominacao}} {{genero}} {{carimbo}}
- *   {{ano}} {{peso-total}} {{peso-calculo}} {{rend-carcaca}} {{peso-arroba}}
- *   {{data-pesagem}} {{hora-pesagem}} {{valor-total}}
+ *   célula e {{/gados}} na última, com {{denominacao}} {{genero}} {{ano}}
+ *   {{peso-total}} {{peso-calculo}} {{rend-carcaca}} {{peso-arroba}}
+ *   {{data-pesagem}} {{hora-pesagem}} {{valor-total}}. {{rend-carcaca}} é o
+ *   percentual da categoria do animal no negócio. O carimbo (mês) por animal deixou
+ *   de existir: a coluna {{carimbo}} do modelo-romaneio1.docx sai em branco até ser
+ *   removida do .docx (ou trocada por {{media-carimbo}} no cabeçalho).
  * - Modelo 2, grade: {{p1}}…{{p120}} (peso do animal) e {{t1}}…{{t6}} (soma da
  *   coluna); {{n1}}…{{n120}} trazem o número da posição já somando o bloco.
  */
@@ -59,13 +78,16 @@ function nomeFazenda(negocio: NegocioDetail, fazenda: Fazenda | undefined) {
 }
 
 export function montarDadosCabecalho(negocio: NegocioDetail, fazenda: Fazenda | undefined): DadosDocumento {
-  const { vendedor } = negocio;
+  const { pecuarista } = negocio;
 
   return {
     "nome-fazenda": nomeFazenda(negocio, fazenda),
     "inscricao-estadual": fazenda?.inscricao_estadual ?? "",
     municipio: fazenda?.municipio ?? "",
-    "nome-vendedor": vendedor?.nome_vendedor ?? "",
+    "nome-pecuarista": pecuarista?.nome_pecuarista ?? "",
+    // Os dois .docx de romaneio ainda usam o placeholder antigo. Remover esta linha
+    // quando os modelos passarem a usar {{nome-pecuarista}}.
+    "nome-vendedor": pecuarista?.nome_pecuarista ?? "",
     "data-negocio": formatDate(negocio.data_negocio),
     "hora-inicio-pesagem": formatHora(negocio.hora_inicio_pesagem),
     "hora-fim-pesagem": formatHora(negocio.hora_fim_pesagem),
@@ -79,13 +101,24 @@ export function montarDadosCabecalho(negocio: NegocioDetail, fazenda: Fazenda | 
     "valor-bruto": campo(negocio.valor_total, formatCurrency),
     funrural: campo(negocio.funrural, formatCurrency),
     senar: campo(negocio.senar, formatCurrency),
+    // Alíquotas do próprio negócio, sem "%" (o modelo traz "{{aliquota_funrural}}% Funrural:").
+    aliquota_funrural: campo(negocio.aliquota_funrural, formatDecimalCurto),
+    aliquota_senar: campo(negocio.aliquota_senar, formatDecimalCurto),
+    "tipo-negocio": negocio.tipo_negocio ?? "",
+    "media-carimbo": negocio.media_carimbo ?? "",
+    ...Object.fromEntries(
+      RACAS_RENDIMENTO.map((raca) => [
+        `rend-${raca.toLowerCase()}`,
+        negocio.modalidade === "arroba" ? formatPercent(rendimentoDaRaca(negocio, raca)) : "",
+      ])
+    ),
 
-    // Dados bancários do vendedor (o campo "Nome" reaproveita {{nome-vendedor}}).
-    "cpf-cnpj": vendedor?.cpf_cnpj ?? "",
-    banco: vendedor?.banco ?? "",
-    agencia: vendedor?.agencia ?? "",
-    conta: vendedor?.conta ?? "",
-    "chave-pix": vendedor?.chave_pix ?? "",
+    // Dados bancários do pecuarista (o campo "Nome" reaproveita {{nome-pecuarista}}).
+    "cpf-cnpj": pecuarista?.cpf_cnpj ?? "",
+    banco: pecuarista?.banco ?? "",
+    agencia: pecuarista?.agencia ?? "",
+    conta: pecuarista?.conta ?? "",
+    "chave-pix": pecuarista?.chave_pix ?? "",
   };
 }
 
@@ -93,11 +126,10 @@ function linhaGado(gado: Gado): Record<string, string> {
   return {
     denominacao: gado.denominacao,
     genero: formatGenero(gado.genero),
-    carimbo: String(gado.carimbo),
     ano: gado.ano_carimbo,
     "peso-total": formatNumber(gado.peso_total),
     "peso-calculo": formatNumber(gado.peso_calculo),
-    "rend-carcaca": formatPercent(gado.rendimento_carcaca),
+    "rend-carcaca": campo(gado.rendimento_carcaca, formatPercent),
     "peso-arroba": formatNumber(gado.peso_arroba),
     "data-pesagem": formatDate(gado.data_pesagem),
     "hora-pesagem": formatHora(gado.horario_pesagem),

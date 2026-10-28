@@ -1,0 +1,12 @@
+.title {
+  margin-top: 0.5rem;
+}
+
+.fazendaNome {
+  font-weight: 800;
+}
+
+.meta {
+  font-size: var(--font-size-xs);
+  color: rgb(255 255 255 / 75%);
+}

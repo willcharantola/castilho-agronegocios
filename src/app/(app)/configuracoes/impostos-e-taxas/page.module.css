@@ -1,0 +1,18 @@
+.subtitle {
+  font-size: var(--font-size-sm);
+  color: var(--color-ink-muted);
+}
+
+.success {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-teal);
+  text-align: center;
+}
+
+.hint {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-ink-muted);
+  text-align: center;
+}

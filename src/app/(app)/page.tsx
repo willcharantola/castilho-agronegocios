@@ -11,7 +11,7 @@ import { formatCurrency, startOfMonth, toDateInputValue } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { fetchNegocios } from "@/lib/api/negocios";
 import { fetchFazendas } from "@/lib/api/fazendas";
-import { fetchVendedores } from "@/lib/api/vendedores";
+import { fetchPecuaristas } from "@/lib/api/pecuaristas";
 import { fetchCompradores } from "@/lib/api/compradores";
 import styles from "./page.module.css";
 
@@ -56,11 +56,11 @@ export default function HomePage() {
   const [comissaoTotal, setComissaoTotal] = React.useState<number | null>(null);
   const [cabecasTotal, setCabecasTotal] = React.useState<number | null>(null);
   const [fazendasCount, setFazendasCount] = React.useState<number | null>(null);
-  const [vendedoresCount, setVendedoresCount] = React.useState<number | null>(null);
+  const [pecuaristasCount, setPecuaristasCount] = React.useState<number | null>(null);
   const [compradoresCount, setCompradoresCount] = React.useState<number | null>(null);
 
   // Bento (tiles do topo) segue o período do filtro; atalhos de navegação
-  // (fazendas/vendedores/negócios totais) não são vinculados a data.
+  // (fazendas/pecuaristas/negócios totais) não são vinculados a data.
   React.useEffect(() => {
     fetchNegocios({ data_inicio: dataInicio, data_fim: dataFim })
       .then((negocios) => {
@@ -76,10 +76,10 @@ export default function HomePage() {
   }, [dataInicio, dataFim]);
 
   React.useEffect(() => {
-    Promise.all([fetchFazendas(), fetchVendedores(), fetchCompradores()])
-      .then(([fazendas, vendedores, compradores]) => {
+    Promise.all([fetchFazendas(), fetchPecuaristas(), fetchCompradores()])
+      .then(([fazendas, pecuaristas, compradores]) => {
         setFazendasCount(fazendas.length);
-        setVendedoresCount(vendedores.length);
+        setPecuaristasCount(pecuaristas.length);
         setCompradoresCount(compradores.length);
       })
       .catch(() => {
@@ -156,7 +156,7 @@ export default function HomePage() {
 
       <div className={styles.shortcuts}>
         <NavShortcut icon={Warehouse} label="Fazendas" count={fazendasCount ?? 0} href="/fazendas" />
-        <NavShortcut icon={Users} label="Vendedores" count={vendedoresCount ?? 0} href="/vendedores" />
+        <NavShortcut icon={Users} label="Pecuaristas" count={pecuaristasCount ?? 0} href="/pecuaristas" />
         <NavShortcut icon={Building2} label="Compradores" count={compradoresCount ?? 0} href="/compradores" />
         <NavShortcut icon={Handshake} label="Negócios" count={negociosCount ?? 0} href="/negocios" />
       </div>

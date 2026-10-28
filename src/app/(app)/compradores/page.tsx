@@ -57,13 +57,13 @@ export default function CompradoresPage() {
   );
 
   return (
-    <div className={cn(styles.page, "pt-safe")}>
-      <h1 className={styles.title}>Compradores Cadastrados</h1>
+    <div className={cn("page-container page-wide", styles.page, "pt-safe")}>
+      <h1 className="page-title">Compradores Cadastrados</h1>
 
-      <div className={styles.searchWrap}>
-        <Search className={styles.searchIcon} size={18} />
+      <div className="search-box">
+        <Search className="search-icon" size={18} />
         <input
-          className={cn(styles.searchInput, "glass-panel")}
+          className="search-input glass-panel"
           placeholder="Buscar comprador..."
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
@@ -71,14 +71,14 @@ export default function CompradoresPage() {
       </div>
 
       {compradores === null && !error ? (
-        <div className={cn(styles.state, "glass-panel")}>Carregando compradores...</div>
+        <div className="state-box glass-panel">Carregando compradores...</div>
       ) : null}
 
       {error && !compradores ? (
-        <div className={cn(styles.state, styles.stateError, "glass-panel")}>
+        <div className="state-box state-error glass-panel">
           {error}
           <div>
-            <Button className={styles.retryButton} variant="brand" onClick={() => setReloadKey((k) => k + 1)}>
+            <Button className="retry-button" variant="brand" onClick={() => setReloadKey((k) => k + 1)}>
               Tentar novamente
             </Button>
           </div>
@@ -86,7 +86,7 @@ export default function CompradoresPage() {
       ) : null}
 
       {filtrados && filtrados.length === 0 ? (
-        <div className={cn(styles.state, "glass-panel")}>
+        <div className="state-box glass-panel">
           {compradores && compradores.length > 0
             ? "Nenhum comprador encontrado para essa busca."
             : "Nenhum comprador cadastrado ainda."}
@@ -94,7 +94,7 @@ export default function CompradoresPage() {
       ) : null}
 
       {filtrados && filtrados.length > 0 ? (
-        <div className={styles.list}>
+        <div className="card-list">
           {filtrados.map((comprador) => (
             <Link
               key={comprador.comprador_id}
@@ -102,16 +102,16 @@ export default function CompradoresPage() {
               // Pendente: ainda não existe no servidor, então não há tela de edição para abrir.
               aria-disabled={comprador.pendente ? true : undefined}
               onClick={comprador.pendente ? (e) => e.preventDefault() : undefined}
-              className={cn(styles.card, "glass-panel")}
+              className="list-card glass-panel"
             >
-              <span className={styles.cardIcon}>
+              <span className="card-icon">
                 <Building2 size={18} />
               </span>
-              <div className={styles.cardInfo}>
-                <p className={styles.cardName}>{comprador.nome_empresa}</p>
-                <p className={styles.cardMeta}>CNPJ: {comprador.cnpj}</p>
-                <p className={styles.cardMeta}>Cidade: {comprador.municipio}</p>
-                 <p className={styles.cardMeta}>Contato: {comprador.pessoa_contato}</p>
+              <div className="card-info">
+                <p className="card-name">{comprador.nome_empresa}</p>
+                <p className="card-meta">CNPJ: {comprador.cnpj}</p>
+                <p className="card-meta">Cidade: {comprador.municipio}</p>
+                 <p className="card-meta">Contato: {comprador.pessoa_contato}</p>
                 {comprador.pendente ? <PendenteBadge pendente={comprador.pendente} /> : null}
               </div>
             </Link>

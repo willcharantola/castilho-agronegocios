@@ -16,7 +16,7 @@ import styles from "./page.module.css";
 function StatRow({ icon: Icon, label, value }: { icon: LucideIcon; label: string; value: string }) {
   return (
     <div className={cn(styles.row, "glass-panel")}>
-      <span className={styles.rowIcon}>
+      <span className="card-icon">
         <Icon size={20} />
       </span>
       <p className={styles.rowLabel}>{label}</p>
@@ -89,7 +89,7 @@ export default function DashboardPage() {
     setRelatorioAvisos([]);
     setGerandoRelatorio(true);
     try {
-      // Romaneio de cada negócio do período (o romaneio precisa do detalhe: gados e vendedor).
+      // Romaneio de cada negócio do período (o romaneio precisa do detalhe: gados e pecuarista).
       const detalhes = await Promise.all(negocios.map((n) => fetchNegocio(n.negocio_id)));
       const { avisos } = await gerarRomaneios(detalhes, fazendasPorId);
       setRelatorioAvisos(avisos);
@@ -103,11 +103,11 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className={cn(styles.page, "pt-safe")}>
-      <h1 className={styles.title}>Dashboard</h1>
+    <div className={cn("page-container page-wide", styles.page, "pt-safe")}>
+      <h1 className="page-title">Dashboard</h1>
 
       <div className={styles.filterRow}>
-        <div className={styles.filterField}>
+        <div className={cn("date-input-fix", styles.filterField)}>
           <label htmlFor="dataInicio" className={styles.filterLabel}>
             De
           </label>
@@ -120,7 +120,7 @@ export default function DashboardPage() {
             onChange={(e) => setDataInicio(e.target.value)}
           />
         </div>
-        <div className={styles.filterField}>
+        <div className={cn("date-input-fix", styles.filterField)}>
           <label htmlFor="dataFim" className={styles.filterLabel}>
             Até
           </label>
@@ -139,9 +139,9 @@ export default function DashboardPage() {
         </button>
       </div>
 
-      {error ? <p className={styles.error}>{error}</p> : null}
+      {error ? <p className="report-error">{error}</p> : null}
 
-      <div className={styles.list}>
+      <div className="card-list">
         <StatRow
           icon={TrendingUp}
           label="Negócios realizados"
@@ -159,9 +159,9 @@ export default function DashboardPage() {
         />
       </div>
 
-      {relatorioError ? <p className={styles.error}>{relatorioError}</p> : null}
+      {relatorioError ? <p className="report-error">{relatorioError}</p> : null}
       {relatorioAvisos.map((aviso) => (
-        <p key={aviso} className={styles.aviso}>
+        <p key={aviso} className="report-notice">
           {aviso}
         </p>
       ))}

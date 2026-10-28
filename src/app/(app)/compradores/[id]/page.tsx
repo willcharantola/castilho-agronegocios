@@ -9,8 +9,6 @@ import { CompradorFields, compradorSchema, type CompradorFormValues } from "@/co
 import { Button } from "@/components/ui/button";
 import { fetchComprador, updateComprador } from "@/lib/api/compradores";
 import { ApiError } from "@/lib/api-client";
-import { cn } from "@/lib/utils";
-import styles from "./page.module.css";
 
 export default function EditarCompradorPage() {
   const params = useParams<{ id: string }>();
@@ -59,17 +57,17 @@ export default function EditarCompradorPage() {
   }
 
   return (
-    <div className={cn(styles.page, "pt-safe")}>
+    <div className="page-container page-narrow pt-safe">
       <BackLink href="/compradores" />
-      <h1 className={styles.title}>Editar Comprador</h1>
+      <h1 className="page-title">Editar Comprador</h1>
 
-      {!loaded && !loadError ? <div className={cn(styles.state, "glass-panel")}>Carregando comprador...</div> : null}
-      {loadError ? <div className={cn(styles.state, styles.stateError, "glass-panel")}>{loadError}</div> : null}
+      {!loaded && !loadError ? <div className="state-box glass-panel">Carregando comprador...</div> : null}
+      {loadError ? <div className="state-box state-error glass-panel">{loadError}</div> : null}
 
       {loaded ? (
-        <form onSubmit={handleSubmit(onSubmit)} className={styles.form}>
-          <div className={styles.fields}>
-            {submitError ? <p className={styles.submitError}>{submitError}</p> : null}
+        <form onSubmit={handleSubmit(onSubmit)} className="form-stack">
+          <div className="form-fields">
+            {submitError ? <p className="form-error">{submitError}</p> : null}
             <CompradorFields register={register} errors={errors} />
           </div>
 

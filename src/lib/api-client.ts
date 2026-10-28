@@ -7,7 +7,7 @@ const USUARIO_KEY = "usuario";
 
 export class ApiError extends Error {
   status: number;
-  /** Código de erro da API, quando houver (ex.: PRIMEIRO_ACESSO_PENDENTE). */
+  /** Código de erro da API, quando houver. */
   code?: string;
 
   constructor(status: number, message: string, code?: string) {
@@ -16,9 +16,6 @@ export class ApiError extends Error {
     this.code = code;
   }
 }
-
-/** A API bloqueia tudo (403) até o usuário trocar a senha no primeiro acesso. */
-export const PRIMEIRO_ACESSO_PENDENTE = "PRIMEIRO_ACESSO_PENDENTE";
 
 export function getToken(): string | null {
   return typeof window !== "undefined" ? localStorage.getItem(TOKEN_KEY) : null;
@@ -81,15 +78,6 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
   if (!res.ok) {
     const body = await res.json().catch(() => null);
     const message = Array.isArray(body?.message) ? body.message.join(" ") : body?.message;
-    if (res.status === 403 && body?.code === PRIMEIRO_ACESSO_PENDENTE) {
-      // Sessão válida, mas a senha do primeiro acesso ainda não foi definida.
-      updateUsuarioLocal({ primeiro_acesso: true });
-      if (typeof window !== "undefined" && window.location.pathname !== "/primeiro-acesso") {
-        // Hard redirect, como no 401 acima: descarta o estado da tela bloqueada.
-        // eslint-disable-next-line @next/next/no-location-assign-relative-destination
-        window.location.href = "/primeiro-acesso";
-      }
-    }
     throw new ApiError(res.status, message ?? `Erro ${res.status}`, body?.code);
   }
 

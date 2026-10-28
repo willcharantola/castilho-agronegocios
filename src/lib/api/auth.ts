@@ -25,14 +25,7 @@ export async function login(email: string, senha: string): Promise<LoginResponse
   return res.json() as Promise<LoginResponse>;
 }
 
-/** Estado atual do usuário logado (permitido mesmo com o primeiro acesso pendente). */
+/** Estado atual do usuário logado. */
 export function fetchMe() {
   return apiFetch<Usuario>("/auth/me");
-}
-
-export function definirSenhaPrimeiroAcesso(novaSenha: string) {
-  return apiFetch<Usuario>("/auth/primeiro-acesso/senha", {
-    method: "PATCH",
-    body: JSON.stringify({ nova_senha: novaSenha }),
-  });
 }

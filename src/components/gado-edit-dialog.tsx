@@ -1,11 +1,10 @@
 "use client";
 
 import { Dialog } from "@/components/ui/dialog";
-import { GadoForm, formValuesParaInput, gadoParaFormInput } from "@/components/gado-form";
+import { GadoForm, estimarGado, formValuesParaInput, gadoParaFormInput } from "@/components/gado-form";
 import { updateGado } from "@/lib/api/gados";
-import { estimarValoresGado } from "@/lib/calculo-gado";
 import { atualizarPendente, ehIdTemporario } from "@/lib/offline/fila";
-import type { Gado, Modalidade } from "@/lib/api/types";
+import type { Gado, Negocio } from "@/lib/api/types";
 
 /**
  * Edição de um gado em modal, usada durante o cadastro do negócio (/negocios/novo/gado).
@@ -13,15 +12,14 @@ import type { Gado, Modalidade } from "@/lib/api/types";
  */
 export function GadoEditDialog({
   gado,
-  modalidade,
-  valorUnidade,
+  negocio,
   onClose,
   onSaved,
 }: {
   /** Gado em edição; `null` fecha o modal. */
   gado: Gado | null;
-  modalidade: Modalidade;
-  valorUnidade: number;
+  /** Modalidade, valor por unidade e rendimentos por categoria do negócio. */
+  negocio: Negocio;
   onClose: () => void;
   onSaved: () => Promise<void> | void;
 }) {
@@ -32,21 +30,18 @@ export function GadoEditDialog({
           // Remonta o formulário ao trocar de gado, para recarregar os valores iniciais.
           key={gado.gado_id}
           idPrefix="editar-"
-          modalidade={modalidade}
-          valorUnidade={valorUnidade}
+          modalidade={negocio.modalidade}
+          valorUnidade={negocio.valor_unidade}
+          rendimentos={negocio}
           defaultValues={gadoParaFormInput(gado)}
           submitLabel="Salvar Alterações"
           submittingLabel="Salvando..."
           onSubmit={async (values) => {
             const input = formValuesParaInput(values);
             if (ehIdTemporario(gado.gado_id)) {
-              const v = estimarValoresGado(modalidade, input.peso_total, input.rendimento_carcaca, valorUnidade);
-              await atualizarPendente(-gado.gado_id, input, {
-                peso_calculo: v.pesoCalculo,
-                peso_arroba: v.pesoArroba,
-                valor_total: v.valorTotal,
-              });
+              await atualizarPendente(-gado.gado_id, input, estimarGado(negocio, input));
             } else {
+              // Trocar a categoria faz a API recalcular o animal com o outro percentual.
               await updateGado(gado.gado_id, input);
             }
             await onSaved();

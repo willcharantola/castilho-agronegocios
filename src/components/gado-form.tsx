@@ -6,30 +6,22 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Field } from "@/components/form/field";
 import { TintedInput } from "@/components/form/tinted-input";
-import { MaskedNumberInput } from "@/components/form/masked-number-input";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { formatCurrency, formatNumber, formatGenero } from "@/lib/format";
+import { OpcoesBotoes, type OpcaoBotao } from "@/components/form/opcoes-botoes";
+import { formatCurrency, formatNumber, formatGenero, formatPercent } from "@/lib/format";
 import { mensagemDeErro } from "@/lib/offline/rede";
-import { MESES_LABELS } from "@/lib/labels";
-import { estimarValoresGado } from "@/lib/calculo-gado";
-import { cn } from "@/lib/utils";
-import type { CreateGadoInput, Gado, Modalidade } from "@/lib/api/types";
-import fieldBox from "@/components/form/field-box.module.css";
+import { RACAS_RENDIMENTO } from "@/lib/labels";
+import { estimarValoresGado, rendimentoDaRaca } from "@/lib/calculo-gado";
+import type { CreateGadoInput, Gado, Modalidade, RacaRendimento, RendimentosNegocio } from "@/lib/api/types";
 import styles from "./gado-form.module.css";
 
 const schema = z.object({
-  denominacao: z.string().min(2, "Informe a denominação.").max(20),
+  // Categoria de rendimento: define qual percentual do negócio entra no cálculo.
+  denominacao: z.enum(["Nelore", "Anelorado", "Angus", "Composto"], { error: "Escolha a categoria." }),
   genero: z.enum(["Macho", "Femea"], { error: "Selecione o gênero." }),
   peso_total: z.coerce.number({ error: "Informe o peso total." }).positive("Deve ser maior que zero."),
   data_pesagem: z.string().min(1, "Informe a data de pesagem."),
-  rendimento_carcaca: z.coerce
-    .number({ error: "Informe o rendimento de carcaça." })
-    .min(0, "Deve ser entre 0 e 100.")
-    .max(100, "Deve ser entre 0 e 100."),
   // horario_pesagem não é informado: a API registra o horário no cadastro.
-  // Mês (1 a 12) e ano de referência definidos pelo cliente.
-  carimbo: z.enum(["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"], { error: "Selecione o mês." }),
   ano_carimbo: z.string().regex(/^\d{4}$/, "Informe o ano com 4 dígitos (ex: 2025)."),
 });
 export type GadoFormInput = z.input<typeof schema>;
@@ -37,18 +29,14 @@ export type GadoFormValues = z.output<typeof schema>;
 
 const hoje = () => new Date().toISOString().slice(0, 10);
 
-/** Só "arroba" usa o rendimento no cálculo; nas demais sugerimos 100 (ainda editável). */
-const rendimentoPadrao = (modalidade: Modalidade) => (modalidade === "arroba" ? "" : 100);
-
 /** Valores iniciais do formulário a partir de um gado já cadastrado (edição). */
 export function gadoParaFormInput(gado: Gado): GadoFormInput {
   return {
-    denominacao: gado.denominacao,
+    // Gado antigo com denominação fora das quatro categorias: obriga a escolher de novo.
+    denominacao: RACAS_RENDIMENTO.includes(gado.denominacao) ? gado.denominacao : (undefined as never),
     genero: gado.genero,
     peso_total: gado.peso_total,
     data_pesagem: gado.data_pesagem.slice(0, 10),
-    rendimento_carcaca: gado.rendimento_carcaca,
-    carimbo: String(gado.carimbo) as GadoFormInput["carimbo"],
     ano_carimbo: gado.ano_carimbo,
   };
 }
@@ -57,13 +45,40 @@ export function gadoParaFormInput(gado: Gado): GadoFormInput {
 export function formValuesParaInput(values: GadoFormValues): Omit<CreateGadoInput, "negocio_id"> {
   return {
     peso_total: values.peso_total,
-    rendimento_carcaca: values.rendimento_carcaca,
     data_pesagem: new Date(values.data_pesagem).toISOString(),
     genero: values.genero,
     denominacao: values.denominacao,
-    carimbo: Number(values.carimbo),
     ano_carimbo: values.ano_carimbo,
   };
+}
+
+/** Prévia de um gado (valores oficiais vêm da API) — também guardada para gados na fila offline. */
+export function estimarGado(
+  negocio: { modalidade: Modalidade; valor_unidade: number } & RendimentosNegocio,
+  input: Pick<CreateGadoInput, "peso_total" | "denominacao">
+) {
+  const rendimento = rendimentoDaRaca(negocio, input.denominacao);
+  const v = estimarValoresGado(negocio.modalidade, input.peso_total, rendimento, negocio.valor_unidade);
+  return {
+    rendimento_carcaca: rendimento,
+    peso_calculo: v.pesoCalculo,
+    peso_arroba: v.pesoArroba,
+    valor_total: v.valorTotal,
+  };
+}
+
+const OPCOES_GENERO: OpcaoBotao<"Macho" | "Femea">[] = [
+  { value: "Macho", label: formatGenero("Macho") },
+  { value: "Femea", label: formatGenero("Femea") },
+];
+
+/** Botões das quatro categorias; o percentual do negócio aparece só na modalidade "arroba". */
+function opcoesCategoria(rendimentos: RendimentosNegocio, mostrarPercentual: boolean): OpcaoBotao<RacaRendimento>[] {
+  return RACAS_RENDIMENTO.map((raca) => ({
+    value: raca,
+    label: raca,
+    detalhe: mostrarPercentual ? formatPercent(rendimentoDaRaca(rendimentos, raca)) : undefined,
+  }));
 }
 
 /**
@@ -74,6 +89,7 @@ export function formValuesParaInput(values: GadoFormValues): Omit<CreateGadoInpu
 export function GadoForm({
   modalidade,
   valorUnidade,
+  rendimentos,
   defaultValues,
   submitLabel,
   submittingLabel,
@@ -83,13 +99,15 @@ export function GadoForm({
 }: {
   modalidade: Modalidade;
   valorUnidade: number;
+  /** Percentuais por categoria definidos no negócio (100 nas modalidades sem rendimento). */
+  rendimentos: RendimentosNegocio;
   /** Valores do gado em edição; omitido para cadastro novo. */
   defaultValues?: GadoFormInput;
   submitLabel: string;
   submittingLabel: string;
   /**
-   * Limpa o formulário após salvar (cadastro em sequência). Gênero, carimbo e ano voltam
-   * a "Selecione"/vazio; o rendimento de carcaça é mantido (costuma se repetir no lote).
+   * Limpa o formulário após salvar (cadastro em sequência). Gênero fica sem seleção e o
+   * ano vazio; a categoria é mantida (costuma se repetir no lote).
    */
   resetAfterSubmit?: boolean;
   /** Evita ids duplicados quando o formulário aparece duas vezes na tela (ex.: modal). */
@@ -106,14 +124,13 @@ export function GadoForm({
     formState: { errors, isSubmitting },
   } = useForm<GadoFormInput, unknown, GadoFormValues>({
     resolver: zodResolver(schema),
-    defaultValues: defaultValues ?? {
-      data_pesagem: hoje(),
-      rendimento_carcaca: rendimentoPadrao(modalidade),
-    },
+    defaultValues: defaultValues ?? { data_pesagem: hoje() },
   });
 
+  const porArroba = modalidade === "arroba";
   const pesoTotal = Number(useWatch({ control, name: "peso_total" })) || 0;
-  const rendimento = Number(useWatch({ control, name: "rendimento_carcaca" })) || 0;
+  const categoria = useWatch({ control, name: "denominacao" });
+  const rendimento = categoria ? rendimentoDaRaca(rendimentos, categoria) : 0;
   const { pesoCalculo, pesoArroba, valorTotal } = estimarValoresGado(modalidade, pesoTotal, rendimento, valorUnidade);
 
   async function submit(values: GadoFormValues) {
@@ -126,12 +143,10 @@ export function GadoForm({
     }
     if (resetAfterSubmit) {
       reset({
-        denominacao: "",
+        denominacao: values.denominacao,
         genero: undefined,
         peso_total: "",
-        rendimento_carcaca: values.rendimento_carcaca,
         data_pesagem: hoje(),
-        carimbo: undefined,
         ano_carimbo: "",
       });
     }
@@ -140,55 +155,49 @@ export function GadoForm({
   const id = (name: string) => `${idPrefix}${name}`;
 
   return (
-    <form onSubmit={handleSubmit(submit)} className={styles.form}>
-      <div className={styles.row}>
-        <Field label="Denominação" htmlFor={id("denominacao")} error={errors.denominacao?.message}>
-          <TintedInput id={id("denominacao")} tint="pink" placeholder="Ex: Nelore" {...register("denominacao")} />
-        </Field>
-        <Field label="Gênero" htmlFor={id("genero")} error={errors.genero?.message}>
-          <Controller
-            control={control}
-            name="genero"
-            render={({ field }) => (
-              // `?? null`: com `undefined` o Select do base-ui vira não controlado e
-              // continua exibindo a última opção mesmo após o reset do formulário.
-              <Select value={field.value ?? null} onValueChange={field.onChange}>
-                <SelectTrigger id={id("genero")} className={cn(fieldBox.box, fieldBox.pink)}>
-                  <SelectValue>
-                    {(value: "Macho" | "Femea" | null) => (value ? formatGenero(value) : "Selecione")}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Macho">Macho</SelectItem>
-                  <SelectItem value="Femea">{formatGenero("Femea")}</SelectItem>
-                </SelectContent>
-              </Select>
-            )}
-          />
-        </Field>
-      </div>
+    <form onSubmit={handleSubmit(submit)} className="form-fields date-input-fix">
+      <Field label="Categoria" htmlFor={id("denominacao")} error={errors.denominacao?.message}>
+        <Controller
+          control={control}
+          name="denominacao"
+          render={({ field }) => (
+            <OpcoesBotoes
+              id={id("denominacao")}
+              ariaLabel="Categoria"
+              opcoes={opcoesCategoria(rendimentos, porArroba)}
+              value={field.value}
+              onChange={field.onChange}
+            />
+          )}
+        />
+      </Field>
+
+      <Field label="Gênero" htmlFor={id("genero")} error={errors.genero?.message}>
+        <Controller
+          control={control}
+          name="genero"
+          render={({ field }) => (
+            <OpcoesBotoes
+              id={id("genero")}
+              ariaLabel="Gênero"
+              opcoes={OPCOES_GENERO}
+              value={field.value}
+              onChange={field.onChange}
+            />
+          )}
+        />
+      </Field>
 
       <div className={styles.row}>
-        <Field label="Carimbo (mês)" htmlFor={id("carimbo")} error={errors.carimbo?.message}>
-          <Controller
-            control={control}
-            name="carimbo"
-            render={({ field }) => (
-              <Select value={field.value ?? null} onValueChange={field.onChange}>
-                <SelectTrigger id={id("carimbo")} className={cn(fieldBox.box, fieldBox.pink)}>
-                  <SelectValue>
-                    {(value: string | null) => (value ? MESES_LABELS[Number(value) - 1] : "Selecione")}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  {MESES_LABELS.map((mes, index) => (
-                    <SelectItem key={mes} value={String(index + 1)}>
-                      {mes}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
+        <Field label="Peso Total" htmlFor={id("peso_total")} error={errors.peso_total?.message}>
+          <TintedInput
+            id={id("peso_total")}
+            tint="pink"
+            type="number"
+            inputMode="decimal"
+            step="0.01"
+            placeholder="kg"
+            {...register("peso_total")}
           />
         </Field>
         <Field label="Ano do Carimbo" htmlFor={id("ano_carimbo")} error={errors.ano_carimbo?.message}>
@@ -203,45 +212,11 @@ export function GadoForm({
         </Field>
       </div>
 
-      <Field label="Peso Total" htmlFor={id("peso_total")} error={errors.peso_total?.message}>
-        <TintedInput
-          id={id("peso_total")}
-          tint="pink"
-          type="number"
-          inputMode="decimal"
-          step="0.01"
-          placeholder="kg"
-          {...register("peso_total")}
-        />
-      </Field>
-
-      <Field
-        label="Rendimento de Carcaça (%)"
-        htmlFor={id("rendimento_carcaca")}
-        error={errors.rendimento_carcaca?.message}
-      >
-        <Controller
-          control={control}
-          name="rendimento_carcaca"
-          render={({ field }) => (
-            <MaskedNumberInput
-              id={id("rendimento_carcaca")}
-              formato="percentual"
-              name={field.name}
-              value={field.value as number | string | undefined}
-              onValueChange={field.onChange}
-              onBlur={field.onBlur}
-              placeholder="Ex: 50%"
-            />
-          )}
-        />
-      </Field>
-
       <Field label="Data de Pesagem" htmlFor={id("data_pesagem")} error={errors.data_pesagem?.message}>
         <TintedInput id={id("data_pesagem")} tint="pink" type="date" {...register("data_pesagem")} />
       </Field>
 
-      {modalidade === "arroba" ? (
+      {porArroba ? (
         <div className={styles.row}>
           <Field label="Peso p/ Cálculo" htmlFor={id("pesoCalculo")}>
             <TintedInput
@@ -273,7 +248,7 @@ export function GadoForm({
         <span className={styles.totalValue}>{formatCurrency(valorTotal)}</span>
       </div>
 
-      {submitError ? <p className={styles.submitError}>{submitError}</p> : null}
+      {submitError ? <p className="form-error">{submitError}</p> : null}
 
       <Button type="submit" variant="brand" size="xl" className="w-full" disabled={isSubmitting}>
         {isSubmitting ? submittingLabel : submitLabel}

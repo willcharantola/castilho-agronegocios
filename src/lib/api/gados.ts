@@ -13,7 +13,8 @@ export function normalizeGado(raw: Gado): Gado {
   return {
     ...raw,
     peso_total: Number(raw.peso_total),
-    rendimento_carcaca: Number(raw.rendimento_carcaca),
+    // Derivado pela API (percentual da categoria no negócio); null se a categoria for inválida.
+    rendimento_carcaca: raw.rendimento_carcaca == null ? null : Number(raw.rendimento_carcaca),
     peso_calculo: Number(raw.peso_calculo),
     peso_arroba: Number(raw.peso_arroba),
     valor_total: raw.valor_total === null ? null : Number(raw.valor_total),

@@ -8,7 +8,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 0.9rem;
+  font-size: var(--font-size-md);
   font-weight: 700;
   color: var(--color-dark);
 }
@@ -19,13 +19,7 @@
   width: 1.75rem;
   align-items: center;
   justify-content: center;
-  border-radius: 5px;
+  border-radius: var(--radius-box);
   background: var(--color-olive);
   color: var(--color-white);
-}
-
-.error {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--color-danger);
 }

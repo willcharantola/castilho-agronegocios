@@ -68,7 +68,7 @@ export function OtpInput({
           />
         ))}
       </div>
-      {error ? <p className={styles.error}>{error}</p> : null}
+      {error ? <p className="field-error">{error}</p> : null}
     </div>
   );
 }

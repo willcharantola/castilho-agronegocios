@@ -8,17 +8,25 @@ import { BackLink } from "@/components/back-link";
 import { Button } from "@/components/ui/button";
 import { Fab } from "@/components/fab";
 import { ComissaoForm } from "@/components/comissao-form";
+import { TipoNegocioForm } from "@/components/tipo-negocio-form";
 import { formatCurrency, formatNumber, formatGenero, formatHora, formatDate, formatPercent } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { fetchNegocio } from "@/lib/api/negocios";
 import { fetchFazendas } from "@/lib/api/fazendas";
 import { gerarRomaneios } from "@/lib/relatorio-romaneio";
+import { rendimentoDaRaca } from "@/lib/calculo-gado";
+import { MODALIDADE_LABELS, RACAS_RENDIMENTO, TIPO_GADO_LABELS, TIPO_NEGOCIO_LABELS } from "@/lib/labels";
 import type { Fazenda, NegocioDetail } from "@/lib/api/types";
 import { ApiError } from "@/lib/api-client";
 import { PendenteBadge } from "@/components/offline/pendente-badge";
 import { useVersaoSincronizacao } from "@/lib/offline/fila";
 import { comGadosPendentes, useGadosPendentes } from "@/lib/offline/pendentes";
 import styles from "./page.module.css";
+
+/** "Funrural (1,5%)" — alíquota gravada no próprio negócio; sem ela, só o nome. */
+function rotuloAliquota(nome: string, aliquota: number | null) {
+  return aliquota !== null ? `${nome} (${formatPercent(aliquota)})` : nome;
+}
 
 export default function NegocioDetailPage() {
   const params = useParams<{ id: string }>();
@@ -66,6 +74,7 @@ export default function NegocioDetailPage() {
 
   // Modalidade "cabeca": sem pesagem nem gados individuais — o valor por cabeça é o próprio valor_unidade.
   const porCabeca = negocio?.modalidade === "cabeca";
+  const porArroba = negocio?.modalidade === "arroba";
   const valorMedio =
     negocio?.valor_medio ??
     (porCabeca ? negocio.valor_unidade : null) ??
@@ -91,8 +100,8 @@ export default function NegocioDetailPage() {
               { label: "Peso médio (kg)", valor: romaneio(negocio.peso_medio_quilos, (v) => formatNumber(v)) },
             ]),
         { label: "Valor médio por cabeça", valor: romaneio(valorMedio, formatCurrency) },
-        { label: "Funrural (1,5%)", valor: romaneio(negocio.funrural, formatCurrency) },
-        { label: "Senar (0,2%)", valor: romaneio(negocio.senar, formatCurrency) },
+        { label: rotuloAliquota("Funrural", negocio.aliquota_funrural), valor: romaneio(negocio.funrural, formatCurrency) },
+        { label: rotuloAliquota("Senar", negocio.aliquota_senar), valor: romaneio(negocio.senar, formatCurrency) },
       ]
     : [];
 
@@ -118,17 +127,17 @@ export default function NegocioDetailPage() {
   }
 
   return (
-    <div className={cn(styles.page, "pt-safe")}>
+    <div className={cn("page-wide", styles.page, "pt-safe")}>
       <BackLink href="/negocios" />
 
-      {!negocio && !error ? <div className={cn(styles.state, "glass-panel")}>Carregando negócio...</div> : null}
+      {!negocio && !error ? <div className="state-box glass-panel">Carregando negócio...</div> : null}
 
       {error ? (
-        <div className={cn(styles.state, styles.stateError, "glass-panel")}>
+        <div className="state-box state-error glass-panel">
           {error}
           <div>
             <Button
-              className={styles.retryButton}
+              className="retry-button"
               variant="brand"
               onClick={() => setReloadKey((k) => k + 1)}
             >
@@ -141,8 +150,8 @@ export default function NegocioDetailPage() {
       {negocio ? (
         <>
           <div className={cn(styles.summary, "glass-dark")}>
-            <div className={styles.summaryHeader}>
-              <span className={styles.summaryIcon}>
+            <div className="card-header">
+              <span className="card-icon-on-dark">
                 <Warehouse size={18} />
               </span>
               <div>
@@ -157,7 +166,7 @@ export default function NegocioDetailPage() {
 
             <div className={styles.summaryFooter}>
 
-               <span>Vendedor: {negocio.vendedor.nome_vendedor}</span>
+               <span>Pecuarista: {negocio.pecuarista.nome_pecuarista}</span>
               
              </div>
 
@@ -170,7 +179,16 @@ export default function NegocioDetailPage() {
 
              <div className={styles.summaryFooter}>
 
-               <span>Modalidade: {negocio.modalidade}</span>
+               <span>Modalidade: {MODALIDADE_LABELS[negocio.modalidade]}</span>
+             </div>
+
+             <div className={styles.summaryFooter}>
+               <span>Tipo de negócio: {TIPO_NEGOCIO_LABELS[negocio.tipo_negocio] ?? "—"}</span>
+             </div>
+
+             <div className={styles.summaryFooter}>
+               <span>Gado: {TIPO_GADO_LABELS[negocio.tipo_gado] ?? negocio.tipo_gado}</span>
+               <span>Carimbo (média): {negocio.media_carimbo || "—"}</span>
               
              </div>
 
@@ -247,6 +265,50 @@ export default function NegocioDetailPage() {
             </dl>
           </div>
 
+          {porArroba ? (
+            <div className={cn(styles.summary, "glass-dark")}>
+              <p className={styles.romaneioTitle}>Rendimentos por categoria</p>
+              <dl className={styles.romaneioGrid}>
+                {RACAS_RENDIMENTO.map((raca) => (
+                  <div key={raca} className={styles.romaneioItem}>
+                    <dt className={styles.romaneioLabel}>{raca}</dt>
+                    <dd className={styles.romaneioValue}>{formatPercent(rendimentoDaRaca(negocio, raca))}</dd>
+                  </div>
+                ))}
+              </dl>
+              {/* Negócio ainda só no aparelho não tem tela própria. */}
+              {sincronizado ? (
+                <Button
+                  variant="brand"
+                  className={styles.editarRendimentos}
+                  render={<Link href={`/negocios/${negocio.negocio_id}/rendimentos`} />}
+                >
+                  <Pencil size={14} aria-hidden /> Editar rendimentos
+                </Button>
+              ) : null}
+            </div>
+          ) : null}
+
+          {sincronizado ? (
+            <TipoNegocioForm
+              key={negocio.tipo_negocio}
+              negocioId={negocio.negocio_id}
+              tipoNegocio={negocio.tipo_negocio}
+              onUpdated={(atualizado) =>
+                setNegocio((atual) =>
+                  atual
+                    ? {
+                        ...atual,
+                        tipo_negocio: atualizado.tipo_negocio,
+                        funrural: atualizado.funrural,
+                        senar: atualizado.senar,
+                      }
+                    : atual
+                )
+              }
+            />
+          ) : null}
+
           <ComissaoForm
             negocioId={negocio.negocio_id}
             porcentagem={negocio.porcentagem_comissao}
@@ -258,7 +320,7 @@ export default function NegocioDetailPage() {
 
 
           {porCabeca && negocio.gados.length === 0 ? null : negocio.gados.length === 0 ? (
-            <div className={cn(styles.state, "glass-panel")}>Nenhum gado cadastrado neste negócio.</div>
+            <div className="state-box glass-panel">Nenhum gado cadastrado neste negócio.</div>
           ) : (
             <div className={styles.gadoList}>
               {negocio.gados.map((gado) => {
@@ -271,7 +333,9 @@ export default function NegocioDetailPage() {
                       <p className={styles.gadoName}>{gado.denominacao}</p>
 
                       <p className={styles.gadoMeta}> Gênero: {formatGenero(gado.genero)}  </p>
-                       <p className={styles.gadoMeta}> Rend.: {formatNumber(gado.rendimento_carcaca, 0)}%</p>
+                       {porArroba && gado.rendimento_carcaca !== null ? (
+                         <p className={styles.gadoMeta}> Rend.: {formatPercent(gado.rendimento_carcaca)}</p>
+                       ) : null}
                        <p className={styles.gadoMeta}>Peso p/ cálculo: {formatNumber(gado.peso_calculo)}</p>
                        <p className={styles.gadoMeta}>   {gado.horario_pesagem ? ` Pesado às ${formatHora(gado.horario_pesagem)}` : null} </p>
                        <p className={styles.gadoMeta}>Peso total: {formatNumber(gado.peso_total)} </p>
@@ -309,9 +373,9 @@ export default function NegocioDetailPage() {
         </>
       ) : null}
 
-      {relatorioError ? <p className={styles.relatorioError}>{relatorioError}</p> : null}
+      {relatorioError ? <p className="report-error">{relatorioError}</p> : null}
       {relatorioAvisos.map((aviso) => (
-        <p key={aviso} className={styles.relatorioAviso}>
+        <p key={aviso} className="report-notice">
           {aviso}
         </p>
       ))}

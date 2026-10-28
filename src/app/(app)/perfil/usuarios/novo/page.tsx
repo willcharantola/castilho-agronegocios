@@ -13,7 +13,6 @@ export default function NovoUsuarioPage() {
   const admin = useSomenteAdmin();
 
   async function cadastrar(values: UsuarioFormValues) {
-    // primeiro_acesso sempre enviado explicitamente (o admin decide no checkbox).
     await createUsuario({ ...values, senha: values.senha });
     router.push("/perfil");
   }
@@ -21,9 +20,9 @@ export default function NovoUsuarioPage() {
   if (!admin) return null;
 
   return (
-    <div className={cn(styles.page, "pt-safe")}>
+    <div className={cn("page-container page-narrow", styles.page, "pt-safe")}>
       <BackLink href="/perfil" />
-      <h1 className={styles.title}>Cadastrar Usuário</h1>
+      <h1 className="page-title">Cadastrar Usuário</h1>
       <UsuarioForm onSubmit={cadastrar} />
     </div>
   );

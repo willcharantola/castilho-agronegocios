@@ -6,16 +6,17 @@ import type {
   CreateCompradorInput,
   CreateFazendaInput,
   CreateNegocioInput,
-  CreateVendedorInput,
+  DadosPecuaristaInput,
   Fazenda,
   Gado,
   Genero,
   Negocio,
   NegocioDetail,
-  Vendedor,
+  Pecuarista,
+  RacaRendimento,
 } from "@/lib/api/types";
 import type { RegistroPendente } from "./db";
-import { idTemporario, usePendentes, type RegistroSalvo } from "./fila";
+import { idTemporario, idTemporarioFazendaAninhada, usePendentes, type RegistroSalvo } from "./fila";
 
 /**
  * Registros da fila offline no mesmo formato das entidades da API (com id negativo,
@@ -39,24 +40,51 @@ export function fazendaDePendente(r: RegistroSalvo): ComPendencia<Fazenda> {
   };
 }
 
-export function vendedorDePendente(r: RegistroSalvo): ComPendencia<Vendedor> {
-  const p = r.payload as CreateVendedorInput;
-  // Fazendas como aparecem na tela (ids reais ou temporários), guardadas ao enfileirar.
-  const fazendas = (r.exibicao?.fazendas as { fazenda_id: number; nome_fazenda: string }[] | undefined) ?? [];
-  const vendedorId = idTemporario(r);
+/**
+ * Fazendas do pecuarista como aparecem nas telas, na mesma ordem de `payload.fazendas`
+ * (guardadas ao enfileirar). As novas ganham o id temporário de fazenda aninhada; as já
+ * cadastradas mantêm o id com que foram escolhidas (real ou de outro cadastro pendente).
+ */
+export type ExibicaoPecuarista = {
+  fazendas: (Partial<Fazenda> & { fazenda_id?: number; nome_fazenda: string })[];
+};
+
+function fazendasDoPecuarista(r: RegistroSalvo): ComPendencia<Fazenda>[] {
+  const itens = (r.payload.fazendas as Record<string, unknown>[] | undefined) ?? [];
+  const exibicao = (r.exibicao as ExibicaoPecuarista | undefined)?.fazendas ?? [];
+  return itens.map((item, indice) => {
+    const nova = item.uuid_origem != null;
+    const e = exibicao[indice] ?? { nome_fazenda: "" };
+    return {
+      fazenda_id: nova ? idTemporarioFazendaAninhada(r.id, indice) : (e.fazenda_id ?? (item.fazenda_id as number)),
+      nome_fazenda: (item.nome_fazenda as string | undefined) ?? e.nome_fazenda,
+      municipio: (item.municipio as string | undefined) ?? e.municipio ?? "",
+      inscricao_estadual: (item.inscricao_estadual as string | undefined) ?? e.inscricao_estadual ?? "",
+      marca_url: (item.marca_url as string | undefined) ?? e.marca_url ?? null,
+      marca_escrita: (item.marca_escrita as string | undefined) ?? e.marca_escrita ?? null,
+      // Só as criadas junto com o pecuarista estão pendentes; as vinculadas já existem.
+      ...(nova ? { pendente: info(r) } : {}),
+    };
+  });
+}
+
+export function pecuaristaDePendente(r: RegistroSalvo): ComPendencia<Pecuarista> {
+  const p = r.payload as DadosPecuaristaInput;
+  const fazendas = fazendasDoPecuarista(r);
+  const pecuaristaId = idTemporario(r);
   return {
-    vendedor_id: vendedorId,
-    nome_vendedor: p.nome_vendedor,
+    pecuarista_id: pecuaristaId,
+    nome_pecuarista: p.nome_pecuarista,
     fisico_juridico: p.fisico_juridico,
     cpf_cnpj: p.cpf_cnpj,
     banco: p.banco,
     agencia: p.agencia,
     conta: p.conta,
     chave_pix: p.chave_pix,
-    vendedor_fazenda: fazendas.map((f) => ({
-      fazenda_id: f.fazenda_id,
-      vendedor_id: vendedorId,
-      fazenda: { fazenda_id: f.fazenda_id, nome_fazenda: f.nome_fazenda } as Fazenda,
+    pecuarista_fazenda: fazendas.map((fazenda) => ({
+      fazenda_id: fazenda.fazenda_id,
+      pecuarista_id: pecuaristaId,
+      fazenda,
     })),
     pendente: info(r),
   };
@@ -78,10 +106,10 @@ export function compradorDePendente(r: RegistroSalvo): ComPendencia<Comprador> {
 /** Nomes/ids como aparecem na tela, guardados ao enfileirar um negócio. */
 export type ExibicaoNegocio = {
   fazenda_id: number;
-  vendedor_id: number;
+  pecuarista_id: number;
   comprador_id: number;
   fazendaNome: string;
-  vendedorNome: string;
+  pecuaristaNome: string;
   compradorNome: string;
 };
 
@@ -92,13 +120,20 @@ export function negocioDePendente(r: RegistroSalvo): ComPendencia<Negocio> {
     negocio_id: idTemporario(r),
     empresa_id: p.empresa_id,
     fazenda_id: e.fazenda_id,
-    vendedor_id: e.vendedor_id,
+    pecuarista_id: e.pecuarista_id,
     comprador_id: e.comprador_id,
     hora_inicio_pesagem: null,
     hora_fim_pesagem: null,
     modalidade: p.modalidade,
     tipo_gado: p.tipo_gado,
     tipo_lote: p.tipo_lote,
+    // Itens de antes da mudança do modelo podem não ter os campos novos (ficam em "revisao").
+    tipo_negocio: p.tipo_negocio,
+    media_carimbo: p.media_carimbo ?? "",
+    porcentagem_rendimento_nelore: p.porcentagem_rendimento_nelore ?? 100,
+    porcentagem_rendimento_anelorado: p.porcentagem_rendimento_anelorado ?? 100,
+    porcentagem_rendimento_angus: p.porcentagem_rendimento_angus ?? 100,
+    porcentagem_rendimento_composto: p.porcentagem_rendimento_composto ?? 100,
     data_negocio: p.data_negocio,
     porcentagem_comissao: p.porcentagem_comissao ?? null,
     comissao: null,
@@ -117,6 +152,8 @@ export function negocioDePendente(r: RegistroSalvo): ComPendencia<Negocio> {
     peso_medio_quilos: null,
     funrural: null,
     senar: null,
+    aliquota_funrural: null,
+    aliquota_senar: null,
     pendente: info(r),
   };
 }
@@ -124,6 +161,8 @@ export function negocioDePendente(r: RegistroSalvo): ComPendencia<Negocio> {
 /** Valores estimados e o negócio como aparece na tela, guardados ao enfileirar um gado. */
 export type ExibicaoGado = {
   negocio_id: number;
+  /** Percentual da categoria do animal no negócio, no momento do cadastro. */
+  rendimento_carcaca: number;
   peso_calculo: number;
   peso_arroba: number;
   valor_total: number;
@@ -138,11 +177,10 @@ export function gadoDePendente(r: RegistroSalvo): ComPendencia<Gado> {
     peso_total: p.peso_total as number,
     data_pesagem: p.data_pesagem as string,
     genero: p.genero as Genero,
-    denominacao: p.denominacao as string,
-    rendimento_carcaca: p.rendimento_carcaca as number,
+    denominacao: p.denominacao as RacaRendimento,
+    rendimento_carcaca: e.rendimento_carcaca ?? null,
     // Mesmo formato das colunas TIME vindas da API, para `formatHora`.
     horario_pesagem: p.horario_pesagem ? `1970-01-01T${p.horario_pesagem as string}.000Z` : null,
-    carimbo: p.carimbo as number,
     ano_carimbo: p.ano_carimbo as string,
     peso_calculo: e.peso_calculo,
     peso_arroba: e.peso_arroba,
@@ -157,14 +195,25 @@ export function mesclarPendentes<T>(lista: T[] | null, pendentes: ComPendencia<T
   return [...pendentes, ...((lista ?? []) as ComPendencia<T>[])];
 }
 
+/**
+ * Fazendas ainda só no aparelho: as cadastradas sozinhas (fila antiga) e as novas
+ * cadastradas dentro de um pecuarista pendente.
+ */
 export function useFazendasPendentes() {
-  const registros = usePendentes("fazenda");
-  return useMemo(() => registros.map(fazendaDePendente), [registros]);
+  const avulsas = usePendentes("fazenda");
+  const pecuaristas = usePendentes("pecuarista");
+  return useMemo(
+    () => [
+      ...avulsas.map(fazendaDePendente),
+      ...pecuaristas.flatMap((r) => fazendasDoPecuarista(r).filter((f) => f.pendente)),
+    ],
+    [avulsas, pecuaristas]
+  );
 }
 
-export function useVendedoresPendentes() {
-  const registros = usePendentes("vendedor");
-  return useMemo(() => registros.map(vendedorDePendente), [registros]);
+export function usePecuaristasPendentes() {
+  const registros = usePendentes("pecuarista");
+  return useMemo(() => registros.map(pecuaristaDePendente), [registros]);
 }
 
 export function useCompradoresPendentes() {

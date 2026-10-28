@@ -10,8 +10,6 @@ import { Button } from "@/components/ui/button";
 import { createComprador } from "@/lib/api/compradores";
 import { ApiError } from "@/lib/api-client";
 import { enviarOuEnfileirar } from "@/lib/offline/fila";
-import { cn } from "@/lib/utils";
-import styles from "./page.module.css";
 
 /** Só aceita retorno para rotas internas (evita open redirect via ?returnTo=). */
 function rotaInterna(returnTo: string | null) {
@@ -42,13 +40,13 @@ function NovoCompradorForm() {
   }
 
   return (
-    <div className={cn(styles.page, "pt-safe")}>
+    <div className="page-container page-narrow pt-safe">
       <BackLink href={returnTo ?? "/compradores"} />
-      <h1 className={styles.title}>Cadastrar Comprador</h1>
+      <h1 className="page-title">Cadastrar Comprador</h1>
 
-      <form onSubmit={handleSubmit(onSubmit)} className={styles.form}>
-        <div className={styles.fields}>
-          {submitError ? <p className={styles.submitError}>{submitError}</p> : null}
+      <form onSubmit={handleSubmit(onSubmit)} className="form-stack">
+        <div className="form-fields">
+          {submitError ? <p className="form-error">{submitError}</p> : null}
           <CompradorFields register={register} errors={errors} autoFocus />
         </div>
 

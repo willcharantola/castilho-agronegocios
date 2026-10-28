@@ -91,16 +91,16 @@ export default function NovoNegocioQuantidadeCabecasPage() {
   if (!data.negocioId) return null;
 
   return (
-    <div className={cn(styles.page, "pt-safe")}>
+    <div className={cn("page-container page-narrow", styles.page, "pt-safe")}>
       <BackLink
         href={ehIdTemporario(data.negocioId) ? "/negocios" : `/negocios/${data.negocioId}`}
         label={ehIdTemporario(data.negocioId) ? "Negócios" : "Ver negócio"}
       />
-      <h1 className={styles.title}>Cadastrar Novo Negócio</h1>
-      <ProgressSteps current={6} total={6} />
+      <h1 className={cn("page-title", styles.title)}>Cadastrar Novo Negócio</h1>
+      <ProgressSteps current={7} total={7} />
 
-      <div className={cn(styles.fazendaCard, "glass-dark")}>
-        <span className={styles.fazendaIcon}>
+      <div className="summary-card glass-dark">
+        <span className="card-icon-on-dark">
           <Warehouse size={18} />
         </span>
         <div>
@@ -109,8 +109,8 @@ export default function NovoNegocioQuantidadeCabecasPage() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className={styles.form}>
-        <div className={styles.row}>
+      <form onSubmit={handleSubmit(onSubmit)} className="form-fields">
+        <div className="form-row">
           <Field
             label="Quantidade de Cabeças"
             htmlFor="quantidade_cabecas"
@@ -151,7 +151,7 @@ export default function NovoNegocioQuantidadeCabecasPage() {
           <span className={styles.totalValue}>{formatCurrency(valorTotalEstimado)}</span>
         </div>
 
-        {submitError ? <p className={styles.submitError}>{submitError}</p> : null}
+        {submitError ? <p className="form-error">{submitError}</p> : null}
 
         <Button type="submit" variant="brand" size="xl" className="w-full" disabled={isSubmitting}>
           {isSubmitting ? "Salvando..." : "Concluir"}

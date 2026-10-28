@@ -13,10 +13,8 @@ import { IconField } from "@/components/form/icon-field";
 import { TintedInput } from "@/components/form/tinted-input";
 import { Button } from "@/components/ui/button";
 import { fetchFazenda, updateFazenda } from "@/lib/api/fazendas";
-import type { Vendedor } from "@/lib/api/types";
+import type { Pecuarista } from "@/lib/api/types";
 import { ApiError } from "@/lib/api-client";
-import { cn } from "@/lib/utils";
-import styles from "./page.module.css";
 
 const schema = z.object({
   nome_fazenda: z.string().min(2, "Informe o nome da fazenda.").max(50),
@@ -34,7 +32,7 @@ export default function EditarFazendaPage() {
   const [loadError, setLoadError] = React.useState<string | null>(null);
   const [submitError, setSubmitError] = React.useState<string | null>(null);
   const [loaded, setLoaded] = React.useState(false);
-  const [vendedores, setVendedores] = React.useState<Vendedor[]>([]);
+  const [pecuaristas, setPecuaristas] = React.useState<Pecuarista[]>([]);
   const [enviandoMarca, setEnviandoMarca] = React.useState(false);
   // marca_url como veio da API: só é reenviada se mudar (trocada ou removida).
   const [marcaOriginal, setMarcaOriginal] = React.useState<string | null>(null);
@@ -59,7 +57,7 @@ export default function EditarFazendaPage() {
           marca_escrita: fazenda.marca_escrita ?? "",
         });
         setMarcaOriginal(fazenda.marca_url ?? null);
-        setVendedores((fazenda.vendedor_fazenda ?? []).map((a) => a.vendedor));
+        setPecuaristas((fazenda.pecuarista_fazenda ?? []).map((a) => a.pecuarista));
         setLoaded(true);
       })
       .catch((err: unknown) => {
@@ -89,17 +87,17 @@ export default function EditarFazendaPage() {
   }
 
   return (
-    <div className={cn(styles.page, "pt-safe")}>
+    <div className="page-container page-narrow pt-safe">
       <BackLink href="/fazendas" />
-      <h1 className={styles.title}>Editar Fazenda</h1>
+      <h1 className="page-title">Editar Fazenda</h1>
 
-      {!loaded && !loadError ? <div className={cn(styles.state, "glass-panel")}>Carregando fazenda...</div> : null}
-      {loadError ? <div className={cn(styles.state, styles.stateError, "glass-panel")}>{loadError}</div> : null}
+      {!loaded && !loadError ? <div className="state-box glass-panel">Carregando fazenda...</div> : null}
+      {loadError ? <div className="state-box state-error glass-panel">{loadError}</div> : null}
 
       {loaded ? (
-        <form onSubmit={handleSubmit(onSubmit)} className={styles.form}>
-          <div className={styles.fields}>
-            {submitError ? <p className={styles.submitError}>{submitError}</p> : null}
+        <form onSubmit={handleSubmit(onSubmit)} className="form-stack">
+          <div className="form-fields">
+            {submitError ? <p className="form-error">{submitError}</p> : null}
 
             <Controller
               control={control}
@@ -132,13 +130,13 @@ export default function EditarFazendaPage() {
               <TintedInput id="marca_escrita" tint="pink" maxLength={10} {...register("marca_escrita")} />
             </IconField>
 
-            <Field label="Vendedores associados" htmlFor="vendedores">
-              {vendedores.length === 0 ? (
-                <p className={styles.state}>Nenhum vendedor associado a esta fazenda.</p>
+            <Field label="Pecuaristas associados" htmlFor="pecuaristas">
+              {pecuaristas.length === 0 ? (
+                <p className="state-box">Nenhum pecuarista associado a esta fazenda.</p>
               ) : (
                 <ul>
-                  {vendedores.map((v) => (
-                    <li key={v.vendedor_id}>{v.nome_vendedor}</li>
+                  {pecuaristas.map((v) => (
+                    <li key={v.pecuarista_id}>{v.nome_pecuarista}</li>
                   ))}
                 </ul>
               )}

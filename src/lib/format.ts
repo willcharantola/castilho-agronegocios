@@ -12,9 +12,14 @@ export function formatNumber(value: number, fractionDigits = 2) {
   });
 }
 
+/** Até 2 casas, sem zeros desnecessários (1.5 → "1,5", 0.2 → "0,2", 2 → "2"). */
+export function formatDecimalCurto(value: number) {
+  return value.toLocaleString("pt-BR", { maximumFractionDigits: 2 });
+}
+
 /** Percentual já em pontos (5 → "5%", 2.5 → "2,5%"). */
 export function formatPercent(value: number) {
-  return `${value.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}%`;
+  return `${formatDecimalCurto(value)}%`;
 }
 
 export function formatDate(iso: string) {

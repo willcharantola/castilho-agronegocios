@@ -1,0 +1,19 @@
+.cardInfo {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.cardMeta {
+  overflow: hidden;
+  font-size: 0.8rem;
+  color: var(--color-ink-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chevron {
+  flex-shrink: 0;
+  color: color-mix(in oklch, var(--color-dark) 60%, transparent);
+}

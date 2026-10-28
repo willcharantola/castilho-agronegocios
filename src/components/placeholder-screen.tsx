@@ -18,7 +18,7 @@ export function PlaceholderScreen({
       <div className={cn(styles.icon, "glass-panel")}>
         <Icon size={28} color="var(--color-olive)" />
       </div>
-      <h1 className={styles.title}>{title}</h1>
+      <h1 className="page-title">{title}</h1>
       <p className={styles.description}>{description}</p>
       {action}
     </div>

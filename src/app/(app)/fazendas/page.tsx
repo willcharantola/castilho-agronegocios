@@ -2,9 +2,8 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { Plus, Search, Warehouse } from "lucide-react";
+import { Search, Warehouse } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Fab } from "@/components/fab";
 import { cn } from "@/lib/utils";
 import { fetchFazendas } from "@/lib/api/fazendas";
 import type { Fazenda } from "@/lib/api/types";
@@ -56,13 +55,13 @@ export default function FazendasPage() {
   );
 
   return (
-    <div className={cn(styles.page, "pt-safe")}>
-      <h1 className={styles.title}>Fazendas Cadastradas</h1>
+    <div className={cn("page-container page-wide", styles.page, "pt-safe")}>
+      <h1 className="page-title">Fazendas Cadastradas</h1>
 
-      <div className={styles.searchWrap}>
-        <Search className={styles.searchIcon} size={18} />
+      <div className="search-box">
+        <Search className="search-icon" size={18} />
         <input
-          className={cn(styles.searchInput, "glass-panel")}
+          className="search-input glass-panel"
           placeholder="Buscar fazenda..."
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
@@ -70,15 +69,15 @@ export default function FazendasPage() {
       </div>
 
       {fazendas === null && !error ? (
-        <div className={cn(styles.state, "glass-panel")}>Carregando fazendas...</div>
+        <div className="state-box glass-panel">Carregando fazendas...</div>
       ) : null}
 
       {error && !fazendas ? (
-        <div className={cn(styles.state, styles.stateError, "glass-panel")}>
+        <div className="state-box state-error glass-panel">
           {error}
           <div>
             <Button
-              className={styles.retryButton}
+              className="retry-button"
               variant="brand"
               onClick={() => setReloadKey((k) => k + 1)}
             >
@@ -89,7 +88,7 @@ export default function FazendasPage() {
       ) : null}
 
       {filtradas && filtradas.length === 0 ? (
-        <div className={cn(styles.state, "glass-panel")}>
+        <div className="state-box glass-panel">
           {fazendas && fazendas.length > 0
             ? "Nenhuma fazenda encontrada para essa busca."
             : "Nenhuma fazenda cadastrada ainda."}
@@ -97,7 +96,7 @@ export default function FazendasPage() {
       ) : null}
 
       {filtradas && filtradas.length > 0 ? (
-        <div className={styles.list}>
+        <div className="card-list">
           {filtradas.map((fazenda) => (
             <Link
               key={fazenda.fazenda_id}
@@ -105,19 +104,19 @@ export default function FazendasPage() {
               // Pendente: ainda não existe no servidor, então não há tela de edição para abrir.
               aria-disabled={fazenda.pendente ? true : undefined}
               onClick={fazenda.pendente ? (e) => e.preventDefault() : undefined}
-              className={cn(styles.card, "glass-panel")}
+              className="list-card glass-panel"
             >
-              <span className={styles.cardIcon}>
+              <span className="card-icon">
                   {fazenda.marca_url ? (
                   <img src={fazenda.marca_url} alt={fazenda.nome_fazenda} className={styles.cardImage}/>
                   ) : (
                   <Warehouse size={18} />
                   )}
               </span>
-              <div className={styles.cardInfo}>
-                <p className={styles.cardName}>{fazenda.nome_fazenda}</p>
-                <p className={styles.cardMeta}> Município: {fazenda.municipio} </p>
-                 <p className={styles.cardMeta}>I.E.: {fazenda.inscricao_estadual}</p>
+              <div className="card-info">
+                <p className="card-name">{fazenda.nome_fazenda}</p>
+                <p className="card-meta"> Município: {fazenda.municipio} </p>
+                 <p className="card-meta">I.E.: {fazenda.inscricao_estadual}</p>
                   {fazenda.pendente ? <PendenteBadge pendente={fazenda.pendente} /> : null}
               </div>
             </Link>
@@ -125,7 +124,10 @@ export default function FazendasPage() {
         </div>
       ) : null}
 
-      <Fab icon={Plus} label="Cadastrar fazenda" href="/fazendas/novo" />
+      {/* Sem cadastro avulso: a fazenda nasce dentro de um pecuarista. */}
+      <p className={styles.dica}>
+        Para cadastrar uma fazenda, use o cadastro do pecuarista ou &quot;Adicionar fazenda&quot; na tela dele.
+      </p>
     </div>
   );
 }

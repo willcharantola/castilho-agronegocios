@@ -6,25 +6,8 @@
 }
 
 .summary {
-  border-radius: 5px;
+  border-radius: var(--radius-box);
   padding: 1rem;
-}
-
-.summaryHeader {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.summaryIcon {
-  display: flex;
-  height: 2.25rem;
-  width: 2.25rem;
-  flex-shrink: 0;
-  align-items: center;
-  justify-content: center;
-  border-radius: 5px;
-  background: rgb(255 255 255 / 15%);
 }
 
 .summaryFarm {
@@ -33,7 +16,7 @@
 }
 
 .summarySeller {
-  font-size: 0.75rem;
+  font-size: var(--font-size-xs);
   color: rgb(255 255 255 / 75%);
 }
 
@@ -43,7 +26,7 @@
   grid-template-columns: repeat(3, 1fr);
   gap: 0.5rem;
   text-align: center;
-  font-size: 0.75rem;
+  font-size: var(--font-size-xs);
 }
 
 .summaryStatLabel {
@@ -59,9 +42,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-top: 1px solid rgb(255 255 255 / 15%);
+  border-top: 1px solid var(--color-on-dark-surface);
   padding-top: 0.75rem;
-  font-size: 0.9rem;
+  font-size: var(--font-size-md);
 }
 
 .romaneioTitle {
@@ -75,7 +58,7 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.75rem;
-  border-top: 1px solid rgb(255 255 255 / 15%);
+  border-top: 1px solid var(--color-on-dark-surface);
   padding-top: 0.75rem;
 }
 
@@ -84,7 +67,7 @@
 }
 
 .romaneioLabel {
-  font-size: 0.75rem;
+  font-size: var(--font-size-xs);
   color: rgb(255 255 255 / 70%);
 }
 
@@ -93,17 +76,11 @@
   overflow-wrap: anywhere;
 }
 
-.sectionTitle {
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: var(--color-dark);
-}
-
 .gadoList {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border-radius: 5px;
+  border-radius: var(--radius-box);
   background: rgb(255 255 255 / 60%);
 }
 
@@ -138,7 +115,7 @@
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  border-radius: 5px;
+  border-radius: var(--radius-box);
   background: var(--color-dark);
   color: var(--color-white);
 }
@@ -160,7 +137,7 @@
 
 .gadoAmount {
   text-align: right;
-  font-size: 0.75rem;
+  font-size: var(--font-size-xs);
 }
 
 .gadoAmountValue {
@@ -169,41 +146,10 @@
   color: var(--color-dark);
 }
 
-.state {
-  border-radius: 5px;
-  padding: 2rem 1.25rem;
-  text-align: center;
-  color: var(--color-ink);
-}
-
-.stateError {
-  color: var(--color-danger);
-}
-
-.retryButton {
-  margin-top: 0.75rem;
-}
-
-.relatorioError {
-  color: var(--color-danger);
-  font-size: 0.85rem;
-  text-align: center;
-}
-
-.relatorioAviso {
-  color: var(--color-ink);
-  font-size: 0.85rem;
-  text-align: center;
-}
-
 /* Telas maiores: cartões e gados em lista (um por linha) ocupando 90% da largura disponível,
    centralizada; os dados de cada gado se distribuem em colunas dentro da linha. */
 @media (min-width: 768px) and (min-height: 500px) {
-  .page {
-    width: 90%;
-    margin-left: auto;
-    margin-right: auto;
-  }
+  
 
   .gadoRow {
     padding: 1rem;
@@ -218,4 +164,9 @@
   .gadoName {
     grid-column: 1 / -1;
   }
+}
+
+.editarRendimentos {
+  align-self: flex-start;
+  gap: 0.4rem;
 }

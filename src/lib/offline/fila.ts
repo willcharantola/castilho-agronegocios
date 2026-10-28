@@ -19,6 +19,27 @@ export function ehIdTemporario(id: number | null | undefined): boolean {
   return typeof id === "number" && id < 0;
 }
 
+/**
+ * Fazendas novas cadastradas dentro de um pecuarista ainda na fila não são registros
+ * próprios: ganham um id local derivado do registro do pecuarista e da posição em
+ * `payload.fazendas`, numa faixa que não colide com os ids dos registros da fila.
+ */
+const BASE_FAZENDA_ANINHADA = 1_000_000;
+const MAX_FAZENDAS_POR_PECUARISTA = 100;
+
+export function idTemporarioFazendaAninhada(registroId: number, indice: number): number {
+  return -(BASE_FAZENDA_ANINHADA + registroId * MAX_FAZENDAS_POR_PECUARISTA + indice);
+}
+
+function fazendaAninhada(idLocal: number): { registroId: number; indice: number } | null {
+  if (idLocal < BASE_FAZENDA_ANINHADA) return null;
+  const resto = idLocal - BASE_FAZENDA_ANINHADA;
+  return {
+    registroId: Math.floor(resto / MAX_FAZENDAS_POR_PECUARISTA),
+    indice: resto % MAX_FAZENDAS_POR_PECUARISTA,
+  };
+}
+
 export async function enfileirar(
   entidade: EntidadeOffline,
   payload: Record<string, unknown>,
@@ -61,7 +82,7 @@ export async function atualizarPendente(
   });
 }
 
-type CampoReferencia = "fazenda" | "vendedor" | "comprador" | "negocio";
+type CampoReferencia = "fazenda" | "pecuarista" | "comprador" | "negocio";
 
 /**
  * Converte o id escolhido na tela (real ou temporário) nos campos do payload:
@@ -70,33 +91,40 @@ type CampoReferencia = "fazenda" | "vendedor" | "comprador" | "negocio";
 export async function referencia(campo: CampoReferencia, id: number): Promise<Record<string, unknown>> {
   if (!ehIdTemporario(id)) return { [`${campo}_id`]: id, [`${campo}_uuid_local`]: null };
   const idLocal = -id;
-  const pendente = await offlineDb.pendentes.get(idLocal);
-  if (pendente) return { [`${campo}_id`]: null, [`${campo}_uuid_local`]: pendente.uuid };
+  const aninhada = campo === "fazenda" ? fazendaAninhada(idLocal) : null;
+  if (aninhada) {
+    // Fazenda nova dentro de um pecuarista pendente: referenciada pelo uuid_origem dela.
+    const pecuarista = await offlineDb.pendentes.get(aninhada.registroId);
+    const item = (pecuarista?.payload.fazendas as Record<string, unknown>[] | undefined)?.[aninhada.indice];
+    if (item?.uuid_origem) return { fazenda_id: null, fazenda_uuid_local: item.uuid_origem };
+  } else {
+    const pendente = await offlineDb.pendentes.get(idLocal);
+    if (pendente) return { [`${campo}_id`]: null, [`${campo}_uuid_local`]: pendente.uuid };
+  }
   // Já sincronizado depois que a tela carregou: usa o id real.
   const mapeado = await offlineDb.mapeamentos.where("idLocal").equals(idLocal).first();
   if (mapeado) return { [`${campo}_id`]: mapeado.idReal, [`${campo}_uuid_local`]: null };
   throw new Error(`O cadastro local de ${campo} não foi encontrado neste aparelho.`);
 }
 
-/** Versão para listas: `{ fazenda_ids: [7], fazenda_uuids_locais: ["…"] }`. */
-export async function referencias(campo: CampoReferencia, ids: number[]): Promise<Record<string, unknown>> {
-  const reais: number[] = [];
-  const uuids: string[] = [];
-  for (const id of ids) {
-    const ref = await referencia(campo, id);
-    const uuid = ref[`${campo}_uuid_local`] as string | null;
-    if (uuid) uuids.push(uuid);
-    else reais.push(ref[`${campo}_id`] as number);
-  }
-  return { [`${campo}_ids`]: reais, [`${campo}_uuids_locais`]: uuids };
+const ehObjeto = (valor: unknown): valor is Record<string, unknown> =>
+  valor !== null && typeof valor === "object" && !Array.isArray(valor);
+
+/**
+ * uuids de cadastros locais referenciados pelo payload, inclusive dentro de listas de
+ * objetos (ex.: `fazendas: [{ fazenda_id: null, fazenda_uuid_local: "…" }]`).
+ */
+export function uuidsReferenciados(payload: Record<string, unknown>): string[] {
+  return Object.entries(payload).flatMap(([chave, valor]) => {
+    if (chave.endsWith("_uuid_local")) return valor != null ? [valor as string] : [];
+    if (chave.endsWith("_uuids_locais") && Array.isArray(valor)) return valor as string[];
+    if (Array.isArray(valor)) return valor.filter(ehObjeto).flatMap(uuidsReferenciados);
+    return [];
+  });
 }
 
 function temReferenciaPendente(payload: Record<string, unknown>): boolean {
-  return Object.entries(payload).some(
-    ([chave, valor]) =>
-      (chave.endsWith("_uuid_local") && valor != null) ||
-      (chave.endsWith("_uuids_locais") && Array.isArray(valor) && valor.length > 0)
-  );
+  return uuidsReferenciados(payload).length > 0;
 }
 
 /** A dependência ainda não foi sincronizada — tentar de novo numa próxima rodada. */
@@ -120,6 +148,8 @@ export async function resolverReferencias(payload: Record<string, unknown>): Pro
       const base = chave.slice(0, -"_uuids_locais".length);
       const ids = await Promise.all((valor as string[]).map(idReal));
       resolvido[`${base}_ids`] = [...((payload[`${base}_ids`] as number[] | undefined) ?? []), ...ids];
+    } else if (Array.isArray(valor) && valor.some(ehObjeto)) {
+      resolvido[chave] = await Promise.all(valor.map((item) => (ehObjeto(item) ? resolverReferencias(item) : item)));
     }
   }
   return resolvido;

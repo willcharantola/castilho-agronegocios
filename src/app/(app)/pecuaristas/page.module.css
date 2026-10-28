@@ -1,0 +1,25 @@
+.page {
+  padding-bottom: 5rem;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  border-radius: var(--radius-box);
+  padding: 1rem;
+}
+
+.cardName {
+  font-weight: 800;
+}
+
+.cardFooter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+  border-top: 1px solid var(--color-on-dark-surface);
+  padding-top: 0.75rem;
+  font-size: var(--font-size-xs);
+ color: #fff;
+}

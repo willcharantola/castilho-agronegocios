@@ -1,0 +1,35 @@
+.subtitle {
+  margin-top: -0.75rem;
+  font-size: var(--font-size-md);
+  color: var(--color-ink-muted);
+}
+
+.fazendaNome {
+  font-weight: 800;
+}
+
+.resumo {
+  flex: 1;
+  min-width: 0;
+}
+
+.editarDados {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  color: inherit;
+}
+
+.remover {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border: none;
+  background: transparent;
+  color: var(--color-ink-muted);
+  cursor: pointer;
+}

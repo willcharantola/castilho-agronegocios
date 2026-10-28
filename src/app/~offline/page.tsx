@@ -22,7 +22,7 @@ export default function OfflinePage() {
       <WifiOff size={40} aria-hidden />
       <h1 style={{ fontSize: "1.25rem", fontWeight: 800 }}>Sem conexão</h1>
       <p style={{ maxWidth: "22rem" }}>
-        Esta tela ainda não foi salva no aparelho. Os cadastros de fazenda, vendedor, comprador,
+        Esta tela ainda não foi salva no aparelho. Os cadastros de fazenda, pecuarista, comprador,
         negócio e gado continuam funcionando offline.
       </p>
       <Link href="/" style={{ fontWeight: 700, textDecoration: "underline" }}>

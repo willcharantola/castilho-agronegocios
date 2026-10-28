@@ -2,12 +2,12 @@
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  border-radius: 5px;
+  border-radius: var(--radius-box);
   padding: 1rem;
 }
 
 .title {
-  font-size: 0.9rem;
+  font-size: var(--font-size-md);
   font-weight: 700;
   color: var(--color-dark);
 }
@@ -31,17 +31,11 @@
 
 .hint {
   font-size: 0.8rem;
-  color: color-mix(in oklch, var(--color-ink) 70%, transparent);
-}
-
-.error {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--color-danger);
+  color: var(--color-ink-muted);
 }
 
 .success {
-  font-size: 0.85rem;
+  font-size: var(--font-size-sm);
   font-weight: 600;
   color: var(--color-teal);
 }

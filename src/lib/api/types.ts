@@ -13,8 +13,6 @@ export type Usuario = {
   sobrenome: string;
   email: string;
   nivel_acesso: NivelAcesso;
-  /** true → precisa definir uma nova senha antes de usar o sistema (/primeiro-acesso). */
-  primeiro_acesso: boolean;
 };
 
 export type CreateUsuarioInput = Omit<Usuario, "usuario_id" | "empresa_id"> & { senha: string };
@@ -40,20 +38,20 @@ export type Fazenda = {
   marca_url: string | null;
   marca_escrita: string | null;
   /** Só vem em GET /fazendas/:id. */
-  vendedor_fazenda?: { fazenda_id: number; vendedor_id: number; vendedor: Vendedor }[];
+  pecuarista_fazenda?: { fazenda_id: number; pecuarista_id: number; pecuarista: Pecuarista }[];
 };
 
-export type Vendedor = {
-  vendedor_id: number;
-  nome_vendedor: string;
+export type Pecuarista = {
+  pecuarista_id: number;
+  nome_pecuarista: string;
   fisico_juridico: "fisico" | "juridico";
   cpf_cnpj: string;
   banco: string;
   agencia: string;
   conta: string;
   chave_pix: string;
-  /** Associações N:N com fazendas (tabela vendedor_fazenda). */
-  vendedor_fazenda?: { fazenda_id: number; vendedor_id: number; fazenda: Fazenda }[];
+  /** Vínculos N:N com fazendas (tabela vendedor_fazenda). */
+  pecuarista_fazenda?: { fazenda_id: number; pecuarista_id: number; fazenda: Fazenda }[];
 };
 
 export type Comprador = {
@@ -66,7 +64,22 @@ export type Comprador = {
 };
 
 export type Modalidade = "arroba" | "kg" | "cabeca";
-export type TipoGado = "Gordo" | "Magro";
+export type TipoGado = "Gordo" | "Reposicao";
+/** Grafias exatas do CHECK no banco. Define o cálculo de Funrural e Senar. */
+export type TipoNegocio = "Desconto em folha" | "Livre" | "Funrural";
+/** Categoria de rendimento de carcaça do animal — gravada em `gado.denominacao`. */
+export type RacaRendimento = "Nelore" | "Anelorado" | "Angus" | "Composto";
+
+/**
+ * Rendimento de carcaça (%, 0 a 100) de cada categoria, definido uma vez por negócio.
+ * Só a modalidade "arroba" usa; em "kg" e "cabeca" a API grava 100 nos quatro.
+ */
+export type RendimentosNegocio = {
+  porcentagem_rendimento_nelore: number;
+  porcentagem_rendimento_anelorado: number;
+  porcentagem_rendimento_angus: number;
+  porcentagem_rendimento_composto: number;
+};
 export type TipoLote = "Vaca" | "Boi" | "Novilha" | "Garrote" | "Bezerro" | "Variados";
 export type Genero = "Macho" | "Femea";
 
@@ -74,7 +87,7 @@ export type Negocio = {
   negocio_id: number;
   empresa_id: number;
   fazenda_id: number;
-  vendedor_id: number;
+  pecuarista_id: number;
   comprador_id: number;
   /**
    * TIME do Postgres, serializado como ISO em 1970-01-01 — use `formatHora`. Registrados
@@ -86,6 +99,9 @@ export type Negocio = {
   modalidade: Modalidade;
   tipo_gado: TipoGado;
   tipo_lote: TipoLote;
+  tipo_negocio: TipoNegocio;
+  /** Média do carimbo do lote, texto livre (ex.: "8,9 e 10"). */
+  media_carimbo: string;
   data_negocio: string;
   /** Percentual de comissão (0 a 100), definido pelo usuário — use `formatPercent`. */
   porcentagem_comissao: number | null;
@@ -109,15 +125,23 @@ export type Negocio = {
   peso_total_quilos: number | null;
   /** Soma de `gado.peso_arroba`. */
   peso_total_arroba: number | null;
-  /** Média simples de `gado.rendimento_carcaca` (0 a 100) — use `formatPercent`. */
+  /** Ponderado pelo peso: soma(peso_calculo) / soma(peso_total) × 100 — use `formatPercent`. */
   rendimento_medio: number | null;
   peso_medio_arroba: number | null;
   peso_medio_quilos: number | null;
-  /** R$ — valor_total × 1,5%. */
+  /**
+   * R$, calculados pela API conforme o tipo_negocio: "Funrural" → valor_total ×
+   * aliquota_funrural / 100 (senar 0); "Desconto em folha" → só senar; "Livre" → ambos 0.
+   */
   funrural: number | null;
-  /** R$ — valor_total × 0,2%. */
   senar: number | null;
-};
+  /**
+   * Alíquotas (%) usadas por este negócio, copiadas da empresa na criação — use
+   * `formatPercent`. null em negócios ainda só no aparelho.
+   */
+  aliquota_funrural: number | null;
+  aliquota_senar: number | null;
+} & RendimentosNegocio;
 
 export type Gado = {
   gado_id: number;
@@ -125,15 +149,18 @@ export type Gado = {
   peso_total: number;
   data_pesagem: string;
   genero: Genero;
-  denominacao: string;
-  rendimento_carcaca: number;
+  /** Categoria de rendimento do animal. */
+  denominacao: RacaRendimento;
+  /**
+   * Derivado (não é coluna): percentual da categoria do animal no negócio, devolvido
+   * pela API só para exibição. Nunca enviar no POST/PATCH.
+   */
+  rendimento_carcaca: number | null;
   /** Registrado pela API no cadastro — use `formatHora`. */
   horario_pesagem: string | null;
-  /** Mês (1 a 12). */
-  carimbo: number;
   /** Ano do carimbo, ex: "2025". */
   ano_carimbo: string;
-  // Calculadas pela API a partir de peso_total e do rendimento_carcaca do próprio gado.
+  // Calculadas pela API a partir de peso_total e do rendimento da categoria no negócio.
   peso_calculo: number;
   peso_arroba: number;
   valor_total: number | null;
@@ -142,7 +169,13 @@ export type Gado = {
 export type NegocioDetail = Negocio & {
   gados: Gado[];
   comprador: Comprador;
-  vendedor: Vendedor;
+  pecuarista: Pecuarista;
+};
+
+/** Configurações > Impostos e taxas: alíquotas em % (1.5 = 1,5%). */
+export type Impostos = {
+  aliquota_funrural: number;
+  aliquota_senar: number;
 };
 
 export type LoginResponse = {
@@ -169,17 +202,26 @@ export type CreateFazendaInput = {
 };
 export type UpdateFazendaInput = Partial<CreateFazendaInput>;
 
-export type CreateVendedorInput = {
-  nome_vendedor: string;
+export type DadosPecuaristaInput = {
+  nome_pecuarista: string;
   fisico_juridico: "fisico" | "juridico";
   cpf_cnpj: string;
   banco: string;
   agencia: string;
   conta: string;
   chave_pix: string;
-  fazenda_ids?: number[];
 };
-export type UpdateVendedorInput = Partial<CreateVendedorInput>;
+
+/**
+ * Fazenda no cadastro de pecuarista: uma já cadastrada (`{ fazenda_id }`) ou uma nova,
+ * criada junto (com o próprio `uuid_origem`, para o reenvio offline não duplicá-la).
+ */
+export type FazendaDoPecuaristaInput = { fazenda_id: number } | (CreateFazendaInput & OrigemOffline);
+
+/** POST /pecuaristas: pecuarista e pelo menos uma fazenda, numa única transação. */
+export type CreatePecuaristaInput = DadosPecuaristaInput & { fazendas: FazendaDoPecuaristaInput[] };
+/** Só os dados: vínculos por POST/DELETE /pecuaristas/:id/fazendas. */
+export type UpdatePecuaristaInput = Partial<DadosPecuaristaInput>;
 
 export type CreateCompradorInput = Omit<Comprador, "comprador_id">;
 export type UpdateCompradorInput = Partial<CreateCompradorInput>;
@@ -187,17 +229,19 @@ export type UpdateCompradorInput = Partial<CreateCompradorInput>;
 export type CreateNegocioInput = {
   empresa_id: number;
   fazenda_id: number;
-  vendedor_id: number;
+  pecuarista_id: number;
   comprador_id: number;
   modalidade: Modalidade;
   tipo_gado: TipoGado;
   tipo_lote: TipoLote;
+  tipo_negocio: TipoNegocio;
+  media_carimbo: string;
   data_negocio: string;
   /** Percentual (0 a 100); a API calcula `comissao` em R$. */
   porcentagem_comissao?: number;
   valor_unidade: number;
   observacao?: string;
-};
+} & Partial<RendimentosNegocio>; // obrigatórios só em "arroba" (a API grava 100 nas demais)
 export type UpdateNegocioInput = Partial<CreateNegocioInput> & {
   /** Só aceito pela API para negócios da modalidade "cabeca". */
   qtd_animais?: number;
@@ -208,11 +252,9 @@ export type UpdateNegocioInput = Partial<CreateNegocioInput> & {
 export type CreateGadoInput = {
   negocio_id: number;
   peso_total: number;
-  rendimento_carcaca: number;
   data_pesagem: string;
   genero: Genero;
-  denominacao: string;
-  carimbo: number;
+  denominacao: RacaRendimento;
   ano_carimbo: string;
 };
 
