@@ -37,6 +37,10 @@ export type Fazenda = {
   inscricao_estadual: string;
   marca_url: string | null;
   marca_escrita: string | null;
+  /** Endereço livre (até 200). */
+  endereco_fazenda?: string | null;
+  /** Link do Google Maps ou coordenadas "lat,lng" (até 500) — ver lib/mapa. */
+  localizacao_google?: string | null;
   /** Só vem em GET /fazendas/:id. */
   pecuarista_fazenda?: { fazenda_id: number; pecuarista_id: number; pecuarista: Pecuarista }[];
 };
@@ -67,21 +71,24 @@ export type Modalidade = "arroba" | "kg" | "cabeca";
 export type TipoGado = "Gordo" | "Reposicao";
 /** Grafias exatas do CHECK no banco. Define o cálculo de Funrural e Senar. */
 export type TipoNegocio = "Desconto em folha" | "Livre" | "Funrural";
-/** Categoria de rendimento de carcaça do animal — gravada em `gado.denominacao`. */
-export type RacaRendimento = "Nelore" | "Anelorado" | "Angus" | "Composto";
-
-/**
- * Rendimento de carcaça (%, 0 a 100) de cada categoria, definido uma vez por negócio.
- * Só a modalidade "arroba" usa; em "kg" e "cabeca" a API grava 100 nos quatro.
- */
-export type RendimentosNegocio = {
-  porcentagem_rendimento_nelore: number;
-  porcentagem_rendimento_anelorado: number;
-  porcentagem_rendimento_angus: number;
-  porcentagem_rendimento_composto: number;
-};
 export type TipoLote = "Vaca" | "Boi" | "Novilha" | "Garrote" | "Bezerro" | "Variados";
 export type Genero = "Macho" | "Femea";
+
+/** Pesos, médias, extremos e rendimento médio — calculados pela API (null sem cabeças). */
+export type AgregadosPeso = {
+  /** Soma de `gado.peso_total`. */
+  peso_total_quilos: number | null;
+  /** Soma de `gado.peso_arroba`. */
+  peso_total_arroba: number | null;
+  peso_medio_quilos: number | null;
+  peso_medio_arroba: number | null;
+  mais_pesado_quilos: number | null;
+  mais_leve_quilos: number | null;
+  mais_pesado_arroba: number | null;
+  mais_leve_arroba: number | null;
+  /** Ponderado pelo peso: soma(peso_calculo) / soma(peso_total) × 100 — use `formatPercent`. */
+  rendimento_medio: number | null;
+};
 
 export type Negocio = {
   negocio_id: number;
@@ -98,37 +105,19 @@ export type Negocio = {
   hora_fim_pesagem: string | null;
   modalidade: Modalidade;
   tipo_gado: TipoGado;
-  tipo_lote: TipoLote;
   tipo_negocio: TipoNegocio;
-  /** Média do carimbo do lote, texto livre (ex.: "8,9 e 10"). */
-  media_carimbo: string;
   data_negocio: string;
   /** Percentual de comissão (0 a 100), definido pelo usuário — use `formatPercent`. */
   porcentagem_comissao: number | null;
   /** Comissão em R$, calculada pela API (valor_total × porcentagem_comissao / 100). */
   comissao: number | null;
-  valor_unidade: number;
   observacao: string | null;
-  // Calculadas pela API a partir dos `gados` vinculados — não enviar no POST/PATCH.
-  // Exceção: na modalidade "cabeca" qtd_animais é informado via PATCH e valor_total
-  // é recalculado pela API (qtd_animais × valor_unidade); valor_medio, mais_pesado e
-  // mais_leve ficam null.
+  // Calculados pela API a partir dos lotes e das cabeças de todos os lotes — não enviar.
+  /** Soma de `lote.qtd_animais`. */
+  qtd_animais: number | null;
+  /** Soma de `lote.valor_total_lote`. */
   valor_total: number | null;
   valor_medio: number | null;
-  qtd_animais: number | null;
-  mais_pesado: number | null;
-  mais_leve: number | null;
-  // Campos do romaneio, calculados e gravados pela API (só vêm em GET /negocios/:id;
-  // na listagem e em negócios ainda só no aparelho ficam null). Pesos/rendimento são
-  // null sem gados (modalidade "cabeca"); funrural e senar, null sem valor_total.
-  /** Soma de `gado.peso_total`. */
-  peso_total_quilos: number | null;
-  /** Soma de `gado.peso_arroba`. */
-  peso_total_arroba: number | null;
-  /** Ponderado pelo peso: soma(peso_calculo) / soma(peso_total) × 100 — use `formatPercent`. */
-  rendimento_medio: number | null;
-  peso_medio_arroba: number | null;
-  peso_medio_quilos: number | null;
   /**
    * R$, calculados pela API conforme o tipo_negocio: "Funrural" → valor_total ×
    * aliquota_funrural / 100 (senar 0); "Desconto em folha" → só senar; "Livre" → ambos 0.
@@ -141,35 +130,52 @@ export type Negocio = {
    */
   aliquota_funrural: number | null;
   aliquota_senar: number | null;
-} & RendimentosNegocio;
+} & AgregadosPeso;
+
+/**
+ * Lote do negócio: gênero, rendimento, preço por unidade, carimbo e tipo de lote são do
+ * lote. Na modalidade "cabeca" há um único lote ("Lote único"), sem cabeças pesadas.
+ */
+export type Lote = {
+  lote_id: number;
+  negocio_id: number;
+  nome_lote: string;
+  /** R$ por arroba, por kg ou por cabeça, conforme a modalidade do negócio. */
+  valor_unidade: number;
+  tipo_lote: TipoLote;
+  genero: Genero;
+  /** % (0 a 100). 100 nas modalidades "kg" e "cabeca". */
+  rendimento_carcaca: number;
+  /** Texto livre (ex.: "8,9 e 10"). */
+  media_carimbo: string;
+  ano_carimbo: string;
+  // Calculados pela API. Em "cabeca", qtd_animais é a informada.
+  qtd_animais: number;
+  valor_total_lote: number;
+  valor_medio_cabeca_lote: number | null;
+} & AgregadosPeso;
 
 export type Gado = {
   gado_id: number;
-  negocio_id: number;
+  lote_id: number;
   peso_total: number;
   data_pesagem: string;
-  genero: Genero;
-  /** Categoria de rendimento do animal. */
-  denominacao: RacaRendimento;
-  /**
-   * Derivado (não é coluna): percentual da categoria do animal no negócio, devolvido
-   * pela API só para exibição. Nunca enviar no POST/PATCH.
-   */
-  rendimento_carcaca: number | null;
   /** Registrado pela API no cadastro — use `formatHora`. */
   horario_pesagem: string | null;
-  /** Ano do carimbo, ex: "2025". */
-  ano_carimbo: string;
-  // Calculadas pela API a partir de peso_total e do rendimento da categoria no negócio.
+  // Calculadas pela API a partir de peso_total e do lote.
   peso_calculo: number;
   peso_arroba: number;
   valor_total: number | null;
 };
 
+export type LoteDetail = Lote & { gados: Gado[] };
+
 export type NegocioDetail = Negocio & {
-  gados: Gado[];
+  /** Em ordem de cadastro; as cabeças de cada lote também. */
+  lotes: LoteDetail[];
   comprador: Comprador;
   pecuarista: Pecuarista;
+  fazenda?: Fazenda;
 };
 
 /** Configurações > Impostos e taxas: alíquotas em % (1.5 = 1,5%). */
@@ -199,6 +205,8 @@ export type CreateFazendaInput = {
   /** finalUrl de POST /uploads/marca-fazenda; `null` remove a imagem (PATCH). */
   marca_url?: string | null;
   marca_escrita?: string;
+  endereco_fazenda?: string | null;
+  localizacao_google?: string | null;
 };
 export type UpdateFazendaInput = Partial<CreateFazendaInput>;
 
@@ -233,31 +241,40 @@ export type CreateNegocioInput = {
   comprador_id: number;
   modalidade: Modalidade;
   tipo_gado: TipoGado;
-  tipo_lote: TipoLote;
   tipo_negocio: TipoNegocio;
-  media_carimbo: string;
   data_negocio: string;
   /** Percentual (0 a 100); a API calcula `comissao` em R$. */
   porcentagem_comissao?: number;
-  valor_unidade: number;
   observacao?: string;
-} & Partial<RendimentosNegocio>; // obrigatórios só em "arroba" (a API grava 100 nas demais)
-export type UpdateNegocioInput = Partial<CreateNegocioInput> & {
-  /** Só aceito pela API para negócios da modalidade "cabeca". */
-  qtd_animais?: number;
-  /** Ignorado pela API (recalculado no servidor) — enviado só como referência. */
-  valor_total?: number;
 };
+export type UpdateNegocioInput = Partial<CreateNegocioInput>;
+
+/**
+ * POST /negocios/:id/lotes e PATCH /lotes/:id. Regras da modalidade: "arroba" exige
+ * nome e rendimento; "kg" exige nome (rendimento 100); "cabeca" exige qtd_animais e a API
+ * grava "Lote único" e rendimento 100.
+ */
+export type CreateLoteInput = {
+  nome_lote?: string;
+  valor_unidade: number;
+  tipo_lote: TipoLote;
+  genero: Genero;
+  rendimento_carcaca?: number;
+  media_carimbo: string;
+  ano_carimbo: string;
+  /** Só na modalidade "cabeca". */
+  qtd_animais?: number;
+};
+export type UpdateLoteInput = Partial<CreateLoteInput>;
 
 export type CreateGadoInput = {
-  negocio_id: number;
+  lote_id: number;
   peso_total: number;
-  data_pesagem: string;
-  genero: Genero;
-  denominacao: RacaRendimento;
-  ano_carimbo: string;
+  /** Omitida, a API usa a data atual. */
+  data_pesagem?: string;
 };
 
+/** Trocar `lote_id` move a cabeça para outro lote do mesmo negócio. */
 export type UpdateGadoInput = Partial<CreateGadoInput>;
 
 /** Só para gados vindos da fila offline: hora local da pesagem no aparelho ("HH:mm:ss"). */

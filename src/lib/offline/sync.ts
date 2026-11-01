@@ -4,16 +4,19 @@ import { ApiError } from "@/lib/api-client";
 import { createComprador } from "@/lib/api/compradores";
 import { createFazenda } from "@/lib/api/fazendas";
 import { createGado } from "@/lib/api/gados";
+import { createLote, deleteLote, updateLote } from "@/lib/api/lotes";
 import { concluirNegocio, createNegocio, updateNegocio } from "@/lib/api/negocios";
 import { createPecuarista } from "@/lib/api/pecuaristas";
 import type {
   CreateCompradorInput,
   CreateFazendaInput,
   CreateGadoOfflineInput,
+  CreateLoteInput,
   CreateNegocioInput,
   DadosPecuaristaInput,
   Fazenda,
   FazendaDoPecuaristaInput,
+  UpdateLoteInput,
   UpdateNegocioInput,
 } from "@/lib/api/types";
 import { offlineDb, ORDEM_SINCRONIZACAO, type EntidadeOffline, type RegistroPendente } from "./db";
@@ -70,6 +73,24 @@ const ENVIAR: Record<
   negocio_atualizacao: async (p) => {
     const { negocio_id, ...campos } = p;
     await updateNegocio(negocio_id as number, campos as UpdateNegocioInput);
+    return null;
+  },
+  lote: async (p, uuid) => {
+    const { negocio_id, ...campos } = p;
+    return (await createLote(negocio_id as number, { ...(campos as CreateLoteInput), uuid_origem: uuid })).lote_id;
+  },
+  lote_atualizacao: async (p) => {
+    const { lote_id, ...campos } = p;
+    await updateLote(lote_id as number, campos as UpdateLoteInput);
+    return null;
+  },
+  // Excluir de novo um lote que já não existe (resposta perdida) não é erro.
+  lote_exclusao: async (p) => {
+    try {
+      await deleteLote(p.lote_id as number);
+    } catch (err) {
+      if (!(err instanceof ApiError && err.status === 404)) throw err;
+    }
     return null;
   },
   gado: async (p, uuid) =>

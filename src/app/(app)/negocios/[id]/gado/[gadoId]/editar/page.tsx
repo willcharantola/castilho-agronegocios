@@ -3,53 +3,26 @@
 import * as React from "react";
 import { useParams, useRouter } from "next/navigation";
 import { BackLink } from "@/components/back-link";
-import { GadoForm, formValuesParaInput, gadoParaFormInput, type GadoFormValues } from "@/components/gado-form";
-import { updateGado } from "@/lib/api/gados";
-import { fetchNegocio } from "@/lib/api/negocios";
-import { ApiError } from "@/lib/api-client";
+import { GadoForm } from "@/components/gado-form";
 import { MODALIDADE_LABELS } from "@/lib/labels";
+import { editarGado } from "@/lib/flows/operacoes-lote";
+import { useNegocioComPendencias } from "@/lib/flows/use-negocio-com-pendencias";
 import { cn } from "@/lib/utils";
-import type { Gado, NegocioDetail } from "@/lib/api/types";
 import styles from "../../gado-page.module.css";
 
+/** Edita peso e lote de uma cabeça — trocar de lote recalcula os dois lotes envolvidos. */
 export default function EditarGadoPage() {
   const params = useParams<{ id: string; gadoId: string }>();
   const router = useRouter();
-  const [negocio, setNegocio] = React.useState<NegocioDetail | null>(null);
-  const [gado, setGado] = React.useState<Gado | null>(null);
-  const [loadError, setLoadError] = React.useState<string | null>(null);
+  const { negocio, erro } = useNegocioComPendencias(Number(params.id));
+  const gado = negocio?.lotes.flatMap((l) => l.gados).find((g) => g.gado_id === Number(params.gadoId));
 
-  React.useEffect(() => {
-    let cancelled = false;
-    fetchNegocio(params.id)
-      .then((negocioData) => {
-        if (cancelled) return;
-        // Negócios "cabeca" não têm gados individuais — não há o que editar.
-        if (negocioData.modalidade === "cabeca") {
-          setLoadError("Negócios por cabeça não possuem cadastro individual de gado.");
-          return;
-        }
-        const encontrado = negocioData.gados.find((g) => g.gado_id === Number(params.gadoId));
-        if (!encontrado) {
-          setLoadError("Gado não encontrado neste negócio.");
-          return;
-        }
-        setNegocio(negocioData);
-        setGado(encontrado);
-      })
-      .catch((err: unknown) => {
-        if (cancelled) return;
-        setLoadError(err instanceof ApiError || err instanceof Error ? err.message : "Erro ao carregar.");
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [params.id, params.gadoId]);
-
-  async function salvar(values: GadoFormValues) {
-    await updateGado(params.gadoId, formValuesParaInput(values));
-    router.push(`/negocios/${params.id}`);
-  }
+  const aviso =
+    negocio?.modalidade === "cabeca"
+      ? "Negócios por cabeça não possuem pesagem individual."
+      : negocio && !gado
+        ? "Cabeça não encontrada neste negócio."
+        : null;
 
   return (
     <div className={cn("page-container page-narrow", styles.page, "pt-safe")}>
@@ -63,18 +36,23 @@ export default function EditarGadoPage() {
         ) : null}
       </div>
 
-      {!gado && !loadError ? <div className="state-box glass-panel">Carregando gado...</div> : null}
-      {loadError ? <div className="state-box state-error glass-panel">{loadError}</div> : null}
+      {!negocio && !erro ? <div className="state-box glass-panel">Carregando gado...</div> : null}
+      {erro && !negocio ? <div className="state-box state-error glass-panel">{erro}</div> : null}
+      {aviso ? <div className="state-box state-error glass-panel">{aviso}</div> : null}
 
-      {negocio && gado ? (
+      {negocio && gado && !aviso ? (
         <GadoForm
           modalidade={negocio.modalidade}
-          valorUnidade={negocio.valor_unidade}
-          rendimentos={negocio}
-          defaultValues={gadoParaFormInput(gado)}
+          lotes={negocio.lotes}
+          defaultValues={{ loteId: gado.lote_id, pesoTotal: gado.peso_total }}
           submitLabel="Salvar Alterações"
           submittingLabel="Salvando..."
-          onSubmit={salvar}
+          onSubmit={async ({ loteId, pesoTotal }) => {
+            const lote = negocio.lotes.find((l) => l.lote_id === loteId);
+            if (!lote) throw new Error("Lote não encontrado.");
+            await editarGado(negocio, gado.gado_id, lote, pesoTotal);
+            router.push(`/negocios/${params.id}`);
+          }}
         />
       ) : null}
     </div>

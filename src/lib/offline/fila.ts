@@ -82,7 +82,7 @@ export async function atualizarPendente(
   });
 }
 
-type CampoReferencia = "fazenda" | "pecuarista" | "comprador" | "negocio";
+type CampoReferencia = "fazenda" | "pecuarista" | "comprador" | "negocio" | "lote";
 
 /**
  * Converte o id escolhido na tela (real ou temporário) nos campos do payload:

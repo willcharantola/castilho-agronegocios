@@ -79,13 +79,15 @@ export async function gerarRelatorioNegocio(negocio: NegocioDetail, fazendaNome:
         comissao: negocio.comissao !== null ? formatCurrency(negocio.comissao) : "—",
       },
     ],
-    gados: negocio.gados.map((g) => ({
-      denominacao: g.denominacao,
-      genero: formatGenero(g.genero),
-      peso_calculo: formatNumber(g.peso_calculo),
-      peso_arroba: formatNumber(g.peso_arroba),
-      valor_total: g.valor_total !== null ? formatCurrency(g.valor_total) : "—",
-    })),
+    gados: negocio.lotes.flatMap((lote) =>
+      lote.gados.map((g) => ({
+        denominacao: lote.nome_lote,
+        genero: formatGenero(lote.genero),
+        peso_calculo: formatNumber(g.peso_calculo),
+        peso_arroba: formatNumber(g.peso_arroba),
+        valor_total: g.valor_total !== null ? formatCurrency(g.valor_total) : "—",
+      }))
+    ),
   });
 
   const blob = doc.getZip().generate({

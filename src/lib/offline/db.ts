@@ -5,7 +5,11 @@ import Dexie, { type Table } from "dexie";
  * (cada um pode referenciar os anteriores):
  * - `fazenda`: só cadastros antigos — hoje a fazenda nasce dentro do `pecuarista`
  *   (payload.fazendas), num único item da fila, para sincronizar na mesma transação.
- * - `negocio_atualizacao`: PATCH /negocios/:id feito offline (qtd/valor na modalidade "cabeca").
+ * - `negocio_atualizacao`: PATCH /negocios/:id feito offline (ex.: informações do negócio
+ *   corrigidas ao voltar no fluxo).
+ * - `lote` / `lote_atualizacao` / `lote_exclusao`: POST /negocios/:id/lotes, PATCH e DELETE
+ *   /lotes/:id. Negócio → lotes → gados: o lote referencia o negócio e o gado, o lote. A
+ *   exclusão vai depois dos gados (só é permitida em lote sem cabeças).
  * - `conclusao`: PATCH /negocios/:id/concluir feito offline (hora_fim_pesagem do aparelho).
  */
 export const ORDEM_SINCRONIZACAO = [
@@ -14,7 +18,10 @@ export const ORDEM_SINCRONIZACAO = [
   "comprador",
   "negocio",
   "negocio_atualizacao",
+  "lote",
+  "lote_atualizacao",
   "gado",
+  "lote_exclusao",
   "conclusao",
 ] as const;
 
@@ -127,6 +134,71 @@ class OfflineDB extends Dexie {
       .upgrade(async (tx) => {
         await tx.table<RegistroPendente, number>("pendentes").toCollection().modify(migrarParaNovoModelo);
       });
+    // v4: lotes (instrucoes-atualizacoesbd11.md). Gênero, rendimento, valor da unidade, carimbo
+    // e tipo de lote passaram do negócio/gado para o lote: gados no formato antigo não são
+    // enviados (ficam em "revisao"); negócios perdem os campos que agora são do lote.
+    this.version(4)
+      .stores({
+        pendentes: "++id, uuid, entidade, status, [entidade+status]",
+        cache: "chave",
+        mapeamentos: "uuid, idLocal",
+      })
+      .upgrade(async (tx) => {
+        await tx.table<RegistroPendente, number>("pendentes").toCollection().modify(migrarParaLotes);
+      });
+  }
+}
+
+/** Campos que passaram para o lote (v4). */
+const CAMPOS_DO_LOTE = [
+  "tipo_lote",
+  "valor_unidade",
+  "media_carimbo",
+  "porcentagem_rendimento_nelore",
+  "porcentagem_rendimento_anelorado",
+  "porcentagem_rendimento_angus",
+  "porcentagem_rendimento_composto",
+];
+const CAMPOS_ANTIGOS_GADO = ["negocio_id", "negocio_uuid_local", "genero", "denominacao", "ano_carimbo"];
+
+/** Migração v4 de um item da fila. */
+export function migrarParaLotes(registro: RegistroPendente) {
+  const p = registro.payload;
+  switch (registro.entidade) {
+    case "gado": {
+      if (CAMPOS_ANTIGOS_GADO.some((campo) => campo in p) || !("lote_id" in p || "lote_uuid_local" in p)) {
+        registro.status = "revisao";
+        registro.erroMensagem =
+          "Cabeça cadastrada antes da atualização do sistema (agora cada cabeça pertence a um lote). " +
+          "Descarte e cadastre de novo, escolhendo o lote.";
+      }
+      break;
+    }
+    case "negocio": {
+      if (p.tipo_gado === "Magro") p.tipo_gado = "Reposicao";
+      for (const campo of CAMPOS_DO_LOTE) delete p[campo];
+      // Itens da v3 em revisão só por falta de carimbo/rendimentos (agora do lote) voltam à fila.
+      if (registro.status === "revisao") {
+        if (p.tipo_negocio) {
+          registro.status = "pendente";
+          registro.erroMensagem = undefined;
+        } else {
+          marcarRevisao(registro, ["tipo de negócio"]);
+        }
+      }
+      break;
+    }
+    case "negocio_atualizacao": {
+      const antigos = [...CAMPOS_DO_LOTE, "qtd_animais", "valor_total"].filter((campo) => campo in p);
+      if (antigos.length > 0) {
+        for (const campo of antigos) delete p[campo];
+        registro.status = "revisao";
+        registro.erroMensagem =
+          "Alteração feita antes da atualização do sistema: quantidade, valor e rendimento agora " +
+          "ficam no lote. Descarte e informe os dados no lote do negócio.";
+      }
+      break;
+    }
   }
 }
 

@@ -13,8 +13,6 @@ export function normalizeGado(raw: Gado): Gado {
   return {
     ...raw,
     peso_total: Number(raw.peso_total),
-    // Derivado pela API (percentual da categoria no negócio); null se a categoria for inválida.
-    rendimento_carcaca: raw.rendimento_carcaca == null ? null : Number(raw.rendimento_carcaca),
     peso_calculo: Number(raw.peso_calculo),
     peso_arroba: Number(raw.peso_arroba),
     valor_total: raw.valor_total === null ? null : Number(raw.valor_total),
@@ -26,8 +24,15 @@ export async function createGado(input: CreateGadoOfflineInput) {
   return normalizeGado(gado);
 }
 
-/** A API recalcula peso_calculo/peso_arroba/valor_total e os agregados do negócio. */
+/**
+ * A API recalcula peso_calculo/peso_arroba/valor_total e os agregados do lote e do
+ * negócio. Trocar `lote_id` move a cabeça (só para lote do mesmo negócio).
+ */
 export async function updateGado(id: number | string, input: UpdateGadoInput) {
   const gado = await apiFetch<Gado>(`/gados/${id}`, { method: "PATCH", body: JSON.stringify(input) });
   return normalizeGado(gado);
+}
+
+export async function deleteGado(id: number | string) {
+  await apiFetch<Gado>(`/gados/${id}`, { method: "DELETE" });
 }

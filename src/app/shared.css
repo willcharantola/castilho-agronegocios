@@ -254,3 +254,162 @@
 .retry-button {
   margin-top: 0.75rem;
 }
+
+/* ================================================================ Carrossel do negócio
+   Detalhe e revisão do negócio: um único quadro cujo conteúdo ("Geral" ou um lote) é
+   trocado pelos chips acima. A faixa de chips rola na horizontal quando há muitos lotes. */
+
+.carrossel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.carrossel-chips {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 2px;
+}
+
+.carrossel-chips::-webkit-scrollbar {
+  display: none;
+}
+
+.carrossel-chip {
+  flex-shrink: 0;
+  min-height: 44px;
+  padding: 0.5rem 1rem;
+  border: 1px solid color-mix(in oklch, var(--color-olive) 35%, transparent);
+  border-radius: 999px;
+  background: color-mix(in oklch, white 55%, transparent);
+  color: var(--color-dark);
+  font: inherit;
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.carrossel-chip-ativo {
+  border-color: var(--color-teal);
+  background: var(--color-teal);
+  color: var(--color-white);
+}
+
+.carrossel-cartao {
+  min-width: 0;
+  border-radius: var(--radius-box);
+  padding: 1rem;
+}
+
+.carrossel-cartao:focus-visible,
+.carrossel-chip:focus-visible {
+  outline: 2px solid var(--color-teal);
+  outline-offset: 2px;
+}
+
+.carrossel-cabecalho {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.carrossel-titulo {
+  font-size: 1.05rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.carrossel-subtitulo {
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+/* minmax(0, 1fr): valores longos quebram dentro da coluna em vez de estourar a largura. */
+.carrossel-grade {
+  margin-top: 0.75rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  border-top: 1px solid var(--color-on-dark-surface);
+  padding-top: 0.75rem;
+}
+
+.carrossel-item {
+  min-width: 0;
+}
+
+.carrossel-item dt {
+  font-size: var(--font-size-xs);
+  color: rgb(255 255 255 / 70%);
+}
+
+.carrossel-item dd {
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.carrossel-cabecas {
+  margin-top: 1rem;
+  border-top: 1px solid var(--color-on-dark-surface);
+  padding-top: 0.75rem;
+}
+
+.carrossel-cabecas table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-sm);
+}
+
+.carrossel-cabecas th {
+  text-align: left;
+  font-weight: 600;
+  color: rgb(255 255 255 / 70%);
+  padding: 0.25rem 0.35rem;
+}
+
+.carrossel-cabecas td {
+  padding: 0.5rem 0.35rem;
+  border-top: 1px solid var(--color-on-dark-surface);
+}
+
+.carrossel-linha-editavel {
+  cursor: pointer;
+}
+
+.carrossel-linha-editavel:hover,
+.carrossel-linha-editavel:focus-visible {
+  background: rgb(255 255 255 / 10%);
+  outline: none;
+}
+
+.carrossel-linha-pendente td {
+  font-style: italic;
+}
+
+.carrossel-vazio {
+  margin-top: 1rem;
+  font-size: var(--font-size-sm);
+  color: rgb(255 255 255 / 80%);
+}
+
+.carrossel-vazio-claro {
+  margin-top: 0;
+  text-align: center;
+  color: var(--color-ink-muted);
+}
+
+.carrossel-aviso {
+  font-size: var(--font-size-xs);
+  color: var(--color-ink-muted);
+}
+
+/* Texto de apoio abaixo de um formulário (ex.: total estimado). */
+.form-hint {
+  font-size: var(--font-size-sm);
+  color: var(--color-ink);
+}

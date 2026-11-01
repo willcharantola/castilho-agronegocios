@@ -49,7 +49,7 @@ export default function EditarUsuarioPage() {
     const atualizado = await updateUsuario(params.id, { ...campos, ...(senha ? { senha } : {}) });
     // Editou o próprio cadastro: mantém o usuário guardado no aparelho em dia.
     if (proprioUsuario) updateUsuarioLocal(atualizado);
-    router.push("/perfil");
+    router.push("/configuracoes/usuarios");
   }
 
   async function excluir() {
@@ -57,7 +57,7 @@ export default function EditarUsuarioPage() {
     setExcluindo(true);
     try {
       await deleteUsuario(params.id);
-      router.push("/perfil");
+      router.push("/configuracoes/usuarios");
     } catch (err) {
       // Ex.: "A empresa precisa ter pelo menos um administrador."
       setExcluirError(mensagemDeErro(err, "Erro ao excluir."));
@@ -69,7 +69,7 @@ export default function EditarUsuarioPage() {
 
   return (
     <div className={cn("page-container page-narrow", styles.page, "pt-safe")}>
-      <BackLink href="/perfil" />
+      <BackLink href="/configuracoes/usuarios" />
       <h1 className="page-title">Editar Usuário</h1>
 
       {!usuario && !loadError ? <div className="state-box glass-panel">Carregando usuário...</div> : null}

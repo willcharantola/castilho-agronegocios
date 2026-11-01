@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 import { fetchPecuaristas } from "@/lib/api/pecuaristas";
 import type { Fazenda, Pecuarista } from "@/lib/api/types";
 import { ApiError } from "@/lib/api-client";
-import { useNegocioFlow } from "@/lib/flows/negocio-flow";
+import { PASSOS_NOVO_NEGOCIO, useNegocioFlow } from "@/lib/flows/negocio-flow";
 import { ehIdTemporario } from "@/lib/offline/fila";
 import { PendenteBadge } from "@/components/offline/pendente-badge";
 import { mesclarPendentes, usePecuaristasPendentes, type ComPendencia } from "@/lib/offline/pendentes";
@@ -61,7 +61,7 @@ export default function NovoNegocioFazendaPage() {
     <div className="page-container page-wide pt-safe">
       <BackLink href="/negocios/novo" />
       <h1 className={cn("page-title", styles.title)}>Cadastrar Novo Negócio</h1>
-      <ProgressSteps current={2} total={7} />
+      <ProgressSteps current={2} total={PASSOS_NOVO_NEGOCIO} />
 
       <div className="summary-card glass-dark">
         <span className="card-icon-on-dark">

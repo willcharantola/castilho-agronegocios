@@ -14,14 +14,14 @@ export default function NovoUsuarioPage() {
 
   async function cadastrar(values: UsuarioFormValues) {
     await createUsuario({ ...values, senha: values.senha });
-    router.push("/perfil");
+    router.push("/configuracoes/usuarios");
   }
 
   if (!admin) return null;
 
   return (
     <div className={cn("page-container page-narrow", styles.page, "pt-safe")}>
-      <BackLink href="/perfil" />
+      <BackLink href="/configuracoes/usuarios" />
       <h1 className="page-title">Cadastrar Usuário</h1>
       <UsuarioForm onSubmit={cadastrar} />
     </div>

@@ -15,8 +15,11 @@ const NOME_ENTIDADE: Record<EntidadeOffline, string> = {
   pecuarista: "Pecuarista",
   comprador: "Comprador",
   negocio: "Negócio",
-  negocio_atualizacao: "Quantidade/valor por cabeça",
+  negocio_atualizacao: "Alteração de negócio",
+  lote: "Lote",
+  lote_atualizacao: "Alteração de lote",
   gado: "Gado",
+  lote_exclusao: "Exclusão de lote",
   conclusao: "Conclusão de negócio",
 };
 
@@ -27,7 +30,8 @@ function descrever(r: RegistroSalvo): string {
     (p.nome_fazenda as string | undefined) ??
     (p.nome_pecuarista as string | undefined) ??
     (p.nome_empresa as string | undefined) ??
-    (p.denominacao as string | undefined) ??
+    (p.nome_lote as string | undefined) ??
+    (r.entidade === "gado" && typeof p.peso_total === "number" ? `${p.peso_total} kg` : undefined) ??
     (r.entidade === "negocio"
       ? `${e.fazendaNome as string} · ${formatDate(p.data_negocio as string)}`
       : undefined);

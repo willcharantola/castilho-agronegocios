@@ -1,37 +1,21 @@
 import { apiFetch } from "@/lib/api-client";
-import { normalizeGado } from "@/lib/api/gados";
+import { decimalOuNull, normalizeAgregadosPeso, normalizeLoteDetail } from "@/lib/api/lotes";
 import { comCache } from "@/lib/offline/cache";
 import type { CreateNegocioInput, Negocio, NegocioDetail, OrigemOffline, UpdateNegocioInput } from "@/lib/api/types";
-
-/** Decimal opcional da API → number; ausente (ex.: listagem, cache antigo) → null. */
-function decimalOuNull(valor: number | string | null | undefined) {
-  return valor === null || valor === undefined ? null : Number(valor);
-}
 
 /** Ver comentário em `gados.ts#normalizeGado` — mesma questão de Decimal-como-string. */
 function normalizeNegocio(raw: Negocio): Negocio {
   return {
     ...raw,
-    valor_total: raw.valor_total === null ? null : Number(raw.valor_total),
-    valor_medio: raw.valor_medio === null ? null : Number(raw.valor_medio),
-    mais_pesado: raw.mais_pesado === null ? null : Number(raw.mais_pesado),
-    mais_leve: raw.mais_leve === null ? null : Number(raw.mais_leve),
-    porcentagem_comissao: raw.porcentagem_comissao === null ? null : Number(raw.porcentagem_comissao),
-    comissao: raw.comissao === null ? null : Number(raw.comissao),
-    valor_unidade: Number(raw.valor_unidade),
-    peso_total_quilos: decimalOuNull(raw.peso_total_quilos),
-    peso_total_arroba: decimalOuNull(raw.peso_total_arroba),
-    rendimento_medio: decimalOuNull(raw.rendimento_medio),
-    peso_medio_arroba: decimalOuNull(raw.peso_medio_arroba),
-    peso_medio_quilos: decimalOuNull(raw.peso_medio_quilos),
+    ...normalizeAgregadosPeso(raw),
+    valor_total: decimalOuNull(raw.valor_total),
+    valor_medio: decimalOuNull(raw.valor_medio),
+    porcentagem_comissao: decimalOuNull(raw.porcentagem_comissao),
+    comissao: decimalOuNull(raw.comissao),
     funrural: decimalOuNull(raw.funrural),
     senar: decimalOuNull(raw.senar),
     aliquota_funrural: decimalOuNull(raw.aliquota_funrural),
     aliquota_senar: decimalOuNull(raw.aliquota_senar),
-    porcentagem_rendimento_nelore: Number(raw.porcentagem_rendimento_nelore),
-    porcentagem_rendimento_anelorado: Number(raw.porcentagem_rendimento_anelorado),
-    porcentagem_rendimento_angus: Number(raw.porcentagem_rendimento_angus),
-    porcentagem_rendimento_composto: Number(raw.porcentagem_rendimento_composto),
   };
 }
 
@@ -48,9 +32,15 @@ export async function fetchNegocios(params?: {
   return negocios.map(normalizeNegocio);
 }
 
-export async function fetchNegocio(id: number | string) {
+/** Negócio com os lotes (ordem de cadastro), cada um com suas cabeças. */
+export async function fetchNegocio(id: number | string): Promise<NegocioDetail> {
   const negocio = await comCache(`negocio:${id}`, () => apiFetch<NegocioDetail>(`/negocios/${id}`));
-  return { ...negocio, ...normalizeNegocio(negocio), gados: negocio.gados.map(normalizeGado) };
+  return {
+    ...negocio,
+    ...normalizeNegocio(negocio),
+    // Cache gravado antes dos lotes não tem a lista.
+    lotes: (negocio.lotes ?? []).map(normalizeLoteDetail),
+  };
 }
 
 export async function createNegocio(input: CreateNegocioInput & OrigemOffline) {
@@ -70,10 +60,7 @@ export async function concluirNegocio(id: number | string, horaFim?: string) {
   return normalizeNegocio(negocio);
 }
 
-/**
- * PATCH /negocios/:id. Mudar os percentuais de rendimento (ou o valor por unidade) faz a
- * API recalcular todos os animais; mudar o tipo_negocio recalcula Funrural e Senar.
- */
+/** PATCH /negocios/:id. Mudar o tipo_negocio recalcula Funrural e Senar. */
 export async function updateNegocio(id: number | string, input: UpdateNegocioInput) {
   const negocio = await apiFetch<Negocio>(`/negocios/${id}`, { method: "PATCH", body: JSON.stringify(input) });
   return normalizeNegocio(negocio);

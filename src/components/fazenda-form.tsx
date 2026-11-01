@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { AvatarUpload } from "@/components/form/avatar-upload";
 import { IconField } from "@/components/form/icon-field";
+import { LocalizacaoFields, localizacaoSchema } from "@/components/localizacao-fields";
 import { TintedInput } from "@/components/form/tinted-input";
 import { Button } from "@/components/ui/button";
 import { mensagemDeErro } from "@/lib/offline/rede";
@@ -19,6 +20,7 @@ export const fazendaSchema = z.object({
   // URL pública no S3, preenchida pelo AvatarUpload (opcional; null = sem imagem).
   marca_url: z.string().nullable().optional(),
   marca_escrita: z.string().max(10, "Máximo de 10 caracteres.").optional(),
+  ...localizacaoSchema,
 });
 type FormValues = z.infer<typeof fazendaSchema>;
 
@@ -43,6 +45,7 @@ export function FazendaForm({
     register,
     handleSubmit,
     control,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({ resolver: zodResolver(fazendaSchema) });
 
@@ -55,6 +58,8 @@ export function FazendaForm({
         inscricao_estadual: values.inscricao_estadual,
         marca_url: values.marca_url ?? undefined,
         marca_escrita: values.marca_escrita || undefined,
+        endereco_fazenda: values.endereco_fazenda || undefined,
+        localizacao_google: values.localizacao_google || undefined,
       });
     } catch (err) {
       setSubmitError(mensagemDeErro(err));
@@ -100,6 +105,8 @@ export function FazendaForm({
         <IconField icon={Type} label="Marca escrita" htmlFor="marca_escrita" error={errors.marca_escrita?.message}>
           <TintedInput id="marca_escrita" tint="pink" maxLength={10} {...register("marca_escrita")} />
         </IconField>
+
+        <LocalizacaoFields register={register} setValue={setValue} errors={errors} />
       </div>
 
       <Button type="submit" variant="brand" size="xl" className="w-full" disabled={isSubmitting || enviandoMarca}>

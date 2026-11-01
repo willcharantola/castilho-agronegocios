@@ -1,0 +1,10 @@
+.gps {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: -0.5rem;
+}
+
+.gps button {
+  min-height: 44px;
+}

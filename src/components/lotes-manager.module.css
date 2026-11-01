@@ -1,0 +1,15 @@
+.lotes {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.item {
+  width: 100%;
+  cursor: pointer;
+}
+
+.editar {
+  flex-shrink: 0;
+  color: color-mix(in oklch, var(--color-dark) 50%, transparent);
+}

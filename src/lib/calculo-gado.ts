@@ -1,18 +1,12 @@
-import type { Modalidade, RacaRendimento, RendimentosNegocio } from "@/lib/api/types";
-import { CAMPO_RENDIMENTO } from "@/lib/labels";
+import type { Lote, Modalidade } from "@/lib/api/types";
 
 const KG_PER_ARROBA = 15;
 
-/** Percentual de rendimento da categoria do animal no negócio. */
-export function rendimentoDaRaca(rendimentos: RendimentosNegocio, raca: RacaRendimento) {
-  return rendimentos[CAMPO_RENDIMENTO[raca]];
-}
-
 /**
- * Prévia dos valores calculados de um gado — mesma fórmula do backend
- * (calcularValoresGado), que continua sendo a fonte autoritativa ao salvar.
- * `rendimento` é o percentual da categoria do animal no negócio (100 em "kg").
- * Usada no formulário (tempo real) e para exibir gados ainda pendentes de sincronização.
+ * Prévia dos valores calculados de uma cabeça — mesma fórmula do backend (calcularGado),
+ * que continua sendo a fonte autoritativa ao salvar. `rendimento` e `valorUnidade` são
+ * os do lote escolhido. Usada no formulário (tempo real) e para exibir cabeças ainda
+ * pendentes de sincronização.
  */
 export function estimarValoresGado(
   modalidade: Modalidade,
@@ -21,14 +15,26 @@ export function estimarValoresGado(
   valorUnidade: number
 ) {
   // Valores exatos, sem arredondamento (a pedido do cliente).
-  const pesoCalculo = (pesoTotal * rendimento) / 100;
-  const pesoArroba = pesoCalculo / KG_PER_ARROBA;
   switch (modalidade) {
-    case "arroba":
+    case "arroba": {
+      const pesoCalculo = (pesoTotal * rendimento) / 100;
+      const pesoArroba = pesoCalculo / KG_PER_ARROBA;
       return { pesoCalculo, pesoArroba, valorTotal: pesoArroba * valorUnidade };
+    }
     case "kg":
-      return { pesoCalculo, pesoArroba, valorTotal: valorUnidade * pesoTotal };
+      // Sem rendimento: o peso de cálculo é o próprio peso.
+      return { pesoCalculo: pesoTotal, pesoArroba: pesoTotal / KG_PER_ARROBA, valorTotal: pesoTotal * valorUnidade };
     case "cabeca":
       return { pesoCalculo: 0, pesoArroba: 0, valorTotal: valorUnidade };
   }
+}
+
+/** Prévia de uma cabeça no formato gravado (guardada também para cabeças na fila offline). */
+export function estimarGado(
+  modalidade: Modalidade,
+  lote: Pick<Lote, "rendimento_carcaca" | "valor_unidade">,
+  pesoTotal: number
+) {
+  const v = estimarValoresGado(modalidade, pesoTotal, lote.rendimento_carcaca, lote.valor_unidade);
+  return { peso_calculo: v.pesoCalculo, peso_arroba: v.pesoArroba, valor_total: v.valorTotal };
 }
