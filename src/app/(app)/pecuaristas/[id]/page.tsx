@@ -7,6 +7,7 @@ import { Pencil, Plus, Warehouse } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { BackLink } from "@/components/back-link";
+import { BotaoMapa } from "@/components/botao-mapa";
 import { PecuaristaFields, pecuaristaSchema, type PecuaristaFormValues } from "@/components/pecuarista-fields";
 import { Button } from "@/components/ui/button";
 import { desvincularFazenda, fetchPecuarista, updatePecuarista } from "@/lib/api/pecuaristas";
@@ -116,6 +117,11 @@ export default function EditarPecuaristaPage() {
                       <p className="card-meta">
                         {fazenda.municipio} · I.E.: {fazenda.inscricao_estadual}
                       </p>
+                      <BotaoMapa
+                        localizacao={fazenda.localizacao_google}
+                        endereco={fazenda.endereco_fazenda}
+                        className={styles.verMapa}
+                      />
                       {/* Precisa de ao menos uma fazenda: a última não é desvinculada. */}
                       {fazendas.length > 1 ? (
                         <button

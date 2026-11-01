@@ -10,9 +10,7 @@ import {
   formatNumber,
   formatPercent,
 } from "@/lib/format";
-import type { Fazenda, Gado, NegocioDetail } from "@/lib/api/types";
-import { rendimentoDaRaca } from "@/lib/calculo-gado";
-import { RACAS_RENDIMENTO } from "@/lib/labels";
+import type { Fazenda, Gado, Lote, NegocioDetail } from "@/lib/api/types";
 
 /**
  * Romaneio de pesagens: um negócio gera dois arquivos, um por modelo (solução
@@ -32,18 +30,17 @@ import { RACAS_RENDIMENTO } from "@/lib/labels";
  *   senar), nunca recalculados aqui. {{rend-arroba}} é o rendimento médio do
  *   negócio (ponderado pelo peso); funrural/senar já vêm conforme o tipo de negócio
  *   (zero sai "R$ 0,00").
- * - Cabeçalho, novos: {{tipo-negocio}} {{media-carimbo}} {{rend-nelore}}
- *   {{rend-anelorado}} {{rend-angus}} {{rend-composto}} (os quatro só na modalidade
- *   "arroba"; nas demais saem em branco).
+ * - Cabeçalho, opcional: {{tipo-negocio}}.
  * - Modelo 1, linha da tabela "Cabeças Negociadas": {{#gados}} na primeira
- *   célula e {{/gados}} na última, com {{denominacao}} {{genero}} {{ano}}
- *   {{peso-total}} {{peso-calculo}} {{rend-carcaca}} {{peso-arroba}}
- *   {{data-pesagem}} {{hora-pesagem}} {{valor-total}}. {{rend-carcaca}} é o
- *   percentual da categoria do animal no negócio. O carimbo (mês) por animal deixou
- *   de existir: a coluna {{carimbo}} do modelo-romaneio1.docx sai em branco até ser
- *   removida do .docx (ou trocada por {{media-carimbo}} no cabeçalho).
+ *   célula e {{/gados}} na última. Do LOTE da cabeça: {{denominacao}} (nome do lote),
+ *   {{lote}} (idem, para uma coluna "Lote"), {{genero}}, {{carimbo}} (média do carimbo),
+ *   {{ano}} (ano do carimbo) e {{rend-carcaca}} (rendimento de carcaça do lote). Da
+ *   cabeça: {{peso-total}} {{peso-calculo}} {{peso-arroba}} {{data-pesagem}}
+ *   {{hora-pesagem}} {{valor-total}}. Ordem: lote a lote (ordem de cadastro) e, dentro
+ *   do lote, por gado_id.
  * - Modelo 2, grade: {{p1}}…{{p120}} (peso do animal) e {{t1}}…{{t6}} (soma da
- *   coluna); {{n1}}…{{n120}} trazem o número da posição já somando o bloco.
+ *   coluna); {{n1}}…{{n120}} trazem o número da posição já somando o bloco. Mesma ordem
+ *   lote a lote; os blocos de 120 não mudam.
  */
 
 const TEMPLATE_URL_MODELO1 = "/templates/modelo-romaneio1.docx";
@@ -69,8 +66,11 @@ function campo(valor: number | null, formatar: (v: number) => string) {
   return valor !== null ? formatar(valor) : "";
 }
 
-function gadosOrdenados(negocio: NegocioDetail) {
-  return [...negocio.gados].sort((a, b) => a.gado_id - b.gado_id);
+/** Cabeças lote a lote (ordem de cadastro dos lotes) e, dentro do lote, por gado_id. */
+function gadosOrdenados(negocio: NegocioDetail): { gado: Gado; lote: Lote }[] {
+  return [...negocio.lotes]
+    .sort((a, b) => a.lote_id - b.lote_id)
+    .flatMap((lote) => [...lote.gados].sort((a, b) => a.gado_id - b.gado_id).map((gado) => ({ gado, lote })));
 }
 
 function nomeFazenda(negocio: NegocioDetail, fazenda: Fazenda | undefined) {
@@ -105,13 +105,6 @@ export function montarDadosCabecalho(negocio: NegocioDetail, fazenda: Fazenda | 
     aliquota_funrural: campo(negocio.aliquota_funrural, formatDecimalCurto),
     aliquota_senar: campo(negocio.aliquota_senar, formatDecimalCurto),
     "tipo-negocio": negocio.tipo_negocio ?? "",
-    "media-carimbo": negocio.media_carimbo ?? "",
-    ...Object.fromEntries(
-      RACAS_RENDIMENTO.map((raca) => [
-        `rend-${raca.toLowerCase()}`,
-        negocio.modalidade === "arroba" ? formatPercent(rendimentoDaRaca(negocio, raca)) : "",
-      ])
-    ),
 
     // Dados bancários do pecuarista (o campo "Nome" reaproveita {{nome-pecuarista}}).
     "cpf-cnpj": pecuarista?.cpf_cnpj ?? "",
@@ -122,14 +115,16 @@ export function montarDadosCabecalho(negocio: NegocioDetail, fazenda: Fazenda | 
   };
 }
 
-function linhaGado(gado: Gado): Record<string, string> {
+function linhaGado({ gado, lote }: { gado: Gado; lote: Lote }): Record<string, string> {
   return {
-    denominacao: gado.denominacao,
-    genero: formatGenero(gado.genero),
-    ano: gado.ano_carimbo,
+    denominacao: lote.nome_lote,
+    lote: lote.nome_lote,
+    genero: formatGenero(lote.genero),
+    carimbo: lote.media_carimbo,
+    ano: lote.ano_carimbo,
     "peso-total": formatNumber(gado.peso_total),
     "peso-calculo": formatNumber(gado.peso_calculo),
-    "rend-carcaca": campo(gado.rendimento_carcaca, formatPercent),
+    "rend-carcaca": formatPercent(lote.rendimento_carcaca),
     "peso-arroba": formatNumber(gado.peso_arroba),
     "data-pesagem": formatDate(gado.data_pesagem),
     "hora-pesagem": formatHora(gado.horario_pesagem),
@@ -161,7 +156,7 @@ export function montarDadosModelo2(negocio: NegocioDetail, fazenda: Fazenda | un
     const deslocamento = bloco * POSICOES_GRADE;
 
     for (let posicao = 1; posicao <= POSICOES_GRADE; posicao++) {
-      const gado = gados[deslocamento + posicao - 1];
+      const gado = gados[deslocamento + posicao - 1]?.gado;
       dados[`n${posicao}`] = String(deslocamento + posicao);
       dados[`p${posicao}`] = gado ? formatNumber(gado.peso_total) : "";
       if (gado) totaisColuna[Math.floor((posicao - 1) / LINHAS_POR_COLUNA)] += gado.peso_total;
@@ -255,7 +250,7 @@ export async function gerarRomaneios(
       // O modelo 2 tem a numeração 1–120 fixa no documento, então as partes
       // seguintes também aparecem numeradas a partir do 1.
       avisos.push(
-        `${nomeFazenda(negocio, fazenda)} (${formatDate(negocio.data_negocio)}) tem ${negocio.gados.length} animais, ` +
+        `${nomeFazenda(negocio, fazenda)} (${formatDate(negocio.data_negocio)}) tem ${gadosOrdenados(negocio).length} animais, ` +
           `mais que as ${POSICOES_GRADE} posições do romaneio 2: ele foi dividido em ${blocos.length} arquivos ` +
           `(cada parte numerada de 1 a ${POSICOES_GRADE}).`
       );

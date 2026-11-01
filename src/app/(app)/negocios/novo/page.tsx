@@ -12,7 +12,7 @@ import { fetchPecuaristas } from "@/lib/api/pecuaristas";
 import type { Pecuarista } from "@/lib/api/types";
 import { FISICO_JURIDICO_LABELS } from "@/lib/labels";
 import { ApiError } from "@/lib/api-client";
-import { useNegocioFlow } from "@/lib/flows/negocio-flow";
+import { PASSOS_NOVO_NEGOCIO, useNegocioFlow } from "@/lib/flows/negocio-flow";
 import { PendenteBadge } from "@/components/offline/pendente-badge";
 import { mesclarPendentes, usePecuaristasPendentes, type ComPendencia } from "@/lib/offline/pendentes";
 import styles from "./page.module.css";
@@ -59,7 +59,7 @@ export default function NovoNegocioPecuaristaPage() {
     <div className="page-container page-wide pt-safe">
       <BackLink href="/" />
       <h1 className={cn("page-title", styles.title)}>Cadastrar Novo Negócio</h1>
-      <ProgressSteps current={1} total={7} />
+      <ProgressSteps current={1} total={PASSOS_NOVO_NEGOCIO} />
 
       <div className="search-box">
         <Search className="search-icon" size={18} />

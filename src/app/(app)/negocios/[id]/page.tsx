@@ -3,124 +3,57 @@
 import * as React from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { Warehouse, Beef, FileText, Pencil, Plus } from "lucide-react";
+import { Beef, FileText, Plus } from "lucide-react";
 import { BackLink } from "@/components/back-link";
+import { PendenteBadge } from "@/components/offline/pendente-badge";
 import { Button } from "@/components/ui/button";
 import { Fab } from "@/components/fab";
 import { ComissaoForm } from "@/components/comissao-form";
+import { NegocioCarrossel } from "@/components/negocio-carrossel";
 import { TipoNegocioForm } from "@/components/tipo-negocio-form";
-import { formatCurrency, formatNumber, formatGenero, formatHora, formatDate, formatPercent } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { formatCurrency, formatHora, formatNumber, formatPercent } from "@/lib/format";
+import { GENERO_LABELS } from "@/lib/labels";
 import { fetchNegocio } from "@/lib/api/negocios";
-import { fetchFazendas } from "@/lib/api/fazendas";
 import { gerarRomaneios } from "@/lib/relatorio-romaneio";
-import { rendimentoDaRaca } from "@/lib/calculo-gado";
-import { MODALIDADE_LABELS, RACAS_RENDIMENTO, TIPO_GADO_LABELS, TIPO_NEGOCIO_LABELS } from "@/lib/labels";
-import type { Fazenda, NegocioDetail } from "@/lib/api/types";
-import { ApiError } from "@/lib/api-client";
-import { PendenteBadge } from "@/components/offline/pendente-badge";
-import { useVersaoSincronizacao } from "@/lib/offline/fila";
-import { comGadosPendentes, useGadosPendentes } from "@/lib/offline/pendentes";
+import { useNegocioComPendencias } from "@/lib/flows/use-negocio-com-pendencias";
+import { mensagemDeErro } from "@/lib/offline/rede";
 import styles from "./page.module.css";
-
-/** "Funrural (1,5%)" — alíquota gravada no próprio negócio; sem ela, só o nome. */
-function rotuloAliquota(nome: string, aliquota: number | null) {
-  return aliquota !== null ? `${nome} (${formatPercent(aliquota)})` : nome;
-}
 
 export default function NegocioDetailPage() {
   const params = useParams<{ id: string }>();
-  const [negocioServidor, setNegocio] = React.useState<NegocioDetail | null>(null);
-  // Gados cadastrados offline para este negócio, ainda na fila do aparelho.
-  const gadosPendentes = useGadosPendentes(Number(params.id));
-  const negocio = React.useMemo(
-    () => (negocioServidor ? comGadosPendentes(negocioServidor, gadosPendentes) : null),
-    [negocioServidor, gadosPendentes]
-  );
-  // Recarrega quando a fila é sincronizada (os gados pendentes passam a vir da API).
-  const versaoSincronizacao = useVersaoSincronizacao();
-  const [fazenda, setFazenda] = React.useState<Fazenda | null>(null);
-  const fazendaNome = fazenda?.nome_fazenda ?? null;
-  const [error, setError] = React.useState<string | null>(null);
-  const [reloadKey, setReloadKey] = React.useState(0);
+  const { negocio, erro, recarregar } = useNegocioComPendencias(Number(params.id));
 
   const [gerandoRelatorio, setGerandoRelatorio] = React.useState(false);
   const [relatorioError, setRelatorioError] = React.useState<string | null>(null);
   const [relatorioAvisos, setRelatorioAvisos] = React.useState<string[]>([]);
 
-  React.useEffect(() => {
-    let cancelled = false;
-    // Reset to the loading state for this fetch — React's own data-fetching
-    // pattern (see "Synchronizing with Effects"). Safe: guarded by `cancelled`.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setNegocio(null);
-    setError(null);
-
-    Promise.all([fetchNegocio(params.id), fetchFazendas()])
-      .then(([negocioData, fazendasData]) => {
-        if (cancelled) return;
-        setNegocio(negocioData);
-        setFazenda(fazendasData.find((f) => f.fazenda_id === negocioData.fazenda_id) ?? null);
-      })
-      .catch((err: unknown) => {
-        if (cancelled) return;
-        setError(err instanceof ApiError || err instanceof Error ? err.message : "Erro ao carregar.");
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [params.id, reloadKey, versaoSincronizacao]);
-
-  // Modalidade "cabeca": sem pesagem nem gados individuais — o valor por cabeça é o próprio valor_unidade.
   const porCabeca = negocio?.modalidade === "cabeca";
-  const porArroba = negocio?.modalidade === "arroba";
-  const valorMedio =
-    negocio?.valor_medio ??
-    (porCabeca ? negocio.valor_unidade : null) ??
-    (negocio && negocio.gados.length > 0
-      ? negocio.gados.reduce((sum, g) => sum + (g.valor_total ?? 0), 0) / negocio.gados.length
-      : 0);
-
-  // Campos do romaneio vêm calculados da API. Negócio ainda só no aparelho (id
-  // negativo): ficam "—" até a sincronização — o cálculo não é replicado aqui.
   const sincronizado = (negocio?.negocio_id ?? 0) > 0;
-  const romaneio = (valor: number | null | undefined, formatar: (v: number) => string) =>
-    sincronizado && valor !== null && valor !== undefined ? formatar(valor) : "—";
-  const itensRomaneio: { label: string; valor: string }[] = negocio
-    ? [
-        // Pesos e rendimento não se aplicam à modalidade "cabeca" (sem pesagem).
-        ...(porCabeca
-          ? []
-          : [
-              { label: "Peso total (kg)", valor: romaneio(negocio.peso_total_quilos, (v) => formatNumber(v)) },
-              { label: "Peso total (@)", valor: romaneio(negocio.peso_total_arroba, (v) => formatNumber(v)) },
-              { label: "Rendimento médio", valor: romaneio(negocio.rendimento_medio, formatPercent) },
-              { label: "Peso médio (@)", valor: romaneio(negocio.peso_medio_arroba, (v) => formatNumber(v)) },
-              { label: "Peso médio (kg)", valor: romaneio(negocio.peso_medio_quilos, (v) => formatNumber(v)) },
-            ]),
-        { label: "Valor médio por cabeça", valor: romaneio(valorMedio, formatCurrency) },
-        { label: rotuloAliquota("Funrural", negocio.aliquota_funrural), valor: romaneio(negocio.funrural, formatCurrency) },
-        { label: rotuloAliquota("Senar", negocio.aliquota_senar), valor: romaneio(negocio.senar, formatCurrency) },
-      ]
-    : [];
+
+  // Filtro dos chips do carrossel: 0 = "Geral", i = i-ésimo lote.
+  const [filtro, setFiltro] = React.useState(0);
+  const lotes = negocio?.lotes ?? [];
+  const loteFiltrado = filtro > 0 ? (lotes[Math.min(filtro, lotes.length) - 1] ?? null) : null;
+  const cabecas = (loteFiltrado ? [loteFiltrado] : lotes).flatMap((lote) =>
+    lote.gados.map((gado) => ({ gado, lote }))
+  );
 
   async function handleGerarRelatorio() {
-    if (!negocioServidor) return;
+    if (!negocio || !sincronizado) return;
     setRelatorioError(null);
     setRelatorioAvisos([]);
     setGerandoRelatorio(true);
     try {
-      // Só o que já está no servidor: gados pendentes têm valores apenas estimados.
+      // Só o que já está no servidor: cabeças pendentes têm valores apenas estimados.
+      const servidor = await fetchNegocio(negocio.negocio_id);
       const { avisos } = await gerarRomaneios(
-        [negocioServidor],
-        fazenda ? { [fazenda.fazenda_id]: fazenda } : {}
+        [servidor],
+        servidor.fazenda ? { [servidor.fazenda.fazenda_id]: servidor.fazenda } : {}
       );
       setRelatorioAvisos(avisos);
     } catch (err) {
-      setRelatorioError(
-        err instanceof ApiError || err instanceof Error ? err.message : "Erro ao gerar relatório."
-      );
+      setRelatorioError(mensagemDeErro(err, "Erro ao gerar relatório."));
     } finally {
       setGerandoRelatorio(false);
     }
@@ -130,17 +63,13 @@ export default function NegocioDetailPage() {
     <div className={cn("page-wide", styles.page, "pt-safe")}>
       <BackLink href="/negocios" />
 
-      {!negocio && !error ? <div className="state-box glass-panel">Carregando negócio...</div> : null}
+      {!negocio && !erro ? <div className="state-box glass-panel">Carregando negócio...</div> : null}
 
-      {error ? (
+      {erro && !negocio ? (
         <div className="state-box state-error glass-panel">
-          {error}
+          {erro}
           <div>
-            <Button
-              className="retry-button"
-              variant="brand"
-              onClick={() => setReloadKey((k) => k + 1)}
-            >
+            <Button className="retry-button" variant="brand" onClick={() => recarregar()}>
               Tentar novamente
             </Button>
           </div>
@@ -149,163 +78,20 @@ export default function NegocioDetailPage() {
 
       {negocio ? (
         <>
-          <div className={cn(styles.summary, "glass-dark")}>
-            <div className="card-header">
-              <span className="card-icon-on-dark">
-                <Warehouse size={18} />
-              </span>
-              <div>
-                <p className={styles.summaryFarm}>
-                  {fazendaNome ?? `#${negocio.fazenda_id}`}
-                </p>
-               
-              </div>
-            </div>
-          
-
-
-            <div className={styles.summaryFooter}>
-
-               <span>Pecuarista: {negocio.pecuarista.nome_pecuarista}</span>
-              
-             </div>
-
-             <div className={styles.summaryFooter}>
-
-               <span>Comprador: {negocio.comprador.nome_empresa}</span>
-              
-             </div>
-
-
-             <div className={styles.summaryFooter}>
-
-               <span>Modalidade: {MODALIDADE_LABELS[negocio.modalidade]}</span>
-             </div>
-
-             <div className={styles.summaryFooter}>
-               <span>Tipo de negócio: {TIPO_NEGOCIO_LABELS[negocio.tipo_negocio] ?? "—"}</span>
-             </div>
-
-             <div className={styles.summaryFooter}>
-               <span>Gado: {TIPO_GADO_LABELS[negocio.tipo_gado] ?? negocio.tipo_gado}</span>
-               <span>Carimbo (média): {negocio.media_carimbo || "—"}</span>
-              
-             </div>
-
-               <div className={styles.summaryFooter}>
-
-               <span>Valor p/ un.: {formatCurrency(negocio.valor_unidade)}</span>
-              
-             </div>
-
-              <div className={styles.summaryFooter}>
-
-               <span> Data: {formatDate(negocio.data_negocio)} </span>
-              
-             </div>
-             
-
-            <div className={styles.summaryFooter}>
-              <span>
-                Início Pesagem: {negocio.hora_inicio_pesagem ? `${formatHora(negocio.hora_inicio_pesagem) || "…"}`
-                    : "—"}
-              </span>
-
-              <span>Fim Pesagem: {negocio.hora_fim_pesagem ? `${formatHora(negocio.hora_fim_pesagem) || "…"} ` : "—"} </span>
-             
-            </div>
-
-           
-          </div>
-
-           <div className={cn(styles.summary, "glass-dark")}>
-
-             <div className={styles.summaryFooter}>
-              <span>
-                Cabeças Negociadas: <b>{negocio.qtd_animais ?? negocio.gados.length}</b>
-              </span>
-             
-            </div>
-
-
-
-            <div className={styles.summaryFooter}>
-              <span>
-                Comissão: <b>{negocio.comissao !== null ? formatCurrency(negocio.comissao) : "—"}</b>
-              </span>
-            </div>
-
-
-           </div>
-
-          <div className={cn(styles.summary, "glass-dark")}>
-
-             <div className={styles.summaryFooter}>
-              <span>
-                Cabeça mais leve: <b>{negocio.mais_leve}</b>
-              </span>
-            </div>
-
-             <div className={styles.summaryFooter}>
-              <span>
-                Cabeça mais pesada: <b>{negocio.mais_pesado}</b>
-              </span>
-            </div>
-          </div>
-
-          <div className={cn(styles.summary, "glass-dark")}>
-            <p className={styles.romaneioTitle}>Resumo do romaneio</p>
-            <dl className={styles.romaneioGrid}>
-              {itensRomaneio.map((item) => (
-                <div key={item.label} className={styles.romaneioItem}>
-                  <dt className={styles.romaneioLabel}>{item.label}</dt>
-                  <dd className={styles.romaneioValue}>{item.valor}</dd>
-                </div>
-              ))}
-            </dl>
-          </div>
-
-          {porArroba ? (
-            <div className={cn(styles.summary, "glass-dark")}>
-              <p className={styles.romaneioTitle}>Rendimentos por categoria</p>
-              <dl className={styles.romaneioGrid}>
-                {RACAS_RENDIMENTO.map((raca) => (
-                  <div key={raca} className={styles.romaneioItem}>
-                    <dt className={styles.romaneioLabel}>{raca}</dt>
-                    <dd className={styles.romaneioValue}>{formatPercent(rendimentoDaRaca(negocio, raca))}</dd>
-                  </div>
-                ))}
-              </dl>
-              {/* Negócio ainda só no aparelho não tem tela própria. */}
-              {sincronizado ? (
-                <Button
-                  variant="brand"
-                  className={styles.editarRendimentos}
-                  render={<Link href={`/negocios/${negocio.negocio_id}/rendimentos`} />}
-                >
-                  <Pencil size={14} aria-hidden /> Editar rendimentos
-                </Button>
-              ) : null}
-            </div>
-          ) : null}
+          <NegocioCarrossel
+            negocio={negocio}
+            fazenda={negocio.fazenda ?? null}
+            ativo={filtro}
+            onAtivoChange={setFiltro}
+            cabecasNoQuadro={false}
+          />
 
           {sincronizado ? (
             <TipoNegocioForm
               key={negocio.tipo_negocio}
               negocioId={negocio.negocio_id}
               tipoNegocio={negocio.tipo_negocio}
-              onUpdated={(atualizado) =>
-                setNegocio((atual) =>
-                  atual
-                    ? {
-                        ...atual,
-                        tipo_negocio: atualizado.tipo_negocio,
-                        funrural: atualizado.funrural,
-                        senar: atualizado.senar,
-                      }
-                    : atual
-                )
-              }
+              onUpdated={() => recarregar()}
             />
           ) : null}
 
@@ -313,46 +99,44 @@ export default function NegocioDetailPage() {
             negocioId={negocio.negocio_id}
             porcentagem={negocio.porcentagem_comissao}
             comissao={negocio.comissao}
-            onUpdated={({ porcentagem_comissao, comissao }) =>
-              setNegocio((atual) => (atual ? { ...atual, porcentagem_comissao, comissao } : atual))
-            }
+            onUpdated={() => recarregar()}
           />
 
-
-          {porCabeca && negocio.gados.length === 0 ? null : negocio.gados.length === 0 ? (
-            <div className="state-box glass-panel">Nenhum gado cadastrado neste negócio.</div>
+          {/* Cabeças do filtro ativo ("Geral" = todas). Negócios "cabeca" não têm pesagem. */}
+          {porCabeca ? null : cabecas.length === 0 ? (
+            <div className="state-box glass-panel">
+              {loteFiltrado ? "Nenhum gado cadastrado neste lote." : "Nenhum gado cadastrado neste negócio."}
+            </div>
           ) : (
             <div className={styles.gadoList}>
-              {negocio.gados.map((gado) => {
+              {cabecas.map(({ gado, lote }) => {
                 const conteudo = (
                   <>
                     <span className={styles.gadoIcon}>
                       <Beef size={18} />
                     </span>
                     <div className={styles.gadoInfo}>
-                      <p className={styles.gadoName}>{gado.denominacao}</p>
-
-                      <p className={styles.gadoMeta}> Gênero: {formatGenero(gado.genero)}  </p>
-                       {porArroba && gado.rendimento_carcaca !== null ? (
-                         <p className={styles.gadoMeta}> Rend.: {formatPercent(gado.rendimento_carcaca)}</p>
-                       ) : null}
-                       <p className={styles.gadoMeta}>Peso p/ cálculo: {formatNumber(gado.peso_calculo)}</p>
-                       <p className={styles.gadoMeta}>   {gado.horario_pesagem ? ` Pesado às ${formatHora(gado.horario_pesagem)}` : null} </p>
-                       <p className={styles.gadoMeta}>Peso total: {formatNumber(gado.peso_total)} </p>
-                        <p className={styles.gadoMeta}>Peso da @: {formatNumber(gado.peso_arroba)} </p>
-                        {gado.pendente ? <PendenteBadge pendente={gado.pendente} /> : null}
+                      <p className={styles.gadoName}>{lote.nome_lote}</p>
+                      <p className={styles.gadoMeta}>Gênero: {GENERO_LABELS[lote.genero]}</p>
+                      <p className={styles.gadoMeta}>Rend.: {formatPercent(lote.rendimento_carcaca)}</p>
+                      <p className={styles.gadoMeta}>Peso p/ cálculo: {formatNumber(gado.peso_calculo)}</p>
+                      <p className={styles.gadoMeta}>
+                        {gado.horario_pesagem ? `Pesado às ${formatHora(gado.horario_pesagem)}` : null}
+                      </p>
+                      <p className={styles.gadoMeta}>Peso total: {formatNumber(gado.peso_total)}</p>
+                      <p className={styles.gadoMeta}>Peso da @: {formatNumber(gado.peso_arroba)}</p>
+                      {gado.pendente ? <PendenteBadge pendente={gado.pendente} /> : null}
                     </div>
                     <div className={styles.gadoAmount}>
                       <p className={styles.gadoAmountValue}>
                         {gado.valor_total !== null ? formatCurrency(gado.valor_total) : "—"}
                       </p>
-                      <p className={styles.gadoMeta}>Valor da cabeça</p>  
+                      <p className={styles.gadoMeta}>Valor da cabeça</p>
                     </div>
                   </>
                 );
-                // Negócios "cabeca" não têm gados individuais editáveis; gados pendentes
-                // (só no aparelho) também não — a edição em tela própria usa a API.
-                return porCabeca || gado.pendente ? (
+                // Cabeças pendentes (só no aparelho) não abrem a edição: ela usa a API.
+                return gado.pendente || gado.gado_id <= 0 ? (
                   <div key={gado.gado_id} className={styles.gadoRow}>
                     {conteudo}
                   </div>
@@ -361,10 +145,9 @@ export default function NegocioDetailPage() {
                     key={gado.gado_id}
                     href={`/negocios/${negocio.negocio_id}/gado/${gado.gado_id}/editar`}
                     className={cn(styles.gadoRow, styles.gadoRowLink)}
-                    aria-label={`Editar ${gado.denominacao}`}
+                    aria-label={`Editar cabeça de ${formatNumber(gado.peso_total)} kg do ${lote.nome_lote}`}
                   >
                     {conteudo}
-                    
                   </Link>
                 );
               })}
@@ -384,12 +167,12 @@ export default function NegocioDetailPage() {
         icon={FileText}
         label="Gerar relatório"
         onClick={handleGerarRelatorio}
-        disabled={gerandoRelatorio || !negocio}
-        disabledTitle={gerandoRelatorio ? "Gerando relatório..." : "Em breve"}
+        disabled={gerandoRelatorio || !negocio || !sincronizado}
+        disabledTitle={gerandoRelatorio ? "Gerando relatório..." : "Disponível após a sincronização"}
       />
 
-      {/* Negócios "cabeca" não têm cadastro individual de gado. */}
-      {negocio && !porCabeca ? (
+      {/* Negócios "cabeca" não têm pesagem; sem lote não há onde registrar a cabeça. */}
+      {negocio && !porCabeca && negocio.lotes.length > 0 ? (
         <Fab icon={Plus} label="Adicionar gado" href={`/negocios/${negocio.negocio_id}/gado/novo`} stacked />
       ) : null}
     </div>

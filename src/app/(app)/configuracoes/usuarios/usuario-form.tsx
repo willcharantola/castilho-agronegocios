@@ -15,8 +15,12 @@ import { useOnlineStatus } from "@/lib/offline/use-online-status";
 import { SENHA_MAX, SENHA_MIN } from "@/lib/senha";
 import { cn } from "@/lib/utils";
 import fieldBox from "@/components/form/field-box.module.css";
-import { NIVEL_LABELS } from "../usuarios-section";
 import styles from "./usuario-form.module.css";
+
+export const NIVEL_LABELS: Record<Usuario["nivel_acesso"], string> = {
+  Admin: "Administrador",
+  Normal: "Normal",
+};
 
 const camposBase = {
   nome: z.string().trim().min(1, "Informe o nome.").max(50, "Máximo de 50 caracteres."),

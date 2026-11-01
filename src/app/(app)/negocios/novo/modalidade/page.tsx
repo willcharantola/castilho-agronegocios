@@ -8,7 +8,7 @@ import { ProgressSteps } from "@/components/progress-steps";
 import { cn } from "@/lib/utils";
 import type { Modalidade } from "@/lib/api/types";
 import { MODALIDADE_LABELS } from "@/lib/labels";
-import { useNegocioFlow } from "@/lib/flows/negocio-flow";
+import { PASSOS_NOVO_NEGOCIO, useNegocioFlow } from "@/lib/flows/negocio-flow";
 import styles from "./page.module.css";
 
 const OPCOES: { modalidade: Modalidade; icon: LucideIcon; descricao: string }[] = [
@@ -38,7 +38,7 @@ export default function NovoNegocioModalidadePage() {
     <div className="page-container page-wide pt-safe">
       <BackLink href="/negocios/novo/comprador" />
       <h1 className={cn("page-title", styles.title)}>Cadastrar Novo Negócio</h1>
-      <ProgressSteps current={4} total={7} />
+      <ProgressSteps current={4} total={PASSOS_NOVO_NEGOCIO} />
 
       <div className="summary-card glass-dark">
         <span className="card-icon-on-dark">

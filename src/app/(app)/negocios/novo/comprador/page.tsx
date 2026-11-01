@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 import { fetchCompradores } from "@/lib/api/compradores";
 import type { Comprador } from "@/lib/api/types";
 import { ApiError } from "@/lib/api-client";
-import { useNegocioFlow } from "@/lib/flows/negocio-flow";
+import { PASSOS_NOVO_NEGOCIO, useNegocioFlow } from "@/lib/flows/negocio-flow";
 import { PendenteBadge } from "@/components/offline/pendente-badge";
 import { mesclarPendentes, useCompradoresPendentes, type ComPendencia } from "@/lib/offline/pendentes";
 import styles from "./page.module.css";
@@ -51,7 +51,7 @@ export default function NovoNegocioCompradorPage() {
     <div className="page-container page-wide pt-safe">
       <BackLink href="/negocios/novo/fazenda" />
       <h1 className={cn("page-title", styles.title)}>Cadastrar Novo Negócio</h1>
-      <ProgressSteps current={3} total={7} />
+      <ProgressSteps current={3} total={PASSOS_NOVO_NEGOCIO} />
 
       <div className="summary-card glass-dark">
         <span className="card-icon-on-dark">

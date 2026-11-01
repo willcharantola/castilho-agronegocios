@@ -23,6 +23,15 @@
   cursor: pointer;
 }
 
+.coluna {
+  flex-direction: column;
+}
+
+.coluna .opcao {
+  flex-basis: auto;
+  gap: 0.25rem;
+}
+
 .selecionada {
   border-color: var(--color-teal);
   background: var(--color-teal);

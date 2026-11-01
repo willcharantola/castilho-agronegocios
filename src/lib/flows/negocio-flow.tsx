@@ -1,8 +1,12 @@
 "use client";
 
 import { createFlowContext } from "@/lib/create-flow-context";
-import type { Modalidade, RendimentosNegocio, TipoGado, TipoLote, TipoNegocio } from "@/lib/api/types";
+import type { Modalidade, TipoGado, TipoNegocio } from "@/lib/api/types";
 
+/**
+ * Fluxo do novo negócio: pecuarista → fazenda → comprador → modalidade → informações →
+ * lotes ("arroba"/"kg") ou lote único ("cabeca") → pesagem (exceto "cabeca") → revisão.
+ */
 export type NegocioFlowData = {
   pecuaristaId: number | null;
   pecuaristaNome: string;
@@ -13,20 +17,16 @@ export type NegocioFlowData = {
   compradorNome: string;
   modalidade: Modalidade | "";
   tipoGado: TipoGado | "";
-  tipoLote: TipoLote | "";
   tipoNegocio: TipoNegocio | "";
-  /** Texto livre (ex.: "8,9 e 10"). */
-  mediaCarimbo: string;
-  valorUnidade: number | null;
   /** Percentual (0 a 100). */
   porcentagemComissao: number | null;
   /** yyyy-mm-dd vindo de um <input type="date">. */
   dataNegocio: string;
   observacao: string;
-  /** Rendimentos por categoria — só na modalidade "arroba" (tela /negocios/novo/rendimentos). */
-  rendimentos: RendimentosNegocio | null;
-  /** Setado assim que POST /negocios é bem-sucedido — a partir daí o negócio já existe de verdade. */
+  /** Setado assim que POST /negocios é bem-sucedido (negativo se ficou na fila offline). */
   negocioId: number | null;
+  /** Último lote usado na pesagem — fica pré-selecionado na próxima cabeça. */
+  ultimoLoteId: number | null;
 };
 
 export const { Provider: NegocioFlowProvider, useFlow: useNegocioFlow } =
@@ -39,13 +39,13 @@ export const { Provider: NegocioFlowProvider, useFlow: useNegocioFlow } =
     compradorNome: "",
     modalidade: "",
     tipoGado: "",
-    tipoLote: "",
     tipoNegocio: "",
-    mediaCarimbo: "",
-    valorUnidade: null,
     porcentagemComissao: null,
     dataNegocio: "",
     observacao: "",
-    rendimentos: null,
     negocioId: null,
+    ultimoLoteId: null,
   });
+
+/** Total de passos da barra de progresso do novo negócio. */
+export const PASSOS_NOVO_NEGOCIO = 8;
