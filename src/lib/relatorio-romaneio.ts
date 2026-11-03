@@ -11,18 +11,17 @@ import {
   formatPercent,
 } from "@/lib/format";
 import type { Fazenda, Gado, Lote, NegocioDetail } from "@/lib/api/types";
+import { docxParaPdf } from "@/lib/docx-para-pdf";
 
 /**
- * Romaneio de pesagens: um negócio gera dois arquivos, um por modelo (solução
- * temporária até o cliente escolher qual usar — ver instrucoes-romaneio.md).
+ * Romaneio de pesagens em PDF: o modelo 1 (.docx) é preenchido e convertido em PDF no
+ * próprio navegador (ver docx-para-pdf). O modelo 2 (grade de 120 posições) está fora da
+ * geração por enquanto; o arquivo continua em public/templates.
  *
- * Os modelos usam chaves duplas e nomes com hífen ({{nome-fazenda}}). Hoje eles
- * só têm os placeholders do cabeçalho e dos dados bancários; os demais dados
- * (totais, tabela de cabeças, grade de pesos) já são montados aqui com os nomes
- * abaixo e passam a sair no documento assim que os placeholders forem
- * adicionados aos .docx:
+ * O modelo usa chaves duplas e nomes com hífen ({{nome-fazenda}}). Os dados abaixo já são
+ * montados aqui e saem no documento quando o placeholder existe no .docx:
  *
- * - Totais (os dois modelos): {{total-kg}} {{total-arroba}} {{rend-arroba}}
+ * - Totais: {{total-kg}} {{total-arroba}} {{rend-arroba}}
  *   {{media-peso}} {{media-arroba}} {{valor-bruto}} {{funrural}} {{senar}}
  *   {{aliquota_funrural}} {{aliquota_senar}} (alíquotas em %, ex.: "1,5") — lidos
  *   dos campos calculados pela API (peso_total_quilos, peso_total_arroba,
@@ -38,17 +37,9 @@ import type { Fazenda, Gado, Lote, NegocioDetail } from "@/lib/api/types";
  *   cabeça: {{peso-total}} {{peso-calculo}} {{peso-arroba}} {{data-pesagem}}
  *   {{hora-pesagem}} {{valor-total}}. Ordem: lote a lote (ordem de cadastro) e, dentro
  *   do lote, por gado_id.
- * - Modelo 2, grade: {{p1}}…{{p120}} (peso do animal) e {{t1}}…{{t6}} (soma da
- *   coluna); {{n1}}…{{n120}} trazem o número da posição já somando o bloco. Mesma ordem
- *   lote a lote; os blocos de 120 não mudam.
  */
 
 const TEMPLATE_URL_MODELO1 = "/templates/modelo-romaneio1.docx";
-const TEMPLATE_URL_MODELO2 = "/templates/modelo-romaneio2.docx";
-
-/** Posições da grade do modelo 2: 6 colunas × 20 linhas. */
-const POSICOES_GRADE = 120;
-const LINHAS_POR_COLUNA = 20;
 
 const DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 
@@ -57,7 +48,7 @@ type DadosDocumento = Record<string, string | Record<string, string>[]>;
 type ArquivoGerado = { nome: string; blob: Blob };
 
 export type ResultadoRomaneios = {
-  /** Mensagens para exibir na tela (ex.: negócio com mais de 120 animais). */
+  /** Mensagens para exibir na tela (hoje nenhuma: era o aviso do modelo 2). */
   avisos: string[];
 };
 
@@ -139,38 +130,6 @@ export function montarDadosModelo1(negocio: NegocioDetail, fazenda: Fazenda | un
   };
 }
 
-/**
- * Um objeto de dados por bloco de 120 animais. O cabeçalho e os totais são
- * sempre do negócio inteiro; {{t1}}–{{t6}} somam só as colunas do bloco. Sem
- * animais (modalidade "cabeca"), devolve um bloco com a grade vazia.
- */
-export function montarDadosModelo2(negocio: NegocioDetail, fazenda: Fazenda | undefined): DadosDocumento[] {
-  const cabecalho = montarDadosCabecalho(negocio, fazenda);
-  const gados = gadosOrdenados(negocio);
-  const totalBlocos = Math.max(1, Math.ceil(gados.length / POSICOES_GRADE));
-  const blocos: DadosDocumento[] = [];
-
-  for (let bloco = 0; bloco < totalBlocos; bloco++) {
-    const dados: DadosDocumento = { ...cabecalho };
-    const totaisColuna = [0, 0, 0, 0, 0, 0];
-    const deslocamento = bloco * POSICOES_GRADE;
-
-    for (let posicao = 1; posicao <= POSICOES_GRADE; posicao++) {
-      const gado = gados[deslocamento + posicao - 1]?.gado;
-      dados[`n${posicao}`] = String(deslocamento + posicao);
-      dados[`p${posicao}`] = gado ? formatNumber(gado.peso_total) : "";
-      if (gado) totaisColuna[Math.floor((posicao - 1) / LINHAS_POR_COLUNA)] += gado.peso_total;
-    }
-
-    totaisColuna.forEach((total, i) => {
-      dados[`t${i + 1}`] = total > 0 ? formatNumber(total) : "";
-    });
-    blocos.push(dados);
-  }
-
-  return blocos;
-}
-
 /** "Fazenda São João" → "fazenda-sao-joao", seguro para nome de arquivo. */
 function sanitizarNomeArquivo(texto: string) {
   return (
@@ -204,17 +163,14 @@ function renderizar(template: ArrayBuffer, dados: DadosDocumento) {
 }
 
 /**
- * Gera os dois romaneios de cada negócio. Um negócio: baixa os .docx direto;
- * mais de um: junta tudo num .zip (PizZip, o mesmo usado para ler os modelos).
+ * Gera o romaneio (PDF) de cada negócio. Um negócio: baixa o PDF direto; mais de um:
+ * junta tudo num .zip (PizZip, o mesmo usado para ler o modelo).
  */
 export async function gerarRomaneios(
   negocios: NegocioDetail[],
   fazendasPorId: Record<number, Fazenda>
 ): Promise<ResultadoRomaneios> {
-  const [modelo1, modelo2] = await Promise.all([
-    baixarTemplate(TEMPLATE_URL_MODELO1),
-    baixarTemplate(TEMPLATE_URL_MODELO2),
-  ]);
+  const modelo1 = await baixarTemplate(TEMPLATE_URL_MODELO1);
 
   const arquivos: ArquivoGerado[] = [];
   const avisos: string[] = [];
@@ -223,7 +179,7 @@ export async function gerarRomaneios(
   // Dois negócios da mesma fazenda no mesmo dia teriam o mesmo nome de arquivo.
   function nomeUnico(nome: string) {
     let candidato = nome;
-    for (let i = 2; nomesUsados.has(candidato); i++) candidato = nome.replace(/\.docx$/, `-${i}.docx`);
+    for (let i = 2; nomesUsados.has(candidato); i++) candidato = nome.replace(/\.pdf$/, `-${i}.pdf`);
     nomesUsados.add(candidato);
     return candidato;
   }
@@ -233,28 +189,9 @@ export async function gerarRomaneios(
     const base = `${sanitizarNomeArquivo(nomeFazenda(negocio, fazenda))}-${negocio.data_negocio.slice(0, 10)}`;
 
     arquivos.push({
-      nome: nomeUnico(`romaneio1-${base}.docx`),
-      blob: renderizar(modelo1, montarDadosModelo1(negocio, fazenda)),
+      nome: nomeUnico(`romaneio-${base}.pdf`),
+      blob: await docxParaPdf(renderizar(modelo1, montarDadosModelo1(negocio, fazenda))),
     });
-
-    const blocos = montarDadosModelo2(negocio, fazenda);
-    blocos.forEach((dados, i) => {
-      const sufixo = i === 0 ? "" : `-parte${i + 1}`;
-      arquivos.push({
-        nome: nomeUnico(`romaneio2-${base}${sufixo}.docx`),
-        blob: renderizar(modelo2, dados),
-      });
-    });
-
-    if (blocos.length > 1) {
-      // O modelo 2 tem a numeração 1–120 fixa no documento, então as partes
-      // seguintes também aparecem numeradas a partir do 1.
-      avisos.push(
-        `${nomeFazenda(negocio, fazenda)} (${formatDate(negocio.data_negocio)}) tem ${gadosOrdenados(negocio).length} animais, ` +
-          `mais que as ${POSICOES_GRADE} posições do romaneio 2: ele foi dividido em ${blocos.length} arquivos ` +
-          `(cada parte numerada de 1 a ${POSICOES_GRADE}).`
-      );
-    }
   }
 
   if (negocios.length === 1) {
