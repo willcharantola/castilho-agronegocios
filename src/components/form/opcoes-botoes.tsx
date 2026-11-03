@@ -20,18 +20,18 @@ export function OpcoesBotoes<T extends string>({
   opcoes,
   value,
   onChange,
-  coluna = false,
+  grade = false,
 }: {
   id: string;
   ariaLabel: string;
   opcoes: OpcaoBotao<T>[];
   value: T | undefined | null;
   onChange: (value: T) => void;
-  /** Um botão por linha, ocupando a largura toda (ex.: lotes na pesagem). */
-  coluna?: boolean;
+  /** Grade de colunas iguais, lado a lado (ex.: lotes na pesagem, que podem ser muitos). */
+  grade?: boolean;
 }) {
   return (
-    <div id={id} role="radiogroup" aria-label={ariaLabel} className={cn(styles.opcoes, coluna && styles.coluna)}>
+    <div id={id} role="radiogroup" aria-label={ariaLabel} className={cn(styles.opcoes, grade && styles.grade)}>
       {opcoes.map((opcao) => {
         const selecionada = value === opcao.value;
         return (

@@ -2,14 +2,15 @@
 
 import * as React from "react";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { OpcoesBotoes, opcoesDeLabels } from "@/components/form/opcoes-botoes";
 import { updateNegocio } from "@/lib/api/negocios";
 import { TIPO_NEGOCIO_LABELS } from "@/lib/labels";
 import { mensagemDeErro } from "@/lib/offline/rede";
 import { cn } from "@/lib/utils";
 import type { Negocio, TipoNegocio } from "@/lib/api/types";
-import fieldBox from "@/components/form/field-box.module.css";
 import styles from "./comissao-form.module.css";
+
+const OPCOES_TIPO_NEGOCIO = opcoesDeLabels(TIPO_NEGOCIO_LABELS);
 
 /**
  * Troca o tipo de negócio de um negócio já cadastrado. A API recalcula Funrural e Senar
@@ -46,33 +47,20 @@ export function TipoNegocioForm({
 
   return (
     <form onSubmit={atualizar} className={cn(styles.card, "glass-panel")}>
-      <label htmlFor="tipo_negocio" className={styles.title}>
-        Tipo de negócio
-      </label>
-      <div className={styles.row}>
-        <Select
-          value={valor}
-          onValueChange={(novo: TipoNegocio | null) => {
-            if (!novo) return;
-            setValor(novo);
-            setSucesso(false);
-          }}
-        >
-          <SelectTrigger id="tipo_negocio" className={cn(fieldBox.box, fieldBox.pink, styles.input)}>
-            <SelectValue>{(value: TipoNegocio | null) => (value ? TIPO_NEGOCIO_LABELS[value] : "Selecione")}</SelectValue>
-          </SelectTrigger>
-          <SelectContent>
-            {(Object.keys(TIPO_NEGOCIO_LABELS) as TipoNegocio[]).map((key) => (
-              <SelectItem key={key} value={key}>
-                {TIPO_NEGOCIO_LABELS[key]}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Button type="submit" variant="brand" className={styles.button} disabled={salvando || valor === tipoNegocio}>
-          {salvando ? "Atualizando..." : "Atualizar"}
-        </Button>
-      </div>
+      <p className={styles.title}>Tipo de negócio</p>
+      <OpcoesBotoes
+        id="tipo_negocio"
+        ariaLabel="Tipo de negócio"
+        opcoes={OPCOES_TIPO_NEGOCIO}
+        value={valor}
+        onChange={(novo) => {
+          setValor(novo);
+          setSucesso(false);
+        }}
+      />
+      <Button type="submit" variant="brand" disabled={salvando || valor === tipoNegocio}>
+        {salvando ? "Atualizando..." : "Atualizar"}
+      </Button>
       <p className={styles.hint}>Funrural e Senar são recalculados conforme o tipo.</p>
       {error ? <p className="form-error">{error}</p> : null}
       {sucesso ? <p className={styles.success}>Tipo de negócio atualizado.</p> : null}

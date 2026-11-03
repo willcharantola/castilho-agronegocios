@@ -23,13 +23,16 @@
   cursor: pointer;
 }
 
-.coluna {
-  flex-direction: column;
+/* Grade: colunas de mesma largura (no mínimo 8rem), quantas couberem na linha. */
+.grade {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(8rem, 1fr));
 }
 
-.coluna .opcao {
-  flex-basis: auto;
+.grade .opcao {
   gap: 0.25rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .selecionada {

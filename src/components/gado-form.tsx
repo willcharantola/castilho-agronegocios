@@ -48,7 +48,7 @@ export function GadoForm({
   onSubmit,
 }: {
   modalidade: Modalidade;
-  /** Lotes do negócio, em coluna, seleção única. */
+  /** Lotes do negócio, em grade, seleção única. */
   lotes: Lote[];
   /** Cabeça em edição, ou o lote pré-selecionado (o último usado) no cadastro. */
   defaultValues?: { loteId?: number | null; pesoTotal?: number };
@@ -121,7 +121,7 @@ export function GadoForm({
               opcoes={opcoes}
               value={field.value}
               onChange={field.onChange}
-              coluna
+              grade
             />
           )}
         />
