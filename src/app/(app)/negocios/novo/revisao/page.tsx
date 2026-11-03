@@ -3,6 +3,8 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { BackLink } from "@/components/back-link";
+import { GadoEditDialog } from "@/components/gado-edit-dialog";
+import { ListaGados } from "@/components/lista-gados";
 import { NegocioCarrossel } from "@/components/negocio-carrossel";
 import { ProgressSteps } from "@/components/progress-steps";
 import { Button } from "@/components/ui/button";
@@ -13,16 +15,21 @@ import { enviarOuEnfileirar, referencia } from "@/lib/offline/fila";
 import { useIsAdmin } from "@/lib/permissoes";
 import { horaLocalAtual, mensagemDeErro } from "@/lib/offline/rede";
 import { cn } from "@/lib/utils";
+import type { Gado } from "@/lib/api/types";
 import styles from "./page.module.css";
 
-/** Passo 8: revisão (Geral + um cartão por lote) e conclusão do negócio. */
+/** Passo 8: revisão (dados com filtro Geral/lotes, cabeças) e conclusão do negócio. */
 export default function NovoNegocioRevisaoPage() {
   const router = useRouter();
   const { data, update, reset } = useNegocioFlow();
-  const { negocio, erro, idReal } = useNegocioComPendencias(data.negocioId);
+  const { negocio, erro, idReal, recarregar } = useNegocioComPendencias(data.negocioId);
   const admin = useIsAdmin();
   const [concluindo, setConcluindo] = React.useState(false);
   const [erroConcluir, setErroConcluir] = React.useState<string | null>(null);
+  // Filtro dos chips do carrossel (0 = "Geral"): também filtra as cabeças abaixo.
+  const [filtro, setFiltro] = React.useState(0);
+  // Cabeça aberta no modal de edição (o mesmo da pesagem): não sai do cadastro.
+  const [gadoEmEdicao, setGadoEmEdicao] = React.useState<Gado | null>(null);
 
   // `concluir` zera o fluxo antes de navegar: isso não deve mandar de volta ao início.
   const negocioIdRef = React.useRef(data.negocioId);
@@ -38,6 +45,8 @@ export default function NovoNegocioRevisaoPage() {
   const voltar = porCabeca ? "/negocios/novo/lote-unico" : "/negocios/novo/gado";
   // "arroba"/"kg" exigem pelo menos um lote; "cabeca", o lote único.
   const semLote = negocio !== null && negocio.lotes.length === 0;
+  const lotes = negocio?.lotes ?? [];
+  const loteFiltrado = filtro > 0 ? (lotes[Math.min(filtro, lotes.length) - 1] ?? null) : null;
 
   async function concluir() {
     const negocioId = data.negocioId;
@@ -82,8 +91,36 @@ export default function NovoNegocioRevisaoPage() {
       {!negocio && !erro ? <div className="state-box glass-panel">Carregando negócio...</div> : null}
 
       {negocio ? (
-        // Na revisão do cadastro não há botão do olho: Admin vê a comissão, Normal vê "-".
-        <NegocioCarrossel negocio={negocio} fazenda={null} comissao={admin ? "visivel" : "restrita"} />
+        <>
+          {/* Na revisão do cadastro não há botão do olho: Admin vê a comissão, Normal vê "-". */}
+          <NegocioCarrossel
+            negocio={negocio}
+            fazenda={null}
+            comissao={admin ? "visivel" : "restrita"}
+            ativo={filtro}
+            onAtivoChange={setFiltro}
+            cabecasNoQuadro={false}
+          />
+          {/* Cabeças como em /negocios/[id], depois dos dados; "cabeca" não tem pesagem. */}
+          {porCabeca || lotes.length === 0 ? null : (
+            <ListaGados
+              negocioId={negocio.negocio_id}
+              lotes={lotes}
+              loteFiltrado={loteFiltrado}
+              onGadoClick={setGadoEmEdicao}
+            />
+          )}
+        </>
+      ) : null}
+
+      {negocio ? (
+        <GadoEditDialog
+          gado={gadoEmEdicao}
+          negocio={negocio}
+          lotes={negocio.lotes}
+          onClose={() => setGadoEmEdicao(null)}
+          onSaved={recarregar}
+        />
       ) : null}
 
       <div className={styles.acoes}>

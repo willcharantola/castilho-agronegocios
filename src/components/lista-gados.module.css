@@ -1,0 +1,90 @@
+.gadoList {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: var(--radius-box);
+  background: rgb(255 255 255 / 60%);
+}
+
+.gadoList > * + * {
+  border-top: 1px solid color-mix(in oklch, var(--color-olive) 15%, transparent);
+}
+
+.gadoRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+}
+
+.gadoRowLink {
+  transition: background 0.15s ease;
+}
+
+.gadoRowLink:hover {
+  background: rgb(255 255 255 / 50%);
+}
+
+.gadoRowBotao {
+  cursor: pointer;
+}
+
+.gadoRowBotao:focus-visible {
+  outline: 2px solid var(--color-teal);
+  outline-offset: -2px;
+}
+
+.gadoIcon {
+  display: flex;
+  height: 2.25rem;
+  width: 2.25rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-box);
+  background: var(--color-dark);
+  color: var(--color-white);
+}
+
+.gadoInfo {
+  flex: 1;
+}
+
+.gadoName {
+  font-size: 1em;
+  font-weight: 700;
+  color: var(--color-dark);
+}
+
+.gadoMeta {
+  font-size: 0.9em;
+  color:#000;
+}
+
+.gadoAmount {
+  text-align: right;
+  font-size: var(--font-size-xs);
+}
+
+.gadoAmountValue {
+  font-size: 1.2em;
+  font-weight: 700;
+  color: var(--color-dark);
+}
+
+/* Telas maiores: os dados de cada gado se distribuem em colunas dentro da linha. */
+@media (min-width: 768px) and (min-height: 500px) {
+  .gadoRow {
+    padding: 1rem;
+  }
+
+  .gadoInfo {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+    gap: 0.15rem 1rem;
+  }
+
+  .gadoName {
+    grid-column: 1 / -1;
+  }
+}

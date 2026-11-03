@@ -8,7 +8,6 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { BackLink } from "@/components/back-link";
 import { BotaoExcluir } from "@/components/botao-excluir";
-import { BotaoMapa } from "@/components/botao-mapa";
 import { PecuaristaFields, pecuaristaSchema, type PecuaristaFormValues } from "@/components/pecuarista-fields";
 import { Button } from "@/components/ui/button";
 import { deletePecuarista, desvincularFazenda, fetchPecuarista, updatePecuarista } from "@/lib/api/pecuaristas";
@@ -111,6 +110,18 @@ export default function EditarPecuaristaPage() {
 
       {loaded ? (
         <>
+          <form onSubmit={handleSubmit(onSubmit)} className="form-stack">
+            <div className="form-fields">
+              <p className="section-title">Dados do pecuarista</p>
+              {submitError ? <p className="form-error">{submitError}</p> : null}
+              <PecuaristaFields register={register} control={control} errors={errors} />
+            </div>
+
+            <Button type="submit" variant="brand" size="xl" className="w-full" disabled={isSubmitting}>
+              {isSubmitting ? "Salvando..." : "Salvar Dados"}
+            </Button>
+          </form>
+
           <section className={styles.fazendas}>
             <p className="section-title">Fazendas vinculadas</p>
             {vinculoError ? <p className="form-error">{vinculoError}</p> : null}
@@ -132,11 +143,6 @@ export default function EditarPecuaristaPage() {
                       <p className="card-meta">
                         {fazenda.municipio} · I.E.: {fazenda.inscricao_estadual}
                       </p>
-                      <BotaoMapa
-                        localizacao={fazenda.localizacao_google}
-                        endereco={fazenda.endereco_fazenda}
-                        className={styles.verMapa}
-                      />
                       {/* Precisa de ao menos uma fazenda: a última não é desvinculada. */}
                       {fazendas.length > 1 ? (
                         <button
@@ -168,18 +174,6 @@ export default function EditarPecuaristaPage() {
               <Plus size={16} aria-hidden /> Adicionar fazenda
             </Button>
           </section>
-
-          <form onSubmit={handleSubmit(onSubmit)} className="form-stack">
-            <div className="form-fields">
-              <p className="section-title">Dados do pecuarista</p>
-              {submitError ? <p className="form-error">{submitError}</p> : null}
-              <PecuaristaFields register={register} control={control} errors={errors} />
-            </div>
-
-            <Button type="submit" variant="brand" size="xl" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? "Salvando..." : "Salvar Dados"}
-            </Button>
-          </form>
         </>
       ) : null}
     </div>
