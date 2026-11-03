@@ -170,6 +170,13 @@ export type Gado = {
 
 export type LoteDetail = Lote & { gados: Gado[] };
 
+/** GET /negocios/resumo — métricas da Home e do Dashboard; `null` para usuário Normal. */
+export type ResumoNegocios = {
+  negocios_realizados: number | null;
+  comissao_total: number | null;
+  total_cabecas: number | null;
+};
+
 export type NegocioDetail = Negocio & {
   /** Em ordem de cadastro; as cabeças de cada lote também. */
   lotes: LoteDetail[];

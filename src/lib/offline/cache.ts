@@ -29,3 +29,16 @@ export async function comCache<T>(chave: string, buscar: () => Promise<T>): Prom
     throw new Error(MENSAGEM_SEM_DADOS);
   }
 }
+
+/**
+ * Apaga as leituras guardadas para uso offline (não mexe na fila de envio). Chamado ao
+ * entrar e ao sair: o cache tem os dados como a API mandou para o usuário anterior — um
+ * Admin recebe a comissão, um Normal não —, e não pode vazar para o próximo.
+ */
+export async function limparCacheDeLeitura() {
+  try {
+    await offlineDb.cache.clear();
+  } catch {
+    // IndexedDB indisponível — não há o que limpar.
+  }
+}

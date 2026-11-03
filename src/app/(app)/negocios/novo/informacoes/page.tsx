@@ -18,6 +18,7 @@ import { MODALIDADE_LABELS, TIPO_GADO_LABELS, TIPO_NEGOCIO_LABELS } from "@/lib/
 import { PASSOS_NOVO_NEGOCIO, useNegocioFlow } from "@/lib/flows/negocio-flow";
 import { salvarNegocioDoFluxo } from "@/lib/flows/criar-negocio";
 import { mensagemDeErro } from "@/lib/offline/rede";
+import { useIsAdmin } from "@/lib/permissoes";
 import { cn } from "@/lib/utils";
 import type { TipoNegocio } from "@/lib/api/types";
 import fieldBox from "@/components/form/field-box.module.css";
@@ -50,6 +51,8 @@ const OPCOES_TIPO_GADO = opcoesDeLabels(TIPO_GADO_LABELS);
 export default function NovoNegocioInformacoesPage() {
   const router = useRouter();
   const { data, update } = useNegocioFlow();
+  // Comissão só para Admin: para Normal o campo não aparece e nada é enviado (a API ignoraria).
+  const admin = useIsAdmin();
   const [submitError, setSubmitError] = React.useState<string | null>(null);
   const {
     register,
@@ -81,7 +84,7 @@ export default function NovoNegocioInformacoesPage() {
       tipoGado: values.tipo_gado,
       tipoNegocio: values.tipo_negocio,
       dataNegocio: values.data_negocio,
-      porcentagemComissao: values.porcentagem_comissao ?? null,
+      porcentagemComissao: admin ? (values.porcentagem_comissao ?? null) : null,
       observacao: values.observacao ?? "",
     };
     try {
@@ -163,27 +166,29 @@ export default function NovoNegocioInformacoesPage() {
             <TintedInput id="data_negocio" tint="pink" type="date" {...register("data_negocio")} />
           </Field>
 
-          <Field
-            label="Comissão % (opcional)"
-            htmlFor="porcentagem_comissao"
-            error={errors.porcentagem_comissao?.message as string | undefined}
-          >
-            <Controller
-              control={control}
-              name="porcentagem_comissao"
-              render={({ field }) => (
-                <MaskedNumberInput
-                  id="porcentagem_comissao"
-                  formato="percentual"
-                  name={field.name}
-                  value={field.value as number | string | undefined}
-                  onValueChange={field.onChange}
-                  onBlur={field.onBlur}
-                  placeholder="Ex: 5%"
-                />
-              )}
-            />
-          </Field>
+          {admin ? (
+            <Field
+              label="Comissão % (opcional)"
+              htmlFor="porcentagem_comissao"
+              error={errors.porcentagem_comissao?.message as string | undefined}
+            >
+              <Controller
+                control={control}
+                name="porcentagem_comissao"
+                render={({ field }) => (
+                  <MaskedNumberInput
+                    id="porcentagem_comissao"
+                    formato="percentual"
+                    name={field.name}
+                    value={field.value as number | string | undefined}
+                    onValueChange={field.onChange}
+                    onBlur={field.onBlur}
+                    placeholder="Ex: 5%"
+                  />
+                )}
+              />
+            </Field>
+          ) : null}
 
           <Field label="Observação (opcional)" htmlFor="observacao" error={errors.observacao?.message}>
             <TintedInput id="observacao" tint="pink" {...register("observacao")} />

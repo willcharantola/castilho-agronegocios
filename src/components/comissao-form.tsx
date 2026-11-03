@@ -8,13 +8,37 @@ import { mensagemDeErro } from "@/lib/offline/rede";
 import { formatCurrency, formatPercent } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { Negocio } from "@/lib/api/types";
+import { COMISSAO_MASCARADA } from "@/lib/permissoes";
 import styles from "./comissao-form.module.css";
 
 /**
  * Inserir/atualizar o percentual de comissão de um negócio já cadastrado. O valor em R$
  * (`comissao`) é calculado pela API a partir do percentual e do valor total do negócio.
+ * Só para Admin. Com a comissão escondida (botão do olho), mostra só a máscara: nem o
+ * percentual nem o valor vão para o DOM.
  */
-export function ComissaoForm({
+export function ComissaoForm(props: {
+  negocioId: number;
+  porcentagem: number | null;
+  comissao: number | null;
+  /** false = comissão escondida pelo botão do olho. */
+  visivel: boolean;
+  onUpdated: (negocio: Pick<Negocio, "porcentagem_comissao" | "comissao">) => void;
+}) {
+  if (!props.visivel) {
+    return (
+      <div className={cn(styles.card, "glass-panel")}>
+        <p className={styles.title}>Comissão (%)</p>
+        <p className={styles.hint}>
+          {COMISSAO_MASCARADA} · Toque no olho no topo da página para ver e editar.
+        </p>
+      </div>
+    );
+  }
+  return <ComissaoFormVisivel {...props} />;
+}
+
+function ComissaoFormVisivel({
   negocioId,
   porcentagem,
   comissao,

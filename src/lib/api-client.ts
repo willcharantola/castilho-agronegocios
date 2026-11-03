@@ -3,7 +3,7 @@ import type { Usuario } from "@/lib/api/types";
 const API_URL = process.env.NEXT_PUBLIC_API_URL!;
 
 const TOKEN_KEY = "access_token";
-const USUARIO_KEY = "usuario";
+export const USUARIO_KEY = "usuario";
 
 export class ApiError extends Error {
   status: number;

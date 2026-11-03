@@ -16,6 +16,7 @@ import { ApiError } from "@/lib/api-client";
 import { PendenteBadge } from "@/components/offline/pendente-badge";
 import { idTemporario, usePendentes, useVersaoSincronizacao } from "@/lib/offline/fila";
 import { mesclarPendentes, negocioDePendente, type ExibicaoNegocio } from "@/lib/offline/pendentes";
+import { BotaoOlhoComissao, exibirComissao, useExibicaoComissao } from "@/lib/permissoes";
 import styles from "./page.module.css";
 
 export default function NegociosPage() {
@@ -43,6 +44,9 @@ export default function NegociosPage() {
   const [fazendaId, setFazendaId] = React.useState("");
   const [dataInicio, setDataInicio] = React.useState("");
   const [dataFim, setDataFim] = React.useState("");
+
+  // Comissão: "-" para Normal; para Admin começa escondida e o olho revela todas as linhas.
+  const comissao = useExibicaoComissao();
 
   const [gerandoRelatorio, setGerandoRelatorio] = React.useState(false);
   const [relatorioError, setRelatorioError] = React.useState<string | null>(null);
@@ -127,7 +131,10 @@ export default function NegociosPage() {
 
   return (
     <div className={cn("page-container page-wide", styles.page, "pt-safe")}>
-      <h1 className="page-title">Negócios Cadastrados</h1>
+      <div className="page-header-acoes">
+        <h1 className="page-title">Negócios Cadastrados</h1>
+        {comissao.admin ? <BotaoOlhoComissao visivel={comissao.visivel} onAlternar={comissao.alternar} /> : null}
+      </div>
 
       <div className="search-box">
         <Search className="search-icon" size={18} />
@@ -219,7 +226,7 @@ export default function NegociosPage() {
                 <p className="card-meta">{formatDate(negocio.data_negocio)}</p>
 
                  <p className="card-meta">
-                  Comissão: {negocio.comissao !== null ? formatCurrency(negocio.comissao) : "—"}
+                  Comissão: {exibirComissao(negocio.comissao, comissao.exibicao, formatCurrency)}
                   
                 </p>
 

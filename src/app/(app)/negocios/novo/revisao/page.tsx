@@ -10,6 +10,7 @@ import { concluirNegocio } from "@/lib/api/negocios";
 import { PASSOS_NOVO_NEGOCIO, useNegocioFlow } from "@/lib/flows/negocio-flow";
 import { useNegocioComPendencias } from "@/lib/flows/use-negocio-com-pendencias";
 import { enviarOuEnfileirar, referencia } from "@/lib/offline/fila";
+import { useIsAdmin } from "@/lib/permissoes";
 import { horaLocalAtual, mensagemDeErro } from "@/lib/offline/rede";
 import { cn } from "@/lib/utils";
 import styles from "./page.module.css";
@@ -19,6 +20,7 @@ export default function NovoNegocioRevisaoPage() {
   const router = useRouter();
   const { data, update, reset } = useNegocioFlow();
   const { negocio, erro, idReal } = useNegocioComPendencias(data.negocioId);
+  const admin = useIsAdmin();
   const [concluindo, setConcluindo] = React.useState(false);
   const [erroConcluir, setErroConcluir] = React.useState<string | null>(null);
 
@@ -79,7 +81,10 @@ export default function NovoNegocioRevisaoPage() {
       {erro && !negocio ? <div className="state-box state-error glass-panel">{erro}</div> : null}
       {!negocio && !erro ? <div className="state-box glass-panel">Carregando negócio...</div> : null}
 
-      {negocio ? <NegocioCarrossel negocio={negocio} fazenda={null} /> : null}
+      {negocio ? (
+        // Na revisão do cadastro não há botão do olho: Admin vê a comissão, Normal vê "-".
+        <NegocioCarrossel negocio={negocio} fazenda={null} comissao={admin ? "visivel" : "restrita"} />
+      ) : null}
 
       <div className={styles.acoes}>
         {semLote ? (
