@@ -42,3 +42,8 @@ export function adicionarFazenda(pecuaristaId: number | string, fazenda: Fazenda
 export function desvincularFazenda(pecuaristaId: number | string, fazendaId: number) {
   return apiFetch<Pecuarista>(`/pecuaristas/${pecuaristaId}/fazendas/${fazendaId}`, { method: "DELETE" });
 }
+
+/** A API recusa (409) enquanto houver negócios ligados. */
+export function deletePecuarista(id: number | string) {
+  return apiFetch<Pecuarista>(`/pecuaristas/${id}`, { method: "DELETE" });
+}

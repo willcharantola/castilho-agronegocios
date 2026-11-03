@@ -17,3 +17,8 @@ export function createComprador(input: CreateCompradorInput & OrigemOffline) {
 export function updateComprador(id: number | string, input: UpdateCompradorInput) {
   return apiFetch<Comprador>(`/compradores/${id}`, { method: "PATCH", body: JSON.stringify(input) });
 }
+
+/** A API recusa (409) enquanto houver negócios ligados. */
+export function deleteComprador(id: number | string) {
+  return apiFetch<Comprador>(`/compradores/${id}`, { method: "DELETE" });
+}

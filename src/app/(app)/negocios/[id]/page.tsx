@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { Beef, FileText, Plus } from "lucide-react";
 import { BackLink } from "@/components/back-link";
+import { BotaoExcluir } from "@/components/botao-excluir";
 import { PendenteBadge } from "@/components/offline/pendente-badge";
 import { Button } from "@/components/ui/button";
 import { Fab } from "@/components/fab";
@@ -12,9 +13,10 @@ import { ComissaoForm } from "@/components/comissao-form";
 import { NegocioCarrossel } from "@/components/negocio-carrossel";
 import { TipoNegocioForm } from "@/components/tipo-negocio-form";
 import { cn } from "@/lib/utils";
+import { modoDoNegocio } from "@/lib/comissao";
 import { formatCurrency, formatHora, formatNumber, formatPercent } from "@/lib/format";
 import { GENERO_LABELS } from "@/lib/labels";
-import { fetchNegocio } from "@/lib/api/negocios";
+import { deleteNegocio, fetchNegocio } from "@/lib/api/negocios";
 import { gerarRomaneios } from "@/lib/relatorio-romaneio";
 import { useNegocioComPendencias } from "@/lib/flows/use-negocio-com-pendencias";
 import { mensagemDeErro } from "@/lib/offline/rede";
@@ -28,6 +30,7 @@ export default function NegocioDetailPage() {
   const [gerandoRelatorio, setGerandoRelatorio] = React.useState(false);
   const [relatorioError, setRelatorioError] = React.useState<string | null>(null);
   const [relatorioAvisos, setRelatorioAvisos] = React.useState<string[]>([]);
+  const [excluirError, setExcluirError] = React.useState<string | null>(null);
 
   // Comissão: "-" para Normal; para Admin começa escondida e o olho revela.
   const comissao = useExibicaoComissao();
@@ -38,6 +41,8 @@ export default function NegocioDetailPage() {
   const [filtro, setFiltro] = React.useState(0);
   const lotes = negocio?.lotes ?? [];
   const loteFiltrado = filtro > 0 ? (lotes[Math.min(filtro, lotes.length) - 1] ?? null) : null;
+  // Lotes ou cabeças ainda na fila offline seriam enviados a um negócio que não existe mais.
+  const temPendencias = lotes.some((lote) => lote.pendente || lote.gados.some((gado) => gado.pendente));
   const cabecas = (loteFiltrado ? [loteFiltrado] : lotes).flatMap((lote) =>
     lote.gados.map((gado) => ({ gado, lote }))
   );
@@ -66,8 +71,26 @@ export default function NegocioDetailPage() {
     <div className={cn("page-wide", styles.page, "pt-safe")}>
       <div className="page-header-acoes">
         <BackLink href="/negocios" />
-        {comissao.admin ? <BotaoOlhoComissao visivel={comissao.visivel} onAlternar={comissao.alternar} /> : null}
+        {/* Olho e exclusão só para Admin (a API também recusa a exclusão com 403). */}
+        {comissao.admin ? (
+          <div className="page-header-botoes">
+            <BotaoOlhoComissao visivel={comissao.visivel} onAlternar={comissao.alternar} />
+            {negocio ? (
+              <BotaoExcluir
+                descricao="este negócio, com todos os lotes e cabeças"
+                excluir={() => deleteNegocio(negocio.negocio_id)}
+                destino="/negocios"
+                onErro={setExcluirError}
+                bloqueio={
+                  !sincronizado || temPendencias ? "Disponível após a sincronização" : null
+                }
+              />
+            ) : null}
+          </div>
+        ) : null}
       </div>
+
+      {excluirError ? <p className="form-error">{excluirError}</p> : null}
 
       {!negocio && !erro ? <div className="state-box glass-panel">Carregando negócio...</div> : null}
 
@@ -108,6 +131,15 @@ export default function NegocioDetailPage() {
               negocioId={negocio.negocio_id}
               porcentagem={negocio.porcentagem_comissao}
               comissao={negocio.comissao}
+              modo={modoDoNegocio(negocio)}
+              tipoGado={negocio.tipo_gado}
+              modalidade={negocio.modalidade}
+              valorTotal={negocio.valor_total}
+              pesoTotalQuilos={negocio.peso_total_quilos}
+              // Na fila desde a versão anterior: o valor foi digitado como percentual.
+              revisar={
+                !sincronizado && negocio.porcentagem_comissao !== null && modoDoNegocio(negocio) === "por_arroba"
+              }
               visivel={comissao.visivel}
               onUpdated={() => recarregar()}
             />

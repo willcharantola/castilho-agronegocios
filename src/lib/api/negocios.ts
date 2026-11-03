@@ -85,3 +85,8 @@ export async function updateNegocio(id: number | string, input: UpdateNegocioInp
   const negocio = await apiFetch<Negocio>(`/negocios/${id}`, { method: "PATCH", body: JSON.stringify(input) });
   return normalizeNegocio(negocio);
 }
+
+/** Só Admin (a API responde 403 para Normal). Lotes e cabeças saem junto. */
+export async function deleteNegocio(id: number | string) {
+  await apiFetch<unknown>(`/negocios/${id}`, { method: "DELETE" });
+}

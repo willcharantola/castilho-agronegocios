@@ -10,37 +10,27 @@ import { BackLink } from "@/components/back-link";
 import { ProgressSteps } from "@/components/progress-steps";
 import { Field } from "@/components/form/field";
 import { TintedInput } from "@/components/form/tinted-input";
-import { MaskedNumberInput } from "@/components/form/masked-number-input";
 import { OpcoesBotoes, opcoesDeLabels } from "@/components/form/opcoes-botoes";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toDateInputValue } from "@/lib/format";
 import { MODALIDADE_LABELS, TIPO_GADO_LABELS, TIPO_NEGOCIO_LABELS } from "@/lib/labels";
 import { PASSOS_NOVO_NEGOCIO, useNegocioFlow } from "@/lib/flows/negocio-flow";
 import { salvarNegocioDoFluxo } from "@/lib/flows/criar-negocio";
 import { mensagemDeErro } from "@/lib/offline/rede";
-import { useIsAdmin } from "@/lib/permissoes";
 import { cn } from "@/lib/utils";
 import type { TipoNegocio } from "@/lib/api/types";
 import fieldBox from "@/components/form/field-box.module.css";
 import styles from "./page.module.css";
 
-const vazioParaUndefined = (v: unknown) => (v === "" || v === null ? undefined : v);
-
 // A modalidade é escolhida no passo anterior. Tipo de lote, valor da unidade, carimbo e
 // rendimento são de cada lote (próxima tela). Horários de pesagem são registrados pela API.
+// A data do negócio não aparece no formulário: vai a data de hoje (ou a já salva no fluxo).
+// A comissão é preenchida depois, no detalhe do negócio; aqui o negócio nasce sem ela.
 const schema = z.object({
   tipo_gado: z.enum(["Gordo", "Reposicao"], { error: "Selecione o tipo de gado." }),
   // Sem valor padrão: o usuário precisa escolher (define Funrural e Senar).
   tipo_negocio: z.enum(["Desconto em folha", "Livre", "Funrural"], { error: "Selecione o tipo de negócio." }),
-  data_negocio: z.string().min(1, "Informe a data do negócio."),
-  porcentagem_comissao: z.preprocess(
-    vazioParaUndefined,
-    z.coerce
-      .number({ error: "Valor inválido." })
-      .min(0, "Deve ser entre 0 e 100.")
-      .max(100, "Deve ser entre 0 e 100.")
-      .optional()
-  ),
   observacao: z.string().max(100).optional(),
 });
 type FormInput = z.input<typeof schema>;
@@ -51,8 +41,6 @@ const OPCOES_TIPO_GADO = opcoesDeLabels(TIPO_GADO_LABELS);
 export default function NovoNegocioInformacoesPage() {
   const router = useRouter();
   const { data, update } = useNegocioFlow();
-  // Comissão só para Admin: para Normal o campo não aparece e nada é enviado (a API ignoraria).
-  const admin = useIsAdmin();
   const [submitError, setSubmitError] = React.useState<string | null>(null);
   const {
     register,
@@ -64,8 +52,6 @@ export default function NovoNegocioInformacoesPage() {
     defaultValues: {
       tipo_gado: data.tipoGado || undefined,
       tipo_negocio: data.tipoNegocio || undefined,
-      data_negocio: data.dataNegocio || new Date().toISOString().slice(0, 10),
-      porcentagem_comissao: data.porcentagemComissao ?? undefined,
       observacao: data.observacao,
     },
   });
@@ -83,8 +69,8 @@ export default function NovoNegocioInformacoesPage() {
     const informacoes = {
       tipoGado: values.tipo_gado,
       tipoNegocio: values.tipo_negocio,
-      dataNegocio: values.data_negocio,
-      porcentagemComissao: admin ? (values.porcentagem_comissao ?? null) : null,
+      dataNegocio: data.dataNegocio || toDateInputValue(new Date()),
+      porcentagemComissao: null,
       observacao: values.observacao ?? "",
     };
     try {
@@ -161,34 +147,6 @@ export default function NovoNegocioInformacoesPage() {
               )}
             />
           </Field>
-
-          <Field label="Data do Negócio" htmlFor="data_negocio" error={errors.data_negocio?.message}>
-            <TintedInput id="data_negocio" tint="pink" type="date" {...register("data_negocio")} />
-          </Field>
-
-          {admin ? (
-            <Field
-              label="Comissão % (opcional)"
-              htmlFor="porcentagem_comissao"
-              error={errors.porcentagem_comissao?.message as string | undefined}
-            >
-              <Controller
-                control={control}
-                name="porcentagem_comissao"
-                render={({ field }) => (
-                  <MaskedNumberInput
-                    id="porcentagem_comissao"
-                    formato="percentual"
-                    name={field.name}
-                    value={field.value as number | string | undefined}
-                    onValueChange={field.onChange}
-                    onBlur={field.onBlur}
-                    placeholder="Ex: 5%"
-                  />
-                )}
-              />
-            </Field>
-          ) : null}
 
           <Field label="Observação (opcional)" htmlFor="observacao" error={errors.observacao?.message}>
             <TintedInput id="observacao" tint="pink" {...register("observacao")} />

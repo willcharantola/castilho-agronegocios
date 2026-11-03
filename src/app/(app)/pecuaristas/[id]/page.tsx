@@ -7,10 +7,11 @@ import { Pencil, Plus, Warehouse } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { BackLink } from "@/components/back-link";
+import { BotaoExcluir } from "@/components/botao-excluir";
 import { BotaoMapa } from "@/components/botao-mapa";
 import { PecuaristaFields, pecuaristaSchema, type PecuaristaFormValues } from "@/components/pecuarista-fields";
 import { Button } from "@/components/ui/button";
-import { desvincularFazenda, fetchPecuarista, updatePecuarista } from "@/lib/api/pecuaristas";
+import { deletePecuarista, desvincularFazenda, fetchPecuarista, updatePecuarista } from "@/lib/api/pecuaristas";
 import type { Fazenda } from "@/lib/api/types";
 import { ApiError } from "@/lib/api-client";
 import { mensagemDeErro } from "@/lib/offline/rede";
@@ -26,6 +27,8 @@ export default function EditarPecuaristaPage() {
   const [vinculoError, setVinculoError] = React.useState<string | null>(null);
   const [desvinculando, setDesvinculando] = React.useState<number | null>(null);
   const [loaded, setLoaded] = React.useState(false);
+  const [nome, setNome] = React.useState("");
+  const [excluirError, setExcluirError] = React.useState<string | null>(null);
   const {
     register,
     handleSubmit,
@@ -49,6 +52,7 @@ export default function EditarPecuaristaPage() {
           chave_pix: pecuarista.chave_pix,
         });
         setFazendas((pecuarista.pecuarista_fazenda ?? []).map((v) => v.fazenda));
+        setNome(pecuarista.nome_pecuarista);
         setLoaded(true);
       })
       .catch((err: unknown) => {
@@ -88,11 +92,22 @@ export default function EditarPecuaristaPage() {
 
   return (
     <div className="page-container page-narrow pt-safe">
-      <BackLink href="/pecuaristas" />
+      <div className="page-header-acoes">
+        <BackLink href="/pecuaristas" />
+        {loaded ? (
+          <BotaoExcluir
+            descricao={`o pecuarista "${nome}"`}
+            excluir={() => deletePecuarista(params.id)}
+            destino="/pecuaristas"
+            onErro={setExcluirError}
+          />
+        ) : null}
+      </div>
       <h1 className="page-title">Editar Pecuarista</h1>
 
       {!loaded && !loadError ? <div className="state-box glass-panel">Carregando pecuarista...</div> : null}
       {loadError ? <div className="state-box state-error glass-panel">{loadError}</div> : null}
+      {excluirError ? <p className="form-error">{excluirError}</p> : null}
 
       {loaded ? (
         <>

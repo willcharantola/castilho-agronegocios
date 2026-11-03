@@ -14,6 +14,7 @@ import {
 } from "@/lib/labels";
 import type { AgregadosPeso, Fazenda, Gado } from "@/lib/api/types";
 import type { ComPendencia, LoteComPendencia, NegocioComPendencias } from "@/lib/offline/pendentes";
+import { formatarCriterioComissao, modoDoNegocio } from "@/lib/comissao";
 import { exibirComissao, type ExibicaoComissao } from "@/lib/permissoes";
 import { cn } from "@/lib/utils";
 
@@ -85,6 +86,12 @@ function CartaoGeral({
         ]),
     { label: rotuloAliquota("Funrural", negocio.aliquota_funrural), valor: ou(negocio.funrural, formatCurrency) },
     { label: rotuloAliquota("Senar", negocio.aliquota_senar), valor: ou(negocio.senar, formatCurrency) },
+    {
+      label: "Critério da comissão",
+      valor: exibirComissao(negocio.porcentagem_comissao, comissao, (v) =>
+        formatarCriterioComissao(v, modoDoNegocio(negocio))
+      ),
+    },
     { label: "Comissão", valor: exibirComissao(negocio.comissao, comissao, formatCurrency) },
     { label: "Observação", valor: negocio.observacao || "—" },
   ];

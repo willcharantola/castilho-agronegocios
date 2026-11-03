@@ -4,6 +4,8 @@
  * straight from the database columns — do not convert to camelCase.
  */
 
+import type { ModoComissao } from "@/lib/comissao";
+
 export type NivelAcesso = "Admin" | "Normal";
 
 export type Usuario = {
@@ -107,10 +109,16 @@ export type Negocio = {
   tipo_gado: TipoGado;
   tipo_negocio: TipoNegocio;
   data_negocio: string;
-  /** Percentual de comissão (0 a 100), definido pelo usuário — use `formatPercent`. */
+  /**
+   * Valor da comissão informado pelo Admin (0 a 100): R$ por arroba de peso vivo no gado
+   * Gordo em "arroba"/"kg", percentual nos demais casos — ver `modo_comissao` e
+   * lib/comissao (`formatarCriterioComissao`). null para usuário Normal.
+   */
   porcentagem_comissao: number | null;
-  /** Comissão em R$, calculada pela API (valor_total × porcentagem_comissao / 100). */
+  /** Comissão em R$, calculada pela API conforme `modo_comissao`. null para usuário Normal. */
   comissao: number | null;
+  /** Derivado pela API (não é coluna, não é enviado). null para Normal; ausente em pendentes. */
+  modo_comissao?: ModoComissao | null;
   observacao: string | null;
   // Calculados pela API a partir dos lotes e das cabeças de todos os lotes — não enviar.
   /** Soma de `lote.qtd_animais`. */
