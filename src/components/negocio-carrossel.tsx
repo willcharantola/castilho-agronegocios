@@ -53,27 +53,49 @@ function Grade({ itens }: { itens: Item[] }) {
   );
 }
 
+/** Demais dados, fora do quadro verde: um quadro branco com borda verde por item. */
+function Detalhes({ itens }: { itens: Item[] }) {
+  return (
+    <dl className="carrossel-detalhes">
+      {itens.map((item) => (
+        <div key={item.label} className="carrossel-detalhe">
+          <dt>{item.label}</dt>
+          <dd>{item.valor}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
 function rotuloAliquota(nome: string, aliquota: number | null) {
   return aliquota !== null ? `${nome} (${formatPercent(aliquota)})` : nome;
 }
 
+/**
+ * "Geral": o quadro verde traz só os destaques (fazenda, partes, data, modalidade e tipos);
+ * os demais dados ficam abaixo, em quadros brancos. `children` entra no fim do quadro verde.
+ */
 function CartaoGeral({
   negocio,
   fazenda,
   comissao,
+  children,
 }: {
   negocio: NegocioComPendencias;
   fazenda: Fazenda | null;
   comissao: ExibicaoComissao;
+  children?: React.ReactNode;
 }) {
   const porCabeca = negocio.modalidade === "cabeca";
-  const itens: Item[] = [
+  const destaques: Item[] = [
     { label: "Pecuarista", valor: negocio.pecuarista?.nome_pecuarista ?? "—" },
     { label: "Comprador", valor: negocio.comprador?.nome_empresa ?? "—" },
     { label: "Data", valor: formatDate(negocio.data_negocio) },
     { label: "Modalidade", valor: MODALIDADE_LABELS[negocio.modalidade] },
     { label: "Tipo de gado", valor: TIPO_GADO_LABELS[negocio.tipo_gado] ?? negocio.tipo_gado },
     { label: "Tipo de negócio", valor: TIPO_NEGOCIO_LABELS[negocio.tipo_negocio] ?? "—" },
+  ];
+  const detalhes: Item[] = [
     { label: "Cabeças", valor: ou(negocio.qtd_animais, String) },
     { label: "Valor total", valor: ou(negocio.valor_total, formatCurrency) },
     { label: "Valor médio por cabeça", valor: ou(negocio.valor_medio, formatCurrency) },
@@ -98,30 +120,45 @@ function CartaoGeral({
   const nomeFazenda = fazenda?.nome_fazenda ?? negocio.fazenda?.nome_fazenda ?? `Fazenda #${negocio.fazenda_id}`;
   return (
     <>
-      <div className="carrossel-cabecalho">
-        <div>
-          <p className="carrossel-titulo">{nomeFazenda}</p>
-          {negocio.pendente ? <PendenteBadge pendente={negocio.pendente} /> : null}
+      <div className="carrossel-cartao glass-dark">
+        <div className="carrossel-cabecalho">
+          <div>
+            <p className="carrossel-titulo">{nomeFazenda}</p>
+            {negocio.pendente ? <PendenteBadge pendente={negocio.pendente} /> : null}
+          </div>
+          <BotaoMapa
+            localizacao={fazenda?.localizacao_google ?? negocio.fazenda?.localizacao_google}
+            endereco={fazenda?.endereco_fazenda ?? negocio.fazenda?.endereco_fazenda}
+            claro
+          />
         </div>
-        <BotaoMapa
-          localizacao={fazenda?.localizacao_google ?? negocio.fazenda?.localizacao_google}
-          endereco={fazenda?.endereco_fazenda ?? negocio.fazenda?.endereco_fazenda}
-          claro
-        />
+        <Grade itens={destaques} />
+        {children}
       </div>
-      <Grade itens={itens} />
+      <Detalhes itens={detalhes} />
     </>
   );
 }
 
-function CartaoLote({ lote, negocio }: { lote: LoteComPendencia; negocio: NegocioComPendencias }) {
+/** Lote: no quadro verde, nome, tipo, gênero e carimbo; valores e pesos ficam abaixo. */
+function CartaoLote({
+  lote,
+  negocio,
+  children,
+}: {
+  lote: LoteComPendencia;
+  negocio: NegocioComPendencias;
+  children?: React.ReactNode;
+}) {
   const { modalidade } = negocio;
   const porCabeca = modalidade === "cabeca";
-  const itens: Item[] = [
+  const destaques: Item[] = [
     { label: "Tipo de lote", valor: TIPO_LOTE_LABELS[lote.tipo_lote] },
     { label: "Gênero", valor: GENERO_LABELS[lote.genero] },
     { label: "Média do carimbo", valor: lote.media_carimbo || "—" },
     { label: "Ano do carimbo", valor: lote.ano_carimbo || "—" },
+  ];
+  const detalhes: Item[] = [
     ...(modalidade === "arroba" ? [{ label: "Rendimento de carcaça", valor: formatPercent(lote.rendimento_carcaca) }] : []),
     { label: VALOR_UNIDADE_LABELS[modalidade], valor: formatCurrency(lote.valor_unidade) },
     { label: "Cabeças", valor: String(lote.qtd_animais) },
@@ -131,13 +168,17 @@ function CartaoLote({ lote, negocio }: { lote: LoteComPendencia; negocio: Negoci
   ];
   return (
     <>
-      <div className="carrossel-cabecalho">
-        <div>
-          <p className="carrossel-titulo">{lote.nome_lote}</p>
-          {lote.pendente ? <PendenteBadge pendente={lote.pendente} /> : null}
+      <div className="carrossel-cartao glass-dark">
+        <div className="carrossel-cabecalho">
+          <div>
+            <p className="carrossel-titulo">{lote.nome_lote}</p>
+            {lote.pendente ? <PendenteBadge pendente={lote.pendente} /> : null}
+          </div>
         </div>
+        <Grade itens={destaques} />
+        {children}
       </div>
-      <Grade itens={itens} />
+      <Detalhes itens={detalhes} />
     </>
   );
 }
@@ -211,8 +252,9 @@ function ListaCabecas({
 }
 
 /**
- * Dados do negócio em um único quadro, com a lista de cabeças: os chips acima ("Geral" e
- * um por lote) funcionam como filtro e trocam o conteúdo do quadro. Setas
+ * Dados do negócio: um quadro verde com os destaques (e a lista de cabeças) e, abaixo, os
+ * demais dados em quadros brancos. Os chips acima ("Geral" e um por lote) funcionam como
+ * filtro e trocam o conteúdo. Setas
  * esquerda/direita, Home e End navegam entre os chips.
  *
  * Com `ativo`/`onAtivoChange` o filtro fica com a página (ex.: para listar as cabeças fora
@@ -288,6 +330,17 @@ export function NegocioCarrossel({
     lote.gados.map((gado) => ({ gado, lote }))
   );
 
+  // Negócios "cabeca" não têm pesagem individual. A lista continua dentro do quadro verde.
+  const listaCabecas =
+    cabecasNoQuadro && negocio.modalidade !== "cabeca" && negocio.lotes.length > 0 ? (
+      <ListaCabecas
+        cabecas={cabecas}
+        mostrarLote={!loteAtivo && negocio.lotes.length > 1}
+        vazio={loteAtivo ? "Nenhuma cabeça pesada neste lote." : "Nenhuma cabeça pesada neste negócio."}
+        onGadoClick={onGadoClick}
+      />
+    ) : null;
+
   return (
     <section className="carrossel" aria-label="Dados do negócio">
       <div className="carrossel-chips" role="tablist" aria-label="Geral e lotes" onKeyDown={aoTeclar}>
@@ -318,22 +371,17 @@ export function NegocioCarrossel({
         id={`${idBase}-cartao`}
         aria-labelledby={`${idBase}-chip-${indiceAtivo}`}
         tabIndex={0}
-        className="carrossel-cartao glass-dark"
+        className="carrossel-painel"
       >
         {loteAtivo ? (
-          <CartaoLote key={loteAtivo.lote_id} lote={loteAtivo} negocio={negocio} />
+          <CartaoLote key={loteAtivo.lote_id} lote={loteAtivo} negocio={negocio}>
+            {listaCabecas}
+          </CartaoLote>
         ) : (
-          <CartaoGeral negocio={negocio} fazenda={fazenda} comissao={comissao} />
+          <CartaoGeral negocio={negocio} fazenda={fazenda} comissao={comissao}>
+            {listaCabecas}
+          </CartaoGeral>
         )}
-        {/* Negócios "cabeca" não têm pesagem individual. */}
-        {cabecasNoQuadro && negocio.modalidade !== "cabeca" && negocio.lotes.length > 0 ? (
-          <ListaCabecas
-            cabecas={cabecas}
-            mostrarLote={!loteAtivo && negocio.lotes.length > 1}
-            vazio={loteAtivo ? "Nenhuma cabeça pesada neste lote." : "Nenhuma cabeça pesada neste negócio."}
-            onGadoClick={onGadoClick}
-          />
-        ) : null}
       </article>
 
       {negocio.lotes.length === 0 ? (

@@ -147,6 +147,18 @@ export default function EditarFazendaPage() {
               )}
             />
 
+            <Field label="Pecuaristas associados" htmlFor="pecuaristas">
+              {pecuaristas.length === 0 ? (
+                <p className="state-box">Nenhum pecuarista associado a esta fazenda.</p>
+              ) : (
+                <ul>
+                  {pecuaristas.map((v) => (
+                    <li key={v.pecuarista_id}>{v.nome_pecuarista}</li>
+                  ))}
+                </ul>
+              )}
+            </Field>
+
             <IconField icon={Warehouse} label="Nome Fazenda" htmlFor="nome_fazenda" error={errors.nome_fazenda?.message}>
               <TintedInput id="nome_fazenda" tint="pink" {...register("nome_fazenda")} />
             </IconField>
@@ -177,18 +189,6 @@ export default function EditarFazendaPage() {
                 className={styles.mapa}
               />
             ) : null}
-
-            <Field label="Pecuaristas associados" htmlFor="pecuaristas">
-              {pecuaristas.length === 0 ? (
-                <p className="state-box">Nenhum pecuarista associado a esta fazenda.</p>
-              ) : (
-                <ul>
-                  {pecuaristas.map((v) => (
-                    <li key={v.pecuarista_id}>{v.nome_pecuarista}</li>
-                  ))}
-                </ul>
-              )}
-            </Field>
           </div>
 
           <Button type="submit" variant="brand" size="xl" className="w-full" disabled={isSubmitting || enviandoMarca}>

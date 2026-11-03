@@ -1,21 +1,18 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
 import { useParams } from "next/navigation";
-import { Beef, FileText, Plus } from "lucide-react";
+import { FileText, Plus } from "lucide-react";
 import { BackLink } from "@/components/back-link";
 import { BotaoExcluir } from "@/components/botao-excluir";
-import { PendenteBadge } from "@/components/offline/pendente-badge";
 import { Button } from "@/components/ui/button";
 import { Fab } from "@/components/fab";
 import { ComissaoForm } from "@/components/comissao-form";
+import { ListaGados } from "@/components/lista-gados";
 import { NegocioCarrossel } from "@/components/negocio-carrossel";
 import { TipoNegocioForm } from "@/components/tipo-negocio-form";
 import { cn } from "@/lib/utils";
 import { modoDoNegocio } from "@/lib/comissao";
-import { formatCurrency, formatHora, formatNumber, formatPercent } from "@/lib/format";
-import { GENERO_LABELS } from "@/lib/labels";
 import { deleteNegocio, fetchNegocio } from "@/lib/api/negocios";
 import { gerarRomaneios } from "@/lib/relatorio-romaneio";
 import { useNegocioComPendencias } from "@/lib/flows/use-negocio-com-pendencias";
@@ -43,9 +40,6 @@ export default function NegocioDetailPage() {
   const loteFiltrado = filtro > 0 ? (lotes[Math.min(filtro, lotes.length) - 1] ?? null) : null;
   // Lotes ou cabeças ainda na fila offline seriam enviados a um negócio que não existe mais.
   const temPendencias = lotes.some((lote) => lote.pendente || lote.gados.some((gado) => gado.pendente));
-  const cabecas = (loteFiltrado ? [loteFiltrado] : lotes).flatMap((lote) =>
-    lote.gados.map((gado) => ({ gado, lote }))
-  );
 
   async function handleGerarRelatorio() {
     if (!negocio || !sincronizado) return;
@@ -146,55 +140,8 @@ export default function NegocioDetailPage() {
           ) : null}
 
           {/* Cabeças do filtro ativo ("Geral" = todas). Negócios "cabeca" não têm pesagem. */}
-          {porCabeca ? null : cabecas.length === 0 ? (
-            <div className="state-box glass-panel">
-              {loteFiltrado ? "Nenhum gado cadastrado neste lote." : "Nenhum gado cadastrado neste negócio."}
-            </div>
-          ) : (
-            <div className={styles.gadoList}>
-              {cabecas.map(({ gado, lote }) => {
-                const conteudo = (
-                  <>
-                    <span className={styles.gadoIcon}>
-                      <Beef size={18} />
-                    </span>
-                    <div className={styles.gadoInfo}>
-                      <p className={styles.gadoName}>{lote.nome_lote}</p>
-                      <p className={styles.gadoMeta}>Gênero: {GENERO_LABELS[lote.genero]}</p>
-                      <p className={styles.gadoMeta}>Rend.: {formatPercent(lote.rendimento_carcaca)}</p>
-                      <p className={styles.gadoMeta}>Peso p/ cálculo: {formatNumber(gado.peso_calculo)}</p>
-                      <p className={styles.gadoMeta}>
-                        {gado.horario_pesagem ? `Pesado às ${formatHora(gado.horario_pesagem)}` : null}
-                      </p>
-                      <p className={styles.gadoMeta}>Peso total: {formatNumber(gado.peso_total)}</p>
-                      <p className={styles.gadoMeta}>Peso da @: {formatNumber(gado.peso_arroba)}</p>
-                      {gado.pendente ? <PendenteBadge pendente={gado.pendente} /> : null}
-                    </div>
-                    <div className={styles.gadoAmount}>
-                      <p className={styles.gadoAmountValue}>
-                        {gado.valor_total !== null ? formatCurrency(gado.valor_total) : "—"}
-                      </p>
-                      <p className={styles.gadoMeta}>Valor da cabeça</p>
-                    </div>
-                  </>
-                );
-                // Cabeças pendentes (só no aparelho) não abrem a edição: ela usa a API.
-                return gado.pendente || gado.gado_id <= 0 ? (
-                  <div key={gado.gado_id} className={styles.gadoRow}>
-                    {conteudo}
-                  </div>
-                ) : (
-                  <Link
-                    key={gado.gado_id}
-                    href={`/negocios/${negocio.negocio_id}/gado/${gado.gado_id}/editar`}
-                    className={cn(styles.gadoRow, styles.gadoRowLink)}
-                    aria-label={`Editar cabeça de ${formatNumber(gado.peso_total)} kg do ${lote.nome_lote}`}
-                  >
-                    {conteudo}
-                  </Link>
-                );
-              })}
-            </div>
+          {porCabeca ? null : (
+            <ListaGados negocioId={negocio.negocio_id} lotes={lotes} loteFiltrado={loteFiltrado} editavel />
           )}
         </>
       ) : null}

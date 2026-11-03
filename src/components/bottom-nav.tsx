@@ -7,8 +7,8 @@ import { cn } from "@/lib/utils";
 import styles from "./bottom-nav.module.css";
 
 const TABS = [
-  { href: "/", icon: Home, label: "Início" },
   { href: "/dashboard", icon: BarChart3, label: "Dashboard" },
+  { href: "/", icon: Home, label: "Início" },
   { href: "/configuracoes", icon: Settings, label: "Configurações" },
 ];
 

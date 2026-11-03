@@ -305,7 +305,13 @@
   padding: 1rem;
 }
 
-.carrossel-cartao:focus-visible,
+/* Painel do chip ativo: quadro verde (destaques) + quadros brancos (demais dados). */
+.carrossel-painel {
+  min-width: 0;
+  border-radius: var(--radius-box);
+}
+
+.carrossel-painel:focus-visible,
 .carrossel-chip:focus-visible {
   outline: 2px solid var(--color-teal);
   outline-offset: 2px;
@@ -341,6 +347,33 @@
 
 .carrossel-item {
   min-width: 0;
+}
+
+/* Demais dados, fora do quadro verde: lado a lado, cada um num quadro branco. */
+.carrossel-detalhes {
+  margin-top: 0.75rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.carrossel-detalhe {
+  min-width: 0;
+  padding: 0.75rem;
+  border: 1px solid var(--color-dark-2);
+  border-radius: var(--radius-box);
+  background: var(--color-white);
+  color: var(--color-ink);
+}
+
+.carrossel-detalhe dt {
+  font-size: var(--font-size-xs);
+  color: var(--color-ink-muted);
+}
+
+.carrossel-detalhe dd {
+  font-weight: 700;
+  overflow-wrap: anywhere;
 }
 
 .carrossel-item dt {
