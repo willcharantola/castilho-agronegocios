@@ -18,6 +18,7 @@ import { fetchNegocio } from "@/lib/api/negocios";
 import { gerarRomaneios } from "@/lib/relatorio-romaneio";
 import { useNegocioComPendencias } from "@/lib/flows/use-negocio-com-pendencias";
 import { mensagemDeErro } from "@/lib/offline/rede";
+import { BotaoOlhoComissao, useExibicaoComissao } from "@/lib/permissoes";
 import styles from "./page.module.css";
 
 export default function NegocioDetailPage() {
@@ -28,6 +29,8 @@ export default function NegocioDetailPage() {
   const [relatorioError, setRelatorioError] = React.useState<string | null>(null);
   const [relatorioAvisos, setRelatorioAvisos] = React.useState<string[]>([]);
 
+  // Comissão: "-" para Normal; para Admin começa escondida e o olho revela.
+  const comissao = useExibicaoComissao();
   const porCabeca = negocio?.modalidade === "cabeca";
   const sincronizado = (negocio?.negocio_id ?? 0) > 0;
 
@@ -61,7 +64,10 @@ export default function NegocioDetailPage() {
 
   return (
     <div className={cn("page-wide", styles.page, "pt-safe")}>
-      <BackLink href="/negocios" />
+      <div className="page-header-acoes">
+        <BackLink href="/negocios" />
+        {comissao.admin ? <BotaoOlhoComissao visivel={comissao.visivel} onAlternar={comissao.alternar} /> : null}
+      </div>
 
       {!negocio && !erro ? <div className="state-box glass-panel">Carregando negócio...</div> : null}
 
@@ -81,6 +87,7 @@ export default function NegocioDetailPage() {
           <NegocioCarrossel
             negocio={negocio}
             fazenda={negocio.fazenda ?? null}
+            comissao={comissao.exibicao}
             ativo={filtro}
             onAtivoChange={setFiltro}
             cabecasNoQuadro={false}
@@ -95,12 +102,16 @@ export default function NegocioDetailPage() {
             />
           ) : null}
 
-          <ComissaoForm
-            negocioId={negocio.negocio_id}
-            porcentagem={negocio.porcentagem_comissao}
-            comissao={negocio.comissao}
-            onUpdated={() => recarregar()}
-          />
+          {/* Normal não vê nem altera a comissão (a API também ignora o que ele enviar). */}
+          {comissao.admin ? (
+            <ComissaoForm
+              negocioId={negocio.negocio_id}
+              porcentagem={negocio.porcentagem_comissao}
+              comissao={negocio.comissao}
+              visivel={comissao.visivel}
+              onUpdated={() => recarregar()}
+            />
+          ) : null}
 
           {/* Cabeças do filtro ativo ("Geral" = todas). Negócios "cabeca" não têm pesagem. */}
           {porCabeca ? null : cabecas.length === 0 ? (

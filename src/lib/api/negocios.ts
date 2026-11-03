@@ -1,7 +1,14 @@
 import { apiFetch } from "@/lib/api-client";
 import { decimalOuNull, normalizeAgregadosPeso, normalizeLoteDetail } from "@/lib/api/lotes";
 import { comCache } from "@/lib/offline/cache";
-import type { CreateNegocioInput, Negocio, NegocioDetail, OrigemOffline, UpdateNegocioInput } from "@/lib/api/types";
+import type {
+  CreateNegocioInput,
+  Negocio,
+  NegocioDetail,
+  OrigemOffline,
+  ResumoNegocios,
+  UpdateNegocioInput,
+} from "@/lib/api/types";
 
 /** Ver comentário em `gados.ts#normalizeGado` — mesma questão de Decimal-como-string. */
 function normalizeNegocio(raw: Negocio): Negocio {
@@ -24,12 +31,25 @@ export async function fetchNegocios(params?: {
   data_inicio?: string;
   data_fim?: string;
 }) {
-  const entries = Object.entries(params ?? {}).filter(([, v]) => v !== undefined);
-  const qs = entries.length > 0
-    ? `?${new URLSearchParams(entries.map(([k, v]) => [k, String(v)])).toString()}`
-    : "";
+  const qs = filtrosNegocios(params);
   const negocios = await comCache(`negocios${qs}`, () => apiFetch<Negocio[]>(`/negocios${qs}`));
   return negocios.map(normalizeNegocio);
+}
+
+/** Query string dos filtros da listagem (só os informados). */
+function filtrosNegocios(params?: { fazenda_id?: number; data_inicio?: string; data_fim?: string }) {
+  const entries = Object.entries(params ?? {}).filter(([, v]) => v !== undefined);
+  return entries.length > 0 ? `?${new URLSearchParams(entries.map(([k, v]) => [k, String(v)])).toString()}` : "";
+}
+
+/**
+ * Métricas da Home e do Dashboard no período. Para usuário Normal a API devolve as três
+ * `null` (o front mostra "-").
+ */
+export async function fetchResumoNegocios(params?: { fazenda_id?: number; data_inicio?: string; data_fim?: string }) {
+  const qs = filtrosNegocios(params);
+  const resumo = await comCache(`negocios-resumo${qs}`, () => apiFetch<ResumoNegocios>(`/negocios/resumo${qs}`));
+  return { ...resumo, comissao_total: decimalOuNull(resumo.comissao_total) };
 }
 
 /** Negócio com os lotes (ordem de cadastro), cada um com suas cabeças. */

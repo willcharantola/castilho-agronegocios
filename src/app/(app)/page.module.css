@@ -49,6 +49,13 @@
    height: 70%;
 }
 
+/* Olho de privacidade, alinhado à direita logo acima dos tiles. */
+.gridAcoes {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: -0.5rem;
+}
+
 .grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

@@ -6,10 +6,11 @@ import { Fab } from "@/components/fab";
 import { TintedInput } from "@/components/form/tinted-input";
 import { formatCurrency, startOfMonth, toDateInputValue } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { fetchNegocio, fetchNegocios } from "@/lib/api/negocios";
+import { fetchNegocio, fetchNegocios, fetchResumoNegocios } from "@/lib/api/negocios";
 import { fetchFazendas } from "@/lib/api/fazendas";
 import { gerarRomaneios } from "@/lib/relatorio-romaneio";
-import type { Fazenda, Negocio } from "@/lib/api/types";
+import type { Fazenda, Negocio, ResumoNegocios } from "@/lib/api/types";
+import { valorRestrito } from "@/lib/permissoes";
 import { ApiError } from "@/lib/api-client";
 import styles from "./page.module.css";
 
@@ -36,6 +37,8 @@ export default function DashboardPage() {
   const [dataFim, setDataFim] = React.useState(() => toDateInputValue(hoje));
 
   const [negocios, setNegocios] = React.useState<Negocio[] | null>(null);
+  // Métricas do período; para usuário Normal a API devolve as três null ("-").
+  const [resumo, setResumo] = React.useState<ResumoNegocios | null>(null);
   const [fazendas, setFazendas] = React.useState<Fazenda[]>([]);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -47,11 +50,16 @@ export default function DashboardPage() {
     let cancelled = false;
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setNegocios(null);
+    setResumo(null);
     setError(null);
 
-    fetchNegocios({ data_inicio: dataInicio || undefined, data_fim: dataFim || undefined })
-      .then((data) => {
-        if (!cancelled) setNegocios(data);
+    const filtros = { data_inicio: dataInicio || undefined, data_fim: dataFim || undefined };
+    // A lista só serve ao relatório; os indicadores vêm do resumo.
+    Promise.all([fetchNegocios(filtros), fetchResumoNegocios(filtros)])
+      .then(([data, metricas]) => {
+        if (cancelled) return;
+        setNegocios(data);
+        setResumo(metricas);
       })
       .catch((err: unknown) => {
         if (cancelled) return;
@@ -73,10 +81,6 @@ export default function DashboardPage() {
     () => Object.fromEntries(fazendas.map((f) => [f.fazenda_id, f])),
     [fazendas]
   );
-
-  // `comissao` é o valor em R$ já calculado pela API para cada negócio.
-  const comissaoTotal = negocios?.reduce((sum, n) => sum + (n.comissao ?? 0), 0) ?? null;
-  const cabecasTotal = negocios?.reduce((sum, n) => sum + (n.qtd_animais ?? 0), 0) ?? null;
 
   function resetarPeriodo() {
     setDataInicio(toDateInputValue(startOfMonth(hoje)));
@@ -145,17 +149,17 @@ export default function DashboardPage() {
         <StatRow
           icon={TrendingUp}
           label="Negócios realizados"
-          value={negocios ? String(negocios.length) : "—"}
+          value={resumo ? valorRestrito(resumo.negocios_realizados, true) : "—"}
         />
         <StatRow
           icon={DollarSign}
           label="Comissão total"
-          value={comissaoTotal !== null ? formatCurrency(comissaoTotal) : "—"}
+          value={resumo ? valorRestrito(resumo.comissao_total, true, formatCurrency) : "—"}
         />
         <StatRow
           icon={Users}
           label="Total de cabeças"
-          value={cabecasTotal !== null ? String(cabecasTotal) : "—"}
+          value={resumo ? valorRestrito(resumo.total_cabecas, true) : "—"}
         />
       </div>
 

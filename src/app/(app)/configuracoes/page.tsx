@@ -4,7 +4,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChevronRight, Percent, UserRound, Users, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { clearSession, getUsuario } from "@/lib/api-client";
+import { clearSession } from "@/lib/api-client";
+import { limparCacheDeLeitura } from "@/lib/offline/cache";
+import { useUsuario } from "@/lib/permissoes";
+import { cn } from "@/lib/utils";
 import { NIVEL_LABELS } from "./usuarios/usuario-form";
 import styles from "./page.module.css";
 
@@ -23,19 +26,20 @@ const ITENS: ItemConfiguracao[] = [
     icon: Users,
     titulo: "Usuários",
     descricao: "Cadastro e acesso dos usuários do sistema",
-    // Só para Admin (visual): a API é quem impede o acesso dos demais.
+    // Para Normal o item aparece desativado; a API recusa (403) as rotas de usuários.
     somenteAdmin: true,
   },
 ];
 
 export default function ConfiguracoesPage() {
   const router = useRouter();
-  const usuario = getUsuario();
+  const usuario = useUsuario();
   const admin = usuario?.nivel_acesso === "Admin";
-  const itens = ITENS.filter((item) => admin || !item.somenteAdmin);
 
-  function handleLogout() {
+  async function handleLogout() {
     clearSession();
+    // Os dados guardados para uso offline são do usuário que saiu (ex.: comissão de um Admin).
+    await limparCacheDeLeitura();
     router.push("/login");
   }
 
@@ -60,18 +64,33 @@ export default function ConfiguracoesPage() {
       ) : null}
 
       <nav className="card-list" aria-label="Configurações">
-        {itens.map(({ href, icon: Icon, titulo, descricao }) => (
-          <Link key={href} href={href} className="list-card glass-panel">
-            <span className="card-icon">
-              <Icon size={18} />
+        {ITENS.map(({ href, icon: Icon, titulo, descricao, somenteAdmin }) => {
+          const bloqueado = Boolean(somenteAdmin) && !admin;
+          const conteudo = (
+            <>
+              <span className="card-icon">
+                <Icon size={18} />
+              </span>
+              <span className={styles.cardInfo}>
+                <span className="card-name">{titulo}</span>
+                <span className={styles.cardMeta}>
+                  {bloqueado ? "Disponível apenas para administradores" : descricao}
+                </span>
+              </span>
+              <ChevronRight size={18} className={styles.chevron} aria-hidden />
+            </>
+          );
+          // Sem permissão: visível, mas sem link (não navega nem mostra erro).
+          return bloqueado ? (
+            <span key={href} aria-disabled="true" className={cn("list-card glass-panel", "item-bloqueado")}>
+              {conteudo}
             </span>
-            <span className={styles.cardInfo}>
-              <span className="card-name">{titulo}</span>
-              <span className={styles.cardMeta}>{descricao}</span>
-            </span>
-            <ChevronRight size={18} className={styles.chevron} aria-hidden />
-          </Link>
-        ))}
+          ) : (
+            <Link key={href} href={href} className="list-card glass-panel">
+              {conteudo}
+            </Link>
+          );
+        })}
       </nav>
 
       <Button variant="brand-secondary" onClick={handleLogout}>

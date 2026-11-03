@@ -14,6 +14,7 @@ import {
 } from "@/lib/labels";
 import type { AgregadosPeso, Fazenda, Gado } from "@/lib/api/types";
 import type { ComPendencia, LoteComPendencia, NegocioComPendencias } from "@/lib/offline/pendentes";
+import { exibirComissao, type ExibicaoComissao } from "@/lib/permissoes";
 import { cn } from "@/lib/utils";
 
 type Item = { label: string; valor: string };
@@ -55,7 +56,15 @@ function rotuloAliquota(nome: string, aliquota: number | null) {
   return aliquota !== null ? `${nome} (${formatPercent(aliquota)})` : nome;
 }
 
-function CartaoGeral({ negocio, fazenda }: { negocio: NegocioComPendencias; fazenda: Fazenda | null }) {
+function CartaoGeral({
+  negocio,
+  fazenda,
+  comissao,
+}: {
+  negocio: NegocioComPendencias;
+  fazenda: Fazenda | null;
+  comissao: ExibicaoComissao;
+}) {
   const porCabeca = negocio.modalidade === "cabeca";
   const itens: Item[] = [
     { label: "Pecuarista", valor: negocio.pecuarista?.nome_pecuarista ?? "—" },
@@ -76,7 +85,7 @@ function CartaoGeral({ negocio, fazenda }: { negocio: NegocioComPendencias; faze
         ]),
     { label: rotuloAliquota("Funrural", negocio.aliquota_funrural), valor: ou(negocio.funrural, formatCurrency) },
     { label: rotuloAliquota("Senar", negocio.aliquota_senar), valor: ou(negocio.senar, formatCurrency) },
-    { label: "Comissão", valor: ou(negocio.comissao, formatCurrency) },
+    { label: "Comissão", valor: exibirComissao(negocio.comissao, comissao, formatCurrency) },
     { label: "Observação", valor: negocio.observacao || "—" },
   ];
   const nomeFazenda = fazenda?.nome_fazenda ?? negocio.fazenda?.nome_fazenda ?? `Fazenda #${negocio.fazenda_id}`;
@@ -206,12 +215,15 @@ export function NegocioCarrossel({
   negocio,
   fazenda,
   onGadoClick,
+  comissao,
   ativo: ativoControlado,
   onAtivoChange,
   cabecasNoQuadro = true,
 }: {
   negocio: NegocioComPendencias;
   fazenda: Fazenda | null;
+  /** Como mostrar a comissão no cartão "Geral" (perfil e botão do olho). */
+  comissao: ExibicaoComissao;
   /** Torna as cabeças clicáveis (ex.: abrir a edição). */
   onGadoClick?: (gado: ComPendencia<Gado>) => void;
   /** Chip ativo: 0 = "Geral", i = i-ésimo lote. */
@@ -304,7 +316,7 @@ export function NegocioCarrossel({
         {loteAtivo ? (
           <CartaoLote key={loteAtivo.lote_id} lote={loteAtivo} negocio={negocio} />
         ) : (
-          <CartaoGeral negocio={negocio} fazenda={fazenda} />
+          <CartaoGeral negocio={negocio} fazenda={fazenda} comissao={comissao} />
         )}
         {/* Negócios "cabeca" não têm pesagem individual. */}
         {cabecasNoQuadro && negocio.modalidade !== "cabeca" && negocio.lotes.length > 0 ? (
