@@ -7,6 +7,7 @@ import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { BackLink } from "@/components/back-link";
+import { BotaoExcluir } from "@/components/botao-excluir";
 import { BotaoMapa } from "@/components/botao-mapa";
 import { LocalizacaoFields, localizacaoSchema } from "@/components/localizacao-fields";
 import { Field } from "@/components/form/field";
@@ -14,7 +15,7 @@ import { AvatarUpload } from "@/components/form/avatar-upload";
 import { IconField } from "@/components/form/icon-field";
 import { TintedInput } from "@/components/form/tinted-input";
 import { Button } from "@/components/ui/button";
-import { fetchFazenda, updateFazenda } from "@/lib/api/fazendas";
+import { fetchFazenda, updateFazenda, deleteFazenda } from "@/lib/api/fazendas";
 import type { Pecuarista } from "@/lib/api/types";
 import { ApiError } from "@/lib/api-client";
 import { urlMapaEmbutido } from "@/lib/mapa";
@@ -38,6 +39,8 @@ export default function EditarFazendaPage() {
   const [loadError, setLoadError] = React.useState<string | null>(null);
   const [submitError, setSubmitError] = React.useState<string | null>(null);
   const [loaded, setLoaded] = React.useState(false);
+  const [nome, setNome] = React.useState("");
+  const [excluirError, setExcluirError] = React.useState<string | null>(null);
   const [pecuaristas, setPecuaristas] = React.useState<Pecuarista[]>([]);
   const [enviandoMarca, setEnviandoMarca] = React.useState(false);
   // marca_url como veio da API: só é reenviada se mudar (trocada ou removida).
@@ -74,6 +77,7 @@ export default function EditarFazendaPage() {
         setMarcaOriginal(fazenda.marca_url ?? null);
         setSalvo({ localizacao: fazenda.localizacao_google ?? null, endereco: fazenda.endereco_fazenda ?? null });
         setPecuaristas((fazenda.pecuarista_fazenda ?? []).map((a) => a.pecuarista));
+        setNome(fazenda.nome_fazenda);
         setLoaded(true);
       })
       .catch((err: unknown) => {
@@ -107,11 +111,22 @@ export default function EditarFazendaPage() {
 
   return (
     <div className="page-container page-narrow pt-safe">
-      <BackLink href="/fazendas" />
+      <div className="page-header-acoes">
+        <BackLink href="/fazendas" />
+        {loaded ? (
+          <BotaoExcluir
+            descricao={`a fazenda "${nome}"`}
+            excluir={() => deleteFazenda(params.id)}
+            destino="/fazendas"
+            onErro={setExcluirError}
+          />
+        ) : null}
+      </div>
       <h1 className="page-title">Editar Fazenda</h1>
 
       {!loaded && !loadError ? <div className="state-box glass-panel">Carregando fazenda...</div> : null}
       {loadError ? <div className="state-box state-error glass-panel">{loadError}</div> : null}
+      {excluirError ? <p className="form-error">{excluirError}</p> : null}
 
       {loaded ? (
         <form onSubmit={handleSubmit(onSubmit)} className="form-stack">

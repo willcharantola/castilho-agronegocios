@@ -4,31 +4,50 @@ import * as React from "react";
 import { MaskedNumberInput } from "@/components/form/masked-number-input";
 import { Button } from "@/components/ui/button";
 import { updateNegocio } from "@/lib/api/negocios";
+import { calcularComissao, formatarCriterioComissao, type ModoComissao } from "@/lib/comissao";
 import { mensagemDeErro } from "@/lib/offline/rede";
-import { formatCurrency, formatPercent } from "@/lib/format";
+import { formatCurrency } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { Negocio } from "@/lib/api/types";
 import { COMISSAO_MASCARADA } from "@/lib/permissoes";
 import styles from "./comissao-form.module.css";
 
-/**
- * Inserir/atualizar o percentual de comissão de um negócio já cadastrado. O valor em R$
- * (`comissao`) é calculado pela API a partir do percentual e do valor total do negócio.
- * Só para Admin. Com a comissão escondida (botão do olho), mostra só a máscara: nem o
- * percentual nem o valor vão para o DOM.
- */
-export function ComissaoForm(props: {
+const ROTULOS: Record<ModoComissao, string> = {
+  por_arroba: "Comissão (R$ por arroba)",
+  percentual: "Comissão (%)",
+};
+
+type ComissaoFormProps = {
   negocioId: number;
+  /** Valor informado (R$/@ ou %, conforme `modo`), ou null se ainda não informado. */
   porcentagem: number | null;
+  /** Valor em R$ calculado pela API. */
   comissao: number | null;
+  /** Ver lib/comissao: muda com o tipo de gado e a modalidade do negócio. */
+  modo: ModoComissao;
+  /** Para a prévia (a mesma regra da API, só informativa). */
+  tipoGado: string;
+  modalidade: string;
+  valorTotal: number | null;
+  pesoTotalQuilos: number | null;
+  /** Negócio ainda na fila offline com valor digitado antes da regra por arroba. */
+  revisar?: boolean;
   /** false = comissão escondida pelo botão do olho. */
   visivel: boolean;
   onUpdated: (negocio: Pick<Negocio, "porcentagem_comissao" | "comissao">) => void;
-}) {
+};
+
+/**
+ * Inserir/atualizar a comissão de um negócio já cadastrado: R$ por arroba (gado Gordo em
+ * arroba/kg) ou percentual (demais casos). O valor em R$ (`comissao`) é calculado pela API.
+ * Só para Admin. Com a comissão escondida (botão do olho), mostra só a máscara: nem o
+ * valor informado nem o calculado vão para o DOM.
+ */
+export function ComissaoForm(props: ComissaoFormProps) {
   if (!props.visivel) {
     return (
       <div className={cn(styles.card, "glass-panel")}>
-        <p className={styles.title}>Comissão (%)</p>
+        <p className={styles.title}>{ROTULOS[props.modo]}</p>
         <p className={styles.hint}>
           {COMISSAO_MASCARADA} · Toque no olho no topo da página para ver e editar.
         </p>
@@ -42,34 +61,55 @@ function ComissaoFormVisivel({
   negocioId,
   porcentagem,
   comissao,
+  modo,
+  tipoGado,
+  modalidade,
+  valorTotal,
+  pesoTotalQuilos,
+  revisar,
   onUpdated,
-}: {
-  negocioId: number;
-  /** Percentual atual (0 a 100), ou null se ainda não informado. */
-  porcentagem: number | null;
-  /** Valor em R$ calculado pela API. */
-  comissao: number | null;
-  onUpdated: (negocio: Pick<Negocio, "porcentagem_comissao" | "comissao">) => void;
-}) {
+}: ComissaoFormProps) {
   const [valor, setValor] = React.useState<number | undefined>(porcentagem ?? undefined);
   const [salvando, setSalvando] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [sucesso, setSucesso] = React.useState(false);
+  const [aviso, setAviso] = React.useState<string | null>(null);
 
-  const percentual = valor ?? NaN;
-  const alterado = !Number.isNaN(percentual) && percentual !== porcentagem;
+  // Se a forma de cálculo mudar com o campo preenchido, o número digitado perde o sentido.
+  const [modoAnterior, setModoAnterior] = React.useState(modo);
+  if (modo !== modoAnterior) {
+    setModoAnterior(modo);
+    if (valor !== undefined) {
+      setValor(undefined);
+      setAviso("A comissão foi limpa porque a forma de cálculo mudou.");
+    }
+  }
+
+  const informado = valor ?? NaN;
+  const alterado = !Number.isNaN(informado) && informado !== porcentagem;
+  const previa = alterado
+    ? calcularComissao({
+        tipoGado,
+        modalidade,
+        valorTotal: valorTotal ?? 0,
+        pesoTotalQuilos: pesoTotalQuilos ?? 0,
+        valorInformado: informado,
+      })
+    : null;
 
   async function atualizar(event: React.FormEvent) {
     event.preventDefault();
     setSucesso(false);
-    if (Number.isNaN(percentual) || percentual < 0 || percentual > 100) {
-      setError("Informe uma porcentagem entre 0 e 100.");
+    // Mesma faixa do CHECK do banco (0 a 100) nos dois modos.
+    if (Number.isNaN(informado) || informado < 0 || informado > 100) {
+      setError(modo === "por_arroba" ? "Informe um valor entre R$ 0,00 e R$ 100,00." : "Informe uma porcentagem entre 0 e 100.");
       return;
     }
     setError(null);
+    setAviso(null);
     setSalvando(true);
     try {
-      const atualizado = await updateNegocio(negocioId, { porcentagem_comissao: percentual });
+      const atualizado = await updateNegocio(negocioId, { porcentagem_comissao: informado });
       onUpdated(atualizado);
       setSucesso(true);
     } catch (err) {
@@ -82,13 +122,15 @@ function ComissaoFormVisivel({
   return (
     <form onSubmit={atualizar} className={cn(styles.card, "glass-panel")}>
       <label htmlFor="comissao" className={styles.title}>
-        Comissão (%)
+        {ROTULOS[modo]}
       </label>
       <div className={styles.row}>
         <MaskedNumberInput
+          // Trocar a máscara (R$ ↔ %) recria o campo.
+          key={modo}
           id="comissao"
-          formato="percentual"
-          placeholder="Ex: 5%"
+          formato={modo === "por_arroba" ? "moeda" : "percentual"}
+          placeholder={modo === "por_arroba" ? "Ex: R$ 2,00" : "Ex: 5%"}
           className={styles.input}
           value={valor}
           onValueChange={(novo) => {
@@ -100,14 +142,26 @@ function ComissaoFormVisivel({
           {salvando ? "Atualizando..." : "Atualizar"}
         </Button>
       </div>
+      {previa !== null ? (
+        <p className={styles.hint}>
+          Prévia: {formatCurrency(previa)}
+          {modo === "por_arroba" ? " sobre o peso vivo das cabeças já pesadas" : " sobre o valor total do negócio"}
+        </p>
+      ) : null}
       {porcentagem !== null ? (
         <p className={styles.hint}>
-          Atual: {formatPercent(porcentagem)}
-          {comissao !== null ? ` · ${formatCurrency(comissao)} sobre o valor total do negócio` : null}
+          Atual: {formatarCriterioComissao(porcentagem, modo)}
+          {comissao !== null ? ` · ${formatCurrency(comissao)}` : null}
         </p>
       ) : (
         <p className={styles.hint}>Nenhuma comissão definida para este negócio.</p>
       )}
+      {revisar ? (
+        <p className="form-error">
+          Valor informado antes da regra por arroba: revise-o, pois agora ele vale como R$ por arroba.
+        </p>
+      ) : null}
+      {aviso ? <p className="form-error">{aviso}</p> : null}
       {error ? <p className="form-error">{error}</p> : null}
       {sucesso ? <p className={styles.success}>Comissão atualizada.</p> : null}
     </form>

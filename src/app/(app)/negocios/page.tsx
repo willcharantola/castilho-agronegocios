@@ -16,6 +16,7 @@ import { ApiError } from "@/lib/api-client";
 import { PendenteBadge } from "@/components/offline/pendente-badge";
 import { idTemporario, usePendentes, useVersaoSincronizacao } from "@/lib/offline/fila";
 import { mesclarPendentes, negocioDePendente, type ExibicaoNegocio } from "@/lib/offline/pendentes";
+import { formatarCriterioComissao, modoDoNegocio } from "@/lib/comissao";
 import { BotaoOlhoComissao, exibirComissao, useExibicaoComissao } from "@/lib/permissoes";
 import styles from "./page.module.css";
 
@@ -227,6 +228,10 @@ export default function NegociosPage() {
 
                  <p className="card-meta">
                   Comissão: {exibirComissao(negocio.comissao, comissao.exibicao, formatCurrency)}
+                  {/* Critério (R$/@ ou %) só com o olho aberto: escondido fica só a máscara. */}
+                  {comissao.exibicao === "visivel" && negocio.porcentagem_comissao !== null
+                    ? ` (${formatarCriterioComissao(negocio.porcentagem_comissao, modoDoNegocio(negocio))})`
+                    : null}
                   
                 </p>
 

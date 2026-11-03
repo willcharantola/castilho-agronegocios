@@ -5,9 +5,10 @@ import { useParams, useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { BackLink } from "@/components/back-link";
+import { BotaoExcluir } from "@/components/botao-excluir";
 import { CompradorFields, compradorSchema, type CompradorFormValues } from "@/components/comprador-fields";
 import { Button } from "@/components/ui/button";
-import { fetchComprador, updateComprador } from "@/lib/api/compradores";
+import { deleteComprador, fetchComprador, updateComprador } from "@/lib/api/compradores";
 import { ApiError } from "@/lib/api-client";
 
 export default function EditarCompradorPage() {
@@ -16,6 +17,8 @@ export default function EditarCompradorPage() {
   const [loadError, setLoadError] = React.useState<string | null>(null);
   const [submitError, setSubmitError] = React.useState<string | null>(null);
   const [loaded, setLoaded] = React.useState(false);
+  const [nome, setNome] = React.useState("");
+  const [excluirError, setExcluirError] = React.useState<string | null>(null);
   const {
     register,
     handleSubmit,
@@ -35,6 +38,7 @@ export default function EditarCompradorPage() {
           municipio: comprador.municipio,
           pessoa_contato: comprador.pessoa_contato,
         });
+        setNome(comprador.nome_empresa);
         setLoaded(true);
       })
       .catch((err: unknown) => {
@@ -58,11 +62,22 @@ export default function EditarCompradorPage() {
 
   return (
     <div className="page-container page-narrow pt-safe">
-      <BackLink href="/compradores" />
+      <div className="page-header-acoes">
+        <BackLink href="/compradores" />
+        {loaded ? (
+          <BotaoExcluir
+            descricao={`o comprador "${nome}"`}
+            excluir={() => deleteComprador(params.id)}
+            destino="/compradores"
+            onErro={setExcluirError}
+          />
+        ) : null}
+      </div>
       <h1 className="page-title">Editar Comprador</h1>
 
       {!loaded && !loadError ? <div className="state-box glass-panel">Carregando comprador...</div> : null}
       {loadError ? <div className="state-box state-error glass-panel">{loadError}</div> : null}
+      {excluirError ? <p className="form-error">{excluirError}</p> : null}
 
       {loaded ? (
         <form onSubmit={handleSubmit(onSubmit)} className="form-stack">

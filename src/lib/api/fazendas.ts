@@ -18,3 +18,8 @@ export function createFazenda(input: CreateFazendaInput & OrigemOffline) {
 export function updateFazenda(id: number | string, input: UpdateFazendaInput) {
   return apiFetch<Fazenda>(`/fazendas/${id}`, { method: "PATCH", body: JSON.stringify(input) });
 }
+
+/** A API recusa (409) enquanto houver negócios ligados. */
+export function deleteFazenda(id: number | string) {
+  return apiFetch<Fazenda>(`/fazendas/${id}`, { method: "DELETE" });
+}
