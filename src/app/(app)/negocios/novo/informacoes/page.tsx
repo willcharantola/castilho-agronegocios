@@ -12,15 +12,12 @@ import { Field } from "@/components/form/field";
 import { TintedInput } from "@/components/form/tinted-input";
 import { OpcoesBotoes, opcoesDeLabels } from "@/components/form/opcoes-botoes";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toDateInputValue } from "@/lib/format";
 import { MODALIDADE_LABELS, TIPO_GADO_LABELS, TIPO_NEGOCIO_LABELS } from "@/lib/labels";
 import { PASSOS_NOVO_NEGOCIO, useNegocioFlow } from "@/lib/flows/negocio-flow";
 import { salvarNegocioDoFluxo } from "@/lib/flows/criar-negocio";
 import { mensagemDeErro } from "@/lib/offline/rede";
 import { cn } from "@/lib/utils";
-import type { TipoNegocio } from "@/lib/api/types";
-import fieldBox from "@/components/form/field-box.module.css";
 import styles from "./page.module.css";
 
 // A modalidade é escolhida no passo anterior. Tipo de lote, valor da unidade, carimbo e
@@ -37,6 +34,7 @@ type FormInput = z.input<typeof schema>;
 type FormValues = z.output<typeof schema>;
 
 const OPCOES_TIPO_GADO = opcoesDeLabels(TIPO_GADO_LABELS);
+const OPCOES_TIPO_NEGOCIO = opcoesDeLabels(TIPO_NEGOCIO_LABELS);
 
 export default function NovoNegocioInformacoesPage() {
   const router = useRouter();
@@ -130,20 +128,13 @@ export default function NovoNegocioInformacoesPage() {
               control={control}
               name="tipo_negocio"
               render={({ field }) => (
-                <Select value={field.value} onValueChange={field.onChange}>
-                  <SelectTrigger id="tipo_negocio" className={cn(fieldBox.box, fieldBox.pink)}>
-                    <SelectValue>
-                      {(value: TipoNegocio | null) => (value ? TIPO_NEGOCIO_LABELS[value] : "Selecione")}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(Object.keys(TIPO_NEGOCIO_LABELS) as TipoNegocio[]).map((key) => (
-                      <SelectItem key={key} value={key}>
-                        {TIPO_NEGOCIO_LABELS[key]}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <OpcoesBotoes
+                  id="tipo_negocio"
+                  ariaLabel="Tipo de Negócio"
+                  opcoes={OPCOES_TIPO_NEGOCIO}
+                  value={field.value}
+                  onChange={field.onChange}
+                />
               )}
             />
           </Field>
