@@ -124,10 +124,7 @@ export default function FazendasPage() {
         </div>
       ) : null}
 
-      {/* Sem cadastro avulso: a fazenda nasce dentro de um pecuarista. */}
-      <p className={styles.dica}>
-        Para cadastrar uma fazenda, use o cadastro do pecuarista ou &quot;Adicionar fazenda&quot; na tela dele.
-      </p>
+     
     </div>
   );
 }

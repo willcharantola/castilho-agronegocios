@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronRight, Percent, UserRound, Users, type LucideIcon } from "lucide-react";
+import { ChevronRight, Percent, Tags, UserRound, Users, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { clearSession } from "@/lib/api-client";
 import { limparCacheDeLeitura } from "@/lib/offline/cache";
@@ -20,6 +20,13 @@ const ITENS: ItemConfiguracao[] = [
     icon: Percent,
     titulo: "Impostos e taxas",
     descricao: "Alíquotas de Funrural e Senar dos negócios",
+  },
+  {
+    href: "/configuracoes/tipos-de-gado",
+    icon: Tags,
+    titulo: "Tipos de gado",
+    // Normal abre a lista só para consulta; só Admin cadastra, renomeia e exclui.
+    descricao: "Nomes sugeridos ao cadastrar lotes",
   },
   {
     href: "/configuracoes/usuarios",

@@ -1,6 +1,6 @@
 import { createGado, updateGado } from "@/lib/api/gados";
 import { createLote, deleteLote, updateLote } from "@/lib/api/lotes";
-import type { CreateGadoInput, CreateLoteInput, Modalidade, UpdateLoteInput } from "@/lib/api/types";
+import type { CreateGadoInput, CreateLoteInput, Modalidade, TipoGado, UpdateLoteInput } from "@/lib/api/types";
 import { estimarGado } from "@/lib/calculo-gado";
 import { atualizarPendente, ehIdTemporario, enviarOuEnfileirar, idTemporario, referencia } from "@/lib/offline/fila";
 import type { ExibicaoGado, ExibicaoLote, ExibicaoLoteAlteracao, LoteComPendencia } from "@/lib/offline/pendentes";
@@ -11,7 +11,7 @@ import { horaLocalAtual } from "@/lib/offline/rede";
 // sem conexão (ou com o negócio/lote ainda só no aparelho) entram na fila offline, que
 // sincroniza na ordem negócio → lotes → gados.
 
-type NegocioRef = { negocio_id: number; modalidade: Modalidade };
+type NegocioRef = { negocio_id: number; modalidade: Modalidade; tipo_gado: TipoGado; valor_unidade: number };
 
 export function mensagemLoteComCabecas(qtd: number) {
   return (
@@ -76,7 +76,7 @@ export async function cadastrarGado(negocio: NegocioRef, lote: LoteComPendencia,
   const exibicao: ExibicaoGado = {
     negocio_id: negocio.negocio_id,
     lote_id: lote.lote_id,
-    ...estimarGado(negocio.modalidade, lote, pesoTotal),
+    ...estimarGado(negocio, lote, pesoTotal),
   };
   const envio = await enviarOuEnfileirar(
     "gado",
@@ -105,7 +105,7 @@ export async function editarGado(
     const exibicao: ExibicaoGado = {
       negocio_id: negocio.negocio_id,
       lote_id: lote.lote_id,
-      ...estimarGado(negocio.modalidade, lote, pesoTotal),
+      ...estimarGado(negocio, lote, pesoTotal),
     };
     await atualizarPendente(
       -gadoId,

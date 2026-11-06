@@ -1,4 +1,4 @@
-import type { Genero, Modalidade, TipoGado, TipoLote, TipoNegocio } from "@/lib/api/types";
+import type { Genero, Modalidade, TipoComprador, TipoGado, TipoLote, TipoNegocio } from "@/lib/api/types";
 
 export const MODALIDADE_LABELS: Record<Modalidade, string> = {
   arroba: "Por @/RC",
@@ -6,11 +6,17 @@ export const MODALIDADE_LABELS: Record<Modalidade, string> = {
   kg: "Por Kg",
 };
 
-/** Rótulo do valor da unidade do lote, conforme a modalidade do negócio. */
+/** Rótulo do valor da unidade do negócio, conforme a modalidade. */
 export const VALOR_UNIDADE_LABELS: Record<Modalidade, string> = {
-  arroba: "R$ por arroba",
-  kg: "R$ por kg",
-  cabeca: "R$ por cabeça",
+  arroba: "Valor por arroba",
+  kg: "Valor por kg",
+  cabeca: "Valor por cabeça",
+};
+
+/** Rótulo discreto que distingue a origem do comprador. */
+export const TIPO_COMPRADOR_LABELS: Record<TipoComprador, string> = {
+  frigorifico: "Frigorífico",
+  pecuarista: "Pecuarista",
 };
 
 export const TIPO_GADO_LABELS: Record<TipoGado, string> = {

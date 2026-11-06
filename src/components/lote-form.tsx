@@ -9,10 +9,12 @@ import { MaskedNumberInput } from "@/components/form/masked-number-input";
 import { OpcoesBotoes, opcoesDeLabels } from "@/components/form/opcoes-botoes";
 import { TintedInput } from "@/components/form/tinted-input";
 import { Button } from "@/components/ui/button";
+import { fetchTiposGado } from "@/lib/api/tipos-gado";
 import { formatCurrency } from "@/lib/format";
-import { GENERO_LABELS, TIPO_LOTE_LABELS, VALOR_UNIDADE_LABELS } from "@/lib/labels";
+import { GENERO_LABELS, TIPO_LOTE_LABELS } from "@/lib/labels";
 import { mensagemDeErro } from "@/lib/offline/rede";
-import type { CreateLoteInput, Genero, Lote, Modalidade, TipoLote } from "@/lib/api/types";
+import type { CreateLoteInput, Genero, Lote, Modalidade, TipoGadoCatalogo, TipoLote } from "@/lib/api/types";
+import styles from "./lote-form.module.css";
 
 const OPCOES_TIPO_LOTE = opcoesDeLabels(TIPO_LOTE_LABELS);
 const OPCOES_GENERO = opcoesDeLabels(GENERO_LABELS);
@@ -34,20 +36,17 @@ function criarSchema(modalidade: Modalidade, nomesExistentes: string[]) {
           .refine((v) => Math.round(v * 100) === v * 100, "Use no máximo 2 casas decimais.")
           .optional()
       ),
-      valor_unidade: z.preprocess(
-        vazioParaUndefined,
-        z.coerce.number({ error: "Informe o valor." }).positive("Deve ser maior que zero.")
-      ),
       tipo_lote: z.enum(["Vaca", "Boi", "Novilha", "Garrote", "Bezerro", "Variados"], {
         error: "Selecione o tipo de lote.",
       }),
       genero: z.enum(["Macho", "Femea"], { error: "Selecione o gênero." }),
-      media_carimbo: z
-        .string({ error: "Informe a média do carimbo." })
+      // Opcionais: vazio vai como null.
+      media_carimbo: z.string().trim().max(30, "Máximo de 30 caracteres.").optional(),
+      ano_carimbo: z
+        .string()
         .trim()
-        .min(1, "Informe a média do carimbo.")
-        .max(30, "Máximo de 30 caracteres."),
-      ano_carimbo: z.string().regex(/^\d{4}$/, "Informe o ano com 4 dígitos (ex: 2025)."),
+        .regex(/^(\d{4})?$/, "Informe o ano com 4 dígitos (ex: 2025).")
+        .optional(),
       qtd_animais: z.preprocess(
         vazioParaUndefined,
         z.coerce.number().int("Deve ser um número inteiro.").min(1, "Deve ser pelo menos 1.").optional()
@@ -74,10 +73,13 @@ type FormSchema = ReturnType<typeof criarSchema>;
 /**
  * Formulário do lote. Em "arroba"/"kg" é usado no modal "Adicionar lote" e na edição (com
  * "Excluir lote"); em "cabeca" é o formulário único do "Lote único" (sem nome nem
- * rendimento, com a quantidade de animais).
+ * rendimento, com a quantidade de animais). O preço é do negócio (informações do negócio).
+ * O nome do lote tem sugestões (Configurações → Tipos de gado): tocar em uma preenche o
+ * campo, que continua livre.
  */
 export function LoteForm({
   modalidade,
+  valorUnidade = 0,
   lote,
   nomesExistentes = [],
   submitLabel,
@@ -86,6 +88,8 @@ export function LoteForm({
   onExcluir,
 }: {
   modalidade: Modalidade;
+  /** Preço por cabeça do negócio, para a estimativa do "Lote único". */
+  valorUnidade?: number;
   /** Lote em edição; omitido para cadastro novo. */
   lote?: Lote;
   /** Nomes dos outros lotes do negócio (para o nome ser único, ignorando maiúsculas). */
@@ -107,6 +111,7 @@ export function LoteForm({
     register,
     handleSubmit,
     control,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<z.input<FormSchema>, unknown, z.output<FormSchema>>({
     resolver: zodResolver(schema),
@@ -114,19 +119,32 @@ export function LoteForm({
       ? {
           nome_lote: lote.nome_lote,
           rendimento_carcaca: lote.rendimento_carcaca,
-          valor_unidade: lote.valor_unidade,
           tipo_lote: lote.tipo_lote,
           genero: lote.genero,
-          media_carimbo: lote.media_carimbo,
-          ano_carimbo: lote.ano_carimbo,
+          media_carimbo: lote.media_carimbo ?? "",
+          ano_carimbo: lote.ano_carimbo ?? "",
           qtd_animais: modalidade === "cabeca" && lote.qtd_animais > 0 ? lote.qtd_animais : undefined,
         }
-      : { ano_carimbo: "" },
+      : { media_carimbo: "", ano_carimbo: "" },
   });
 
   const porCabeca = modalidade === "cabeca";
-  const valorUnidade = Number(useWatch({ control, name: "valor_unidade" })) || 0;
   const qtd = Number(useWatch({ control, name: "qtd_animais" })) || 0;
+  const nomeAtual = (useWatch({ control, name: "nome_lote" }) ?? "").trim().toLowerCase();
+
+  // Sugestões de nome: lista da empresa (guardada no aparelho para uso offline).
+  const [sugestoes, setSugestoes] = React.useState<TipoGadoCatalogo[]>([]);
+  React.useEffect(() => {
+    if (porCabeca) return;
+    let cancelado = false;
+    fetchTiposGado()
+      .then((tipos) => !cancelado && setSugestoes(tipos))
+      // Sem a lista, o nome continua sendo digitado à mão.
+      .catch(() => undefined);
+    return () => {
+      cancelado = true;
+    };
+  }, [porCabeca]);
   const id = (nome: string) => `${idPrefix}${nome}`;
 
   async function submit(v: z.output<FormSchema>) {
@@ -135,11 +153,10 @@ export function LoteForm({
       await onSubmit({
         ...(porCabeca ? { qtd_animais: v.qtd_animais } : { nome_lote: v.nome_lote }),
         ...(modalidade === "arroba" ? { rendimento_carcaca: v.rendimento_carcaca } : {}),
-        valor_unidade: v.valor_unidade,
         tipo_lote: v.tipo_lote as TipoLote,
         genero: v.genero as Genero,
-        media_carimbo: v.media_carimbo,
-        ano_carimbo: v.ano_carimbo,
+        media_carimbo: v.media_carimbo || null,
+        ano_carimbo: v.ano_carimbo || null,
       });
     } catch (err) {
       setErro(mensagemDeErro(err));
@@ -171,6 +188,21 @@ export function LoteForm({
               placeholder="Ex: Bois Nelore"
               {...register("nome_lote")}
             />
+            {sugestoes.length > 0 ? (
+              <div className={styles.sugestoes} role="group" aria-label="Sugestões de nome">
+                {sugestoes.map((tipo) => (
+                  <button
+                    key={tipo.tipo_gado_id}
+                    type="button"
+                    className={styles.sugestao}
+                    aria-pressed={nomeAtual === tipo.nome_gado.toLowerCase()}
+                    onClick={() => setValue("nome_lote", tipo.nome_gado, { shouldValidate: true, shouldDirty: true })}
+                  >
+                    {tipo.nome_gado}
+                  </button>
+                ))}
+              </div>
+            ) : null}
           </Field>
         )}
 
@@ -198,27 +230,6 @@ export function LoteForm({
               />
             </Field>
           ) : null}
-
-          <Field
-            label={VALOR_UNIDADE_LABELS[modalidade]}
-            htmlFor={id("valor_unidade")}
-            error={errors.valor_unidade?.message}
-          >
-            <Controller
-              control={control}
-              name="valor_unidade"
-              render={({ field }) => (
-                <MaskedNumberInput
-                  id={id("valor_unidade")}
-                  formato="moeda"
-                  name={field.name}
-                  value={field.value as number | string | undefined}
-                  onValueChange={field.onChange}
-                  onBlur={field.onBlur}
-                />
-              )}
-            />
-          </Field>
 
           {porCabeca ? (
             <Field label="Quantidade de animais" htmlFor={id("qtd_animais")} error={errors.qtd_animais?.message}>
@@ -269,7 +280,7 @@ export function LoteForm({
         </Field>
 
         <div className="form-row">
-          <Field label="Média do carimbo" htmlFor={id("media_carimbo")} error={errors.media_carimbo?.message}>
+          <Field label="Média do carimbo (opcional)" htmlFor={id("media_carimbo")} error={errors.media_carimbo?.message}>
             <TintedInput
               id={id("media_carimbo")}
               tint="pink"
@@ -278,7 +289,7 @@ export function LoteForm({
               {...register("media_carimbo")}
             />
           </Field>
-          <Field label="Ano do carimbo" htmlFor={id("ano_carimbo")} error={errors.ano_carimbo?.message}>
+          <Field label="Ano do carimbo (opcional)" htmlFor={id("ano_carimbo")} error={errors.ano_carimbo?.message}>
             <TintedInput
               id={id("ano_carimbo")}
               tint="pink"

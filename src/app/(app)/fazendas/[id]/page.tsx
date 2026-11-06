@@ -1,16 +1,16 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { FileText, MapPin, Type, Warehouse } from "lucide-react";
+import { FileText, MapPin, Type, User, Warehouse } from "lucide-react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { BackLink } from "@/components/back-link";
 import { BotaoExcluir } from "@/components/botao-excluir";
-import { BotaoMapa } from "@/components/botao-mapa";
+import { DocumentosFazendaFields, documentosFazendaSchema } from "@/components/cnpj-fazenda-field";
 import { LocalizacaoFields, localizacaoSchema } from "@/components/localizacao-fields";
-import { Field } from "@/components/form/field";
 import { AvatarUpload } from "@/components/form/avatar-upload";
 import { IconField } from "@/components/form/icon-field";
 import { TintedInput } from "@/components/form/tinted-input";
@@ -18,14 +18,15 @@ import { Button } from "@/components/ui/button";
 import { fetchFazenda, updateFazenda, deleteFazenda } from "@/lib/api/fazendas";
 import type { Pecuarista } from "@/lib/api/types";
 import { ApiError } from "@/lib/api-client";
-import { urlMapaEmbutido } from "@/lib/mapa";
+import { resolverLinkMapa, urlMapaEmbutido } from "@/lib/mapa";
 import { useOnlineStatus } from "@/lib/offline/use-online-status";
+import { cn } from "@/lib/utils";
 import styles from "./page.module.css";
 
 const schema = z.object({
   nome_fazenda: z.string().min(2, "Informe o nome da fazenda.").max(50),
   municipio: z.string().min(2, "Informe o município.").max(20),
-  inscricao_estadual: z.string().min(1, "Informe a inscrição estadual.").max(12),
+  ...documentosFazendaSchema,
   // URL pública no S3, preenchida pelo AvatarUpload (opcional; null = sem imagem).
   marca_url: z.string().nullable().optional(),
   marca_escrita: z.string().max(10, "Máximo de 10 caracteres.").optional(),
@@ -69,6 +70,7 @@ export default function EditarFazendaPage() {
           nome_fazenda: fazenda.nome_fazenda,
           municipio: fazenda.municipio,
           inscricao_estadual: fazenda.inscricao_estadual,
+          cnpj: fazenda.cnpj ?? "",
           marca_url: fazenda.marca_url ?? null,
           marca_escrita: fazenda.marca_escrita ?? "",
           endereco_fazenda: fazenda.endereco_fazenda ?? "",
@@ -100,6 +102,7 @@ export default function EditarFazendaPage() {
         ...(marca !== marcaOriginal ? { marca_url: marca } : {}),
         marca_escrita: values.marca_escrita || undefined,
         // Apagados → null (limpa no banco).
+        cnpj: values.cnpj || null,
         endereco_fazenda: values.endereco_fazenda || null,
         localizacao_google: values.localizacao_google || null,
       });
@@ -147,18 +150,6 @@ export default function EditarFazendaPage() {
               )}
             />
 
-            <Field label="Pecuaristas associados" htmlFor="pecuaristas">
-              {pecuaristas.length === 0 ? (
-                <p className="state-box">Nenhum pecuarista associado a esta fazenda.</p>
-              ) : (
-                <ul>
-                  {pecuaristas.map((v) => (
-                    <li key={v.pecuarista_id}>{v.nome_pecuarista}</li>
-                  ))}
-                </ul>
-              )}
-            </Field>
-
             <IconField icon={Warehouse} label="Nome Fazenda" htmlFor="nome_fazenda" error={errors.nome_fazenda?.message}>
               <TintedInput id="nome_fazenda" tint="pink" {...register("nome_fazenda")} />
             </IconField>
@@ -167,9 +158,7 @@ export default function EditarFazendaPage() {
               <TintedInput id="municipio" tint="pink" {...register("municipio")} />
             </IconField>
 
-            <IconField icon={FileText} label="Inscrição Estadual" htmlFor="inscricao_estadual" error={errors.inscricao_estadual?.message}>
-              <TintedInput id="inscricao_estadual" tint="pink" {...register("inscricao_estadual")} />
-            </IconField>
+            <DocumentosFazendaFields control={control} errors={errors} icone={FileText} />
 
 
             <IconField icon={Type} label="Marca escrita" htmlFor="marca_escrita" error={errors.marca_escrita?.message}>
@@ -178,18 +167,49 @@ export default function EditarFazendaPage() {
 
             <LocalizacaoFields register={register} setValue={setValue} errors={errors} />
 
-            <BotaoMapa localizacao={salvo.localizacao} endereco={salvo.endereco} className={styles.botaoMapa} />
-            {/* Pré-visualização só com coordenadas e com internet; senão fica só o botão. */}
+            {/* Pré-visualização só com coordenadas e com internet; clicar abre o Google Maps. */}
             {urlMapaEmbutido(salvo.localizacao) && online ? (
-              <iframe
-                title="Mapa da fazenda"
-                src={urlMapaEmbutido(salvo.localizacao)!}
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-                className={styles.mapa}
-              />
+              <a
+                href={resolverLinkMapa(salvo.localizacao, salvo.endereco) ?? undefined}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={styles.mapaLink}
+                aria-label="Abrir a localização no Google Maps"
+              >
+                <iframe
+                  title="Mapa da fazenda"
+                  src={urlMapaEmbutido(salvo.localizacao)!}
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  tabIndex={-1}
+                  className={styles.mapa}
+                />
+              </a>
             ) : null}
           </div>
+
+          <section className={styles.pecuaristas}>
+            <p className="section-title">Pecuaristas associados</p>
+            {pecuaristas.length === 0 ? (
+              <div className="state-box glass-panel">Nenhum pecuarista associado a esta fazenda.</div>
+            ) : (
+              <div className="card-list">
+                {pecuaristas.map((pecuarista) => (
+                  // O card inteiro abre a edição do pecuarista (o link cobre o card).
+                  <div key={pecuarista.pecuarista_id} className={cn("list-card", "glass-panel", styles.cardPecuarista)}>
+                    <span className="card-icon">
+                      <User size={18} />
+                    </span>
+                    <div className="card-info">
+                      <Link href={`/pecuaristas/${pecuarista.pecuarista_id}`} className={styles.linkPecuarista}>
+                        <p className="card-name">{pecuarista.nome_pecuarista}</p>
+                      </Link>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
 
           <Button type="submit" variant="brand" size="xl" className="w-full" disabled={isSubmitting || enviandoMarca}>
             {isSubmitting ? "Salvando..." : enviandoMarca ? "Enviando imagem..." : "Salvar"}

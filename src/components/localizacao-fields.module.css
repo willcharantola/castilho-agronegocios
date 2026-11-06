@@ -1,10 +1,16 @@
 .gps {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  margin-top: -0.5rem;
+  align-items: flex-end;
+ 
+  /* Junto do campo de localização logo abaixo (os campos são separados em 1,25rem). */
+  margin-bottom: -10.5rem;
 }
 
 .gps button {
   min-height: 44px;
+}
+
+.gps :global(.form-error) {
+  align-self: stretch;
 }

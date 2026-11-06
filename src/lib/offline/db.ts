@@ -146,7 +146,68 @@ class OfflineDB extends Dexie {
       .upgrade(async (tx) => {
         await tx.table<RegistroPendente, number>("pendentes").toCollection().modify(migrarParaLotes);
       });
+    // v5: bd-12 (atualizacao-bd12.md). O preço volta do lote para o negócio, o comprador
+    // pode ser um pecuarista e o frigorífico perde o telefone. Converte a fila; as leituras
+    // guardadas (cache) estão no formato antigo e são descartadas — a próxima busca online
+    // as regrava. Os tipos de gado (sugestões de nome de lote) ficam no cache, chave "tipos-gado".
+    this.version(5)
+      .stores({
+        pendentes: "++id, uuid, entidade, status, [entidade+status]",
+        cache: "chave",
+        mapeamentos: "uuid, idLocal",
+      })
+      .upgrade(async (tx) => {
+        const pendentes = tx.table<RegistroPendente, number>("pendentes");
+        // Precisa ver a fila inteira (o preço do negócio vem dos lotes dele).
+        await pendentes.bulkPut(migrarParaBd12(await pendentes.toArray()));
+        await tx.table<CacheLeitura, string>("cache").clear();
+      });
   }
+}
+
+/**
+ * Migração v5 da fila (bd-12):
+ * - negócio pendente recebe o `valor_unidade` dos seus lotes pendentes; sem lote, ou com
+ *   lotes de preços diferentes (agora o valor é único), fica em "revisao";
+ * - lotes (cadastro e alteração) perdem o `valor_unidade`; o comprador perde o `telefone`;
+ * - o comprador_id antigo continua valendo como frigorífico (é o formato plano da fila).
+ */
+export function migrarParaBd12(registros: RegistroPendente[]): RegistroPendente[] {
+  const precosDoNegocio = new Map<string, number[]>();
+  for (const r of registros) {
+    if (r.entidade !== "lote" || r.payload.valor_unidade == null) continue;
+    const uuidNegocio = r.payload.negocio_uuid_local as string | undefined;
+    if (!uuidNegocio) continue;
+    precosDoNegocio.set(uuidNegocio, [...(precosDoNegocio.get(uuidNegocio) ?? []), Number(r.payload.valor_unidade)]);
+  }
+  for (const r of registros) {
+    const p = r.payload;
+    switch (r.entidade) {
+      case "negocio": {
+        if (p.valor_unidade != null) break;
+        const precos = precosDoNegocio.get(r.uuid) ?? [];
+        if (precos.length > 0) p.valor_unidade = precos[0];
+        if (precos.length === 0 || new Set(precos).size > 1) {
+          r.status = "revisao";
+          r.erroMensagem =
+            precos.length === 0
+              ? "Negócio cadastrado antes da atualização do sistema: agora o valor da unidade é do negócio. " +
+                "Descarte e cadastre de novo, informando o valor."
+              : "Negócio cadastrado antes da atualização do sistema com valores diferentes por lote: agora o " +
+                "valor da unidade é um só para o negócio. Descarte e cadastre de novo.";
+        }
+        break;
+      }
+      case "lote":
+      case "lote_atualizacao":
+        delete p.valor_unidade;
+        break;
+      case "comprador":
+        delete p.telefone;
+        break;
+    }
+  }
+  return registros;
 }
 
 /** Campos que passaram para o lote (v4). */

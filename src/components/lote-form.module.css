@@ -1,0 +1,26 @@
+/* Sugestões de nome do lote (tipos de gado): chips que preenchem o campo. */
+.sugestoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+}
+
+.sugestao {
+  min-height: 36px;
+  padding: 0.35rem 0.85rem;
+  border: 1px solid color-mix(in oklch, var(--color-olive) 35%, transparent);
+  border-radius: 999px;
+  background: color-mix(in oklch, white 55%, transparent);
+  color: var(--color-dark);
+  font: inherit;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.sugestao[aria-pressed="true"] {
+  border-color: var(--color-teal);
+  background: var(--color-teal);
+  color: var(--color-white);
+}

@@ -89,13 +89,14 @@ function CartaoGeral({
   const porCabeca = negocio.modalidade === "cabeca";
   const destaques: Item[] = [
     { label: "Pecuarista", valor: negocio.pecuarista?.nome_pecuarista ?? "—" },
-    { label: "Comprador", valor: negocio.comprador?.nome_empresa ?? "—" },
+    { label: "Comprador", valor: negocio.comprador?.nome ?? "—" },
     { label: "Data", valor: formatDate(negocio.data_negocio) },
     { label: "Modalidade", valor: MODALIDADE_LABELS[negocio.modalidade] },
     { label: "Tipo de gado", valor: TIPO_GADO_LABELS[negocio.tipo_gado] ?? negocio.tipo_gado },
     { label: "Tipo de negócio", valor: TIPO_NEGOCIO_LABELS[negocio.tipo_negocio] ?? "—" },
   ];
   const detalhes: Item[] = [
+    { label: VALOR_UNIDADE_LABELS[negocio.modalidade], valor: formatCurrency(negocio.valor_unidade) },
     { label: "Cabeças", valor: ou(negocio.qtd_animais, String) },
     { label: "Valor total", valor: ou(negocio.valor_total, formatCurrency) },
     { label: "Valor médio por cabeça", valor: ou(negocio.valor_medio, formatCurrency) },
@@ -160,7 +161,6 @@ function CartaoLote({
   ];
   const detalhes: Item[] = [
     ...(modalidade === "arroba" ? [{ label: "Rendimento de carcaça", valor: formatPercent(lote.rendimento_carcaca) }] : []),
-    { label: VALOR_UNIDADE_LABELS[modalidade], valor: formatCurrency(lote.valor_unidade) },
     { label: "Cabeças", valor: String(lote.qtd_animais) },
     { label: "Valor total do lote", valor: formatCurrency(lote.valor_total_lote) },
     { label: "Valor médio por cabeça", valor: ou(lote.valor_medio_cabeca_lote, formatCurrency) },

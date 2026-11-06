@@ -45,6 +45,10 @@ export default function NovoNegocioPecuaristaPage() {
       pecuaristaNome: pecuarista.nome_pecuarista,
       // Outro pecuarista → a fazenda escolhida antes pode não ser dele.
       ...(pecuarista.pecuarista_id !== data.pecuaristaId ? { fazendaId: null, fazendaNome: "" } : {}),
+      // O vendedor não pode ser o comprador: se era o pecuarista escolhido como comprador, limpa.
+      ...(data.compradorTipo === "pecuarista" && data.compradorId === pecuarista.pecuarista_id
+        ? { compradorId: null, compradorNome: "", compradorTipo: "" as const }
+        : {}),
       negocioId: null,
     });
     router.push("/negocios/novo/fazenda");

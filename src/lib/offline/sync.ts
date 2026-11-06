@@ -5,7 +5,7 @@ import { createComprador } from "@/lib/api/compradores";
 import { createFazenda } from "@/lib/api/fazendas";
 import { createGado } from "@/lib/api/gados";
 import { createLote, deleteLote, updateLote } from "@/lib/api/lotes";
-import { concluirNegocio, createNegocio, updateNegocio } from "@/lib/api/negocios";
+import { compradorParaApi, concluirNegocio, createNegocio, updateNegocio } from "@/lib/api/negocios";
 import { createPecuarista } from "@/lib/api/pecuaristas";
 import type {
   CreateCompradorInput,
@@ -68,11 +68,11 @@ const ENVIAR: Record<
   comprador: async (p, uuid) =>
     (await createComprador({ ...(p as CreateCompradorInput), uuid_origem: uuid })).comprador_id,
   negocio: async (p, uuid) =>
-    (await createNegocio({ ...(p as CreateNegocioInput), uuid_origem: uuid })).negocio_id,
+    (await createNegocio({ ...(compradorParaApi(p) as CreateNegocioInput), uuid_origem: uuid })).negocio_id,
   // PATCH e conclusão regravam os mesmos valores — reenviar é inofensivo.
   negocio_atualizacao: async (p) => {
     const { negocio_id, ...campos } = p;
-    await updateNegocio(negocio_id as number, campos as UpdateNegocioInput);
+    await updateNegocio(negocio_id as number, compradorParaApi(campos) as UpdateNegocioInput);
     return null;
   },
   lote: async (p, uuid) => {

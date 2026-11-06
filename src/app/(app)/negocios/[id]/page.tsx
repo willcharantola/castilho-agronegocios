@@ -11,6 +11,7 @@ import { ComissaoForm } from "@/components/comissao-form";
 import { ListaGados } from "@/components/lista-gados";
 import { NegocioCarrossel } from "@/components/negocio-carrossel";
 import { TipoNegocioForm } from "@/components/tipo-negocio-form";
+import { ValorUnidadeForm } from "@/components/valor-unidade-form";
 import { cn } from "@/lib/utils";
 import { modoDoNegocio } from "@/lib/comissao";
 import { deleteNegocio, fetchNegocio } from "@/lib/api/negocios";
@@ -109,6 +110,16 @@ export default function NegocioDetailPage() {
             onAtivoChange={setFiltro}
             cabecasNoQuadro={false}
           />
+
+          {sincronizado ? (
+            <ValorUnidadeForm
+              key={negocio.valor_unidade}
+              negocioId={negocio.negocio_id}
+              modalidade={negocio.modalidade}
+              valorUnidade={negocio.valor_unidade}
+              onUpdated={() => recarregar()}
+            />
+          ) : null}
 
           {sincronizado ? (
             <TipoNegocioForm

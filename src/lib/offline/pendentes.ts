@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import type {
   AgregadosPeso,
   Comprador,
+  CompradorDoNegocio,
   CreateCompradorInput,
   CreateFazendaInput,
   CreateLoteInput,
@@ -15,6 +16,7 @@ import type {
   Negocio,
   NegocioDetail,
   Pecuarista,
+  TipoComprador,
   UpdateLoteInput,
 } from "@/lib/api/types";
 import type { RegistroPendente } from "./db";
@@ -35,6 +37,7 @@ export function fazendaDePendente(r: RegistroSalvo): ComPendencia<Fazenda> {
     fazenda_id: idTemporario(r),
     nome_fazenda: p.nome_fazenda,
     municipio: p.municipio,
+    cnpj: p.cnpj ?? null,
     inscricao_estadual: p.inscricao_estadual,
     marca_url: p.marca_url ?? null,
     marca_escrita: p.marca_escrita ?? null,
@@ -63,6 +66,7 @@ function fazendasDoPecuarista(r: RegistroSalvo): ComPendencia<Fazenda>[] {
       fazenda_id: nova ? idTemporarioFazendaAninhada(r.id, indice) : (e.fazenda_id ?? (item.fazenda_id as number)),
       nome_fazenda: (item.nome_fazenda as string | undefined) ?? e.nome_fazenda,
       municipio: (item.municipio as string | undefined) ?? e.municipio ?? "",
+      cnpj: (item.cnpj as string | undefined) ?? e.cnpj ?? null,
       inscricao_estadual: (item.inscricao_estadual as string | undefined) ?? e.inscricao_estadual ?? "",
       marca_url: (item.marca_url as string | undefined) ?? e.marca_url ?? null,
       marca_escrita: (item.marca_escrita as string | undefined) ?? e.marca_escrita ?? null,
@@ -102,18 +106,22 @@ export function compradorDePendente(r: RegistroSalvo): ComPendencia<Comprador> {
     comprador_id: idTemporario(r),
     nome_empresa: p.nome_empresa,
     cnpj: p.cnpj,
-    telefone: p.telefone,
     municipio: p.municipio,
     pessoa_contato: p.pessoa_contato,
     pendente: info(r),
   };
 }
 
-/** Nomes/ids como aparecem na tela, guardados ao enfileirar um negócio. */
+/**
+ * Nomes/ids como aparecem na tela, guardados ao enfileirar um negócio. `comprador_id` é o
+ * id do frigorífico ou do pecuarista, conforme `compradorTipo` (ausente na fila antiga:
+ * frigorífico).
+ */
 export type ExibicaoNegocio = {
   fazenda_id: number;
   pecuarista_id: number;
   comprador_id: number;
+  compradorTipo?: TipoComprador;
   fazendaNome: string;
   pecuaristaNome: string;
   compradorNome: string;
@@ -131,15 +139,32 @@ const SEM_PESOS: AgregadosPeso = {
   rendimento_medio: null,
 };
 
+/** Comprador do negócio pendente, no formato unificado da API (só com o que a tela guardou). */
+function compradorDePendenteNegocio(e: ExibicaoNegocio): CompradorDoNegocio {
+  return {
+    tipo: e.compradorTipo ?? "frigorifico",
+    id: e.comprador_id,
+    nome: e.compradorNome,
+    documento: "",
+    municipio: null,
+    pessoa_contato: null,
+  };
+}
+
 export function negocioDePendente(r: RegistroSalvo): ComPendencia<Negocio> {
-  const p = r.payload as unknown as CreateNegocioInput;
+  // Na fila o comprador fica nas colunas planas (ver criar-negocio#referenciaComprador).
+  const p = r.payload as unknown as Omit<CreateNegocioInput, "comprador">;
   const e = r.exibicao as ExibicaoNegocio;
+  const comprador = compradorDePendenteNegocio(e);
   return {
     negocio_id: idTemporario(r),
     empresa_id: p.empresa_id,
     fazenda_id: e.fazenda_id,
     pecuarista_id: e.pecuarista_id,
-    comprador_id: e.comprador_id,
+    comprador_id: comprador.tipo === "frigorifico" ? comprador.id : null,
+    comprador_pecuarista_id: comprador.tipo === "pecuarista" ? comprador.id : null,
+    comprador,
+    valor_unidade: p.valor_unidade ?? 0,
     hora_inicio_pesagem: null,
     hora_fim_pesagem: null,
     modalidade: p.modalidade,
@@ -169,7 +194,6 @@ export function negocioDetailDePendente(r: RegistroSalvo): NegocioDetail & { pen
     ...negocioDePendente(r),
     lotes: [],
     pecuarista: { nome_pecuarista: e.pecuaristaNome } as NegocioDetail["pecuarista"],
-    comprador: { nome_empresa: e.compradorNome } as NegocioDetail["comprador"],
     fazenda: { fazenda_id: e.fazenda_id, nome_fazenda: e.fazendaNome } as Fazenda,
     pendente: info(r),
   };
@@ -188,15 +212,15 @@ export function loteDePendente(r: RegistroSalvo): ComPendencia<LoteDetail> {
     negocio_id: e.negocio_id,
     // Em "cabeca" a API grava o nome e o rendimento sozinha.
     nome_lote: porCabeca ? "Lote único" : (p.nome_lote ?? ""),
-    valor_unidade: p.valor_unidade,
     tipo_lote: p.tipo_lote,
     genero: p.genero,
     rendimento_carcaca: e.modalidade === "arroba" ? (p.rendimento_carcaca ?? 100) : 100,
-    media_carimbo: p.media_carimbo,
-    ano_carimbo: p.ano_carimbo,
+    media_carimbo: p.media_carimbo || null,
+    ano_carimbo: p.ano_carimbo || null,
     qtd_animais: qtd,
-    valor_total_lote: porCabeca ? p.valor_unidade * qtd : 0,
-    valor_medio_cabeca_lote: porCabeca && qtd > 0 ? p.valor_unidade : null,
+    // Valor (preço do negócio × quantidade, em "cabeca") estimado em comPendencias.
+    valor_total_lote: 0,
+    valor_medio_cabeca_lote: null,
     ...SEM_PESOS,
     gados: [],
     pendente: info(r),
@@ -351,12 +375,14 @@ export function comPendencias(
     .map((lote) => {
       const alteracao = alteracoes.get(lote.lote_id);
       const novosGados = gados.filter((g) => g.lote_id === lote.lote_id);
-      if (!alteracao && novosGados.length === 0) return lote;
+      // Lote ainda na fila: sem valor calculado pela API, estimado aqui.
+      if (!alteracao && novosGados.length === 0 && !lote.pendente) return lote;
       const atualizado = { ...lote, ...alteracao?.campos };
       const gadosDoLote: ComPendencia<Gado>[] = [...lote.gados, ...novosGados];
       const qtd = porCabeca ? atualizado.qtd_animais : gadosDoLote.length;
+      // O preço é o do negócio, o mesmo para todos os lotes.
       const valorTotal = porCabeca
-        ? atualizado.valor_unidade * qtd
+        ? negocio.valor_unidade * qtd
         : gadosDoLote.reduce((soma, g) => soma + (g.valor_total ?? 0), 0);
       return {
         ...atualizado,

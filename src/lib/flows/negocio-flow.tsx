@@ -1,7 +1,7 @@
 "use client";
 
 import { createFlowContext } from "@/lib/create-flow-context";
-import type { Modalidade, TipoGado, TipoNegocio } from "@/lib/api/types";
+import type { Modalidade, TipoComprador, TipoGado, TipoNegocio } from "@/lib/api/types";
 
 /**
  * Fluxo do novo negócio: pecuarista → fazenda → comprador → modalidade → informações →
@@ -13,9 +13,13 @@ export type NegocioFlowData = {
   /** Só fazendas vinculadas ao pecuarista escolhido; trocar o pecuarista limpa a fazenda. */
   fazendaId: number | null;
   fazendaNome: string;
+  /** Frigorífico (comprador_id) ou pecuarista (pecuarista_id), conforme `compradorTipo`. */
   compradorId: number | null;
   compradorNome: string;
+  compradorTipo: TipoComprador | "";
   modalidade: Modalidade | "";
+  /** R$ por arroba, kg ou cabeça (conforme a modalidade), o mesmo para todos os lotes. */
+  valorUnidade: number | null;
   tipoGado: TipoGado | "";
   tipoNegocio: TipoNegocio | "";
   /** Percentual (0 a 100). */
@@ -37,7 +41,9 @@ export const { Provider: NegocioFlowProvider, useFlow: useNegocioFlow } =
     fazendaNome: "",
     compradorId: null,
     compradorNome: "",
+    compradorTipo: "",
     modalidade: "",
+    valorUnidade: null,
     tipoGado: "",
     tipoNegocio: "",
     porcentagemComissao: null,

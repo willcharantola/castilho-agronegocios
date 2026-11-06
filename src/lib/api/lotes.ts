@@ -34,7 +34,6 @@ export function normalizeLote(raw: Lote): Lote {
   return {
     ...raw,
     ...normalizeAgregadosPeso(raw),
-    valor_unidade: Number(raw.valor_unidade),
     rendimento_carcaca: Number(raw.rendimento_carcaca),
     valor_total_lote: Number(raw.valor_total_lote),
     valor_medio_cabeca_lote: decimalOuNull(raw.valor_medio_cabeca_lote),
@@ -53,7 +52,7 @@ export async function createLote(negocioId: number | string, input: CreateLoteIn
   return normalizeLote(lote);
 }
 
-/** Mudar rendimento ou valor da unidade faz a API recalcular as cabeças, o lote e o negócio. */
+/** Mudar o rendimento faz a API recalcular as cabeças, o lote e o negócio. */
 export async function updateLote(id: number | string, input: UpdateLoteInput) {
   const lote = await apiFetch<Lote>(`/lotes/${id}`, { method: "PATCH", body: JSON.stringify(input) });
   return normalizeLote(lote);

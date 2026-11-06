@@ -3,58 +3,65 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Building2, User, Warehouse } from "lucide-react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { Building2, Search, User, Warehouse } from "lucide-react";
 import { BackLink } from "@/components/back-link";
-import { CompradorFields, compradorSchema, type CompradorFormValues } from "@/components/comprador-fields";
 import { ProgressSteps } from "@/components/progress-steps";
 import { Button } from "@/components/ui/button";
-import { Dialog } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { createComprador, fetchCompradores } from "@/lib/api/compradores";
+import { fetchCompradores } from "@/lib/api/compradores";
 import { fetchPecuaristas } from "@/lib/api/pecuaristas";
-import type { Comprador, Pecuarista } from "@/lib/api/types";
+import type { Comprador, Pecuarista, TipoComprador } from "@/lib/api/types";
 import { ApiError } from "@/lib/api-client";
+import { TIPO_COMPRADOR_LABELS } from "@/lib/labels";
 import { PASSOS_NOVO_NEGOCIO, useNegocioFlow } from "@/lib/flows/negocio-flow";
-import { enviarOuEnfileirar, idTemporario } from "@/lib/offline/fila";
-import { mensagemDeErro } from "@/lib/offline/rede";
 import { PendenteBadge } from "@/components/offline/pendente-badge";
 import {
   mesclarPendentes,
   useCompradoresPendentes,
   usePecuaristasPendentes,
-  type ComPendencia,
+  type InfoPendente,
 } from "@/lib/offline/pendentes";
 import styles from "./page.module.css";
 
-/** Só os dígitos do CPF/CNPJ, para reconhecer o pecuarista que já virou comprador. */
-const documento = (valor: string) => valor.replace(/\D/g, "");
+/** Item do seletor: frigorífico ou pecuarista, no mesmo formato. */
+type Opcao = {
+  tipo: TipoComprador;
+  id: number;
+  nome: string;
+  detalhe: string;
+  pendente?: InfoPendente;
+};
 
-/** Item da lista: um comprador, ou um pecuarista que ainda não existe como comprador. */
-type Opcao =
-  | { tipo: "comprador"; nome: string; comprador: ComPendencia<Comprador> }
-  | { tipo: "pecuarista"; nome: string; pecuarista: ComPendencia<Pecuarista> };
+const deFrigorifico = (c: Comprador & { pendente?: InfoPendente }): Opcao => ({
+  tipo: "frigorifico",
+  id: c.comprador_id,
+  nome: c.nome_empresa,
+  detalhe: [c.municipio, c.pessoa_contato && `Contato: ${c.pessoa_contato}`].filter(Boolean).join(" · "),
+  pendente: c.pendente,
+});
 
+const dePecuarista = (p: Pecuarista & { pendente?: InfoPendente }): Opcao => ({
+  tipo: "pecuarista",
+  id: p.pecuarista_id,
+  nome: p.nome_pecuarista,
+  detalhe: p.cpf_cnpj ? `CPF/CNPJ: ${p.cpf_cnpj}` : "",
+  pendente: p.pendente,
+});
+
+/**
+ * Comprador do negócio: um único seletor, com busca, de frigoríficos e pecuaristas (cada
+ * um com o rótulo da origem). Inclui os cadastros feitos offline ainda não sincronizados.
+ * O pecuarista que vende não pode ser o comprador: aparece desabilitado.
+ */
 export default function NovoNegocioCompradorPage() {
   const router = useRouter();
   const { data, update } = useNegocioFlow();
   const [compradoresServidor, setCompradores] = React.useState<Comprador[] | null>(null);
   const [pecuaristasServidor, setPecuaristas] = React.useState<Pecuarista[] | null>(null);
-  // Inclui cadastros feitos offline ainda não sincronizados (id negativo).
   const compradoresPendentes = useCompradoresPendentes();
   const pecuaristasPendentes = usePecuaristasPendentes();
-  const compradores = React.useMemo(
-    () => mesclarPendentes(compradoresServidor, compradoresPendentes),
-    [compradoresServidor, compradoresPendentes]
-  );
-  const pecuaristas = React.useMemo(
-    () => mesclarPendentes(pecuaristasServidor, pecuaristasPendentes),
-    [pecuaristasServidor, pecuaristasPendentes]
-  );
   const [error, setError] = React.useState<string | null>(null);
-  // Pecuarista escolhido como comprador: abre o formulário dos dados que faltam.
-  const [pecuaristaComprador, setPecuaristaComprador] = React.useState<Pecuarista | null>(null);
+  const [busca, setBusca] = React.useState("");
 
   React.useEffect(() => {
     if (!data.pecuaristaId || !data.fazendaId) {
@@ -66,35 +73,33 @@ export default function NovoNegocioCompradorPage() {
       .catch((err: unknown) => {
         setError(err instanceof ApiError || err instanceof Error ? err.message : "Erro ao carregar.");
       });
-    // Sem a lista de pecuaristas, a tela continua só com os compradores.
+    // Sem a lista de pecuaristas, a tela continua só com os frigoríficos.
     fetchPecuaristas()
       .then(setPecuaristas)
       .catch(() => setPecuaristas([]));
   }, [data.pecuaristaId, data.fazendaId, router]);
 
-  /**
-   * Compradores e pecuaristas juntos, em ordem alfabética. Fica de fora o próprio vendedor
-   * do negócio e o pecuarista que já tem um comprador com o mesmo CPF/CNPJ (ele aparece
-   * pelo comprador).
-   */
   const opcoes = React.useMemo<Opcao[] | null>(() => {
-    if (!compradores) return null;
-    const documentosDeCompradores = new Set(compradores.map((c) => documento(c.cnpj)).filter(Boolean));
-    const lista: Opcao[] = [
-      ...compradores.map((comprador) => ({ tipo: "comprador" as const, nome: comprador.nome_empresa, comprador })),
-      ...(pecuaristas ?? [])
-        .filter(
-          (p) => p.pecuarista_id !== data.pecuaristaId && !documentosDeCompradores.has(documento(p.cpf_cnpj))
-        )
-        .map((pecuarista) => ({ tipo: "pecuarista" as const, nome: pecuarista.nome_pecuarista, pecuarista })),
-    ];
-    return lista.sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
-  }, [compradores, pecuaristas, data.pecuaristaId]);
+    const frigorificos = mesclarPendentes(compradoresServidor, compradoresPendentes);
+    if (!frigorificos) return null;
+    const pecuaristas = mesclarPendentes(pecuaristasServidor, pecuaristasPendentes) ?? [];
+    return [...frigorificos.map(deFrigorifico), ...pecuaristas.map(dePecuarista)].sort((a, b) =>
+      a.nome.localeCompare(b.nome, "pt-BR")
+    );
+  }, [compradoresServidor, compradoresPendentes, pecuaristasServidor, pecuaristasPendentes]);
+
+  const termo = busca.trim().toLowerCase();
+  const visiveis = opcoes?.filter(
+    (o) => !termo || o.nome.toLowerCase().includes(termo) || o.detalhe.toLowerCase().includes(termo)
+  );
 
   if (!data.fazendaId) return null;
 
-  function selecionar(compradorId: number, nome: string) {
-    update({ compradorId, compradorNome: nome });
+  const ehVendedor = (o: Opcao) => o.tipo === "pecuarista" && o.id === data.pecuaristaId;
+
+  function selecionar(opcao: Opcao) {
+    if (ehVendedor(opcao)) return;
+    update({ compradorId: opcao.id, compradorNome: opcao.nome, compradorTipo: opcao.tipo });
     router.push("/negocios/novo/modalidade");
   }
 
@@ -113,52 +118,53 @@ export default function NovoNegocioCompradorPage() {
 
       <p className="section-title">Selecione o comprador</p>
 
+      <label className={cn(styles.busca, "glass-panel")}>
+        <Search size={16} aria-hidden />
+        <input
+          type="search"
+          value={busca}
+          onChange={(e) => setBusca(e.target.value)}
+          placeholder="Buscar frigorífico ou pecuarista..."
+          aria-label="Buscar comprador"
+        />
+      </label>
+
       {opcoes === null && !error ? <div className="state-box glass-panel">Carregando compradores...</div> : null}
 
       {error && !opcoes ? <div className="state-box state-error glass-panel">{error}</div> : null}
 
-      {opcoes && opcoes.length === 0 ? (
-        <div className="state-box glass-panel">Nenhum comprador cadastrado ainda.</div>
+      {visiveis && visiveis.length === 0 ? (
+        <div className="state-box glass-panel">
+          {termo ? "Nenhum comprador encontrado." : "Nenhum comprador cadastrado ainda."}
+        </div>
       ) : null}
 
-      {opcoes && opcoes.length > 0 ? (
+      {visiveis && visiveis.length > 0 ? (
         <div className="card-list">
-          {opcoes.map((opcao) =>
-            opcao.tipo === "comprador" ? (
+          {visiveis.map((opcao) => {
+            const vendedor = ehVendedor(opcao);
+            const Icone = opcao.tipo === "frigorifico" ? Building2 : User;
+            return (
               <button
-                key={`c${opcao.comprador.comprador_id}`}
+                key={`${opcao.tipo}-${opcao.id}`}
                 type="button"
-                onClick={() => selecionar(opcao.comprador.comprador_id, opcao.comprador.nome_empresa)}
-                className={cn("list-card", styles.card, "glass-dark")}
+                onClick={() => selecionar(opcao)}
+                disabled={vendedor}
+                className={cn("list-card", styles.card, "glass-dark", vendedor && styles.cardDesabilitado)}
               >
                 <span className="card-icon-on-dark">
-                  <Building2 size={18} />
+                  <Icone size={18} />
                 </span>
                 <div className="card-info">
-                  <p className={styles.cardName}>{opcao.comprador.nome_empresa}</p>
-                  <p className="card-meta-on-dark"> {opcao.comprador.municipio}</p>
-                  <p className="card-meta-on-dark">Contato: {opcao.comprador.pessoa_contato}</p>
-                  {opcao.comprador.pendente ? <PendenteBadge pendente={opcao.comprador.pendente} /> : null}
+                  <p className={styles.cardName}>{opcao.nome}</p>
+                  {opcao.detalhe ? <p className="card-meta-on-dark">{opcao.detalhe}</p> : null}
+                  {vendedor ? <p className="card-meta-on-dark">É o vendedor deste negócio</p> : null}
+                  {opcao.pendente ? <PendenteBadge pendente={opcao.pendente} /> : null}
                 </div>
+                <span className={styles.rotulo}>{TIPO_COMPRADOR_LABELS[opcao.tipo]}</span>
               </button>
-            ) : (
-              <button
-                key={`p${opcao.pecuarista.pecuarista_id}`}
-                type="button"
-                onClick={() => setPecuaristaComprador(opcao.pecuarista)}
-                className={cn("list-card", styles.card, "glass-dark")}
-              >
-                <span className="card-icon-on-dark">
-                  <User size={18} />
-                </span>
-                <div className="card-info">
-                  <p className={styles.cardName}>{opcao.pecuarista.nome_pecuarista}</p>
-                  <p className="card-meta-on-dark">CPF/CNPJ: {opcao.pecuarista.cpf_cnpj}</p>
-                  {opcao.pecuarista.pendente ? <PendenteBadge pendente={opcao.pecuarista.pendente} /> : null}
-                </div>
-              </button>
-            )
-          )}
+            );
+          })}
         </div>
       ) : null}
 
@@ -168,87 +174,9 @@ export default function NovoNegocioCompradorPage() {
           variant="brand"
           render={<Link href="/compradores/novo?returnTo=/negocios/novo/comprador" />}
         >
-          Cadastrar comprador
+          Cadastrar novo frigorífico
         </Button>
       ) : null}
-
-      <Dialog
-        open={pecuaristaComprador !== null}
-        onOpenChange={(aberto) => !aberto && setPecuaristaComprador(null)}
-        title="Dados do comprador"
-      >
-        {pecuaristaComprador ? (
-          <CompradorDePecuaristaForm
-            key={pecuaristaComprador.pecuarista_id}
-            pecuarista={pecuaristaComprador}
-            onCriado={(compradorId, nome) => {
-              setPecuaristaComprador(null);
-              selecionar(compradorId, nome);
-            }}
-          />
-        ) : null}
-      </Dialog>
     </div>
-  );
-}
-
-/**
- * Pecuarista escolhido como comprador: o negócio só aceita um comprador, então ele é
- * cadastrado como comprador (uma vez; depois aparece na lista pelo comprador). Nome e
- * CPF/CNPJ vêm do pecuarista; telefone, município e contato, que o pecuarista não tem,
- * são pedidos aqui. Sem conexão, o comprador vai para a fila como no cadastro normal.
- */
-function CompradorDePecuaristaForm({
-  pecuarista,
-  onCriado,
-}: {
-  pecuarista: Pecuarista;
-  onCriado: (compradorId: number, nome: string) => void;
-}) {
-  const [submitError, setSubmitError] = React.useState<string | null>(null);
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm<CompradorFormValues>({
-    resolver: zodResolver(compradorSchema),
-    defaultValues: {
-      nome_empresa: pecuarista.nome_pecuarista.slice(0, 50),
-      cnpj: pecuarista.cpf_cnpj.slice(0, 18),
-      telefone: "",
-      municipio: (pecuarista.pecuarista_fazenda?.[0]?.fazenda.municipio ?? "").slice(0, 30),
-      pessoa_contato: pecuarista.nome_pecuarista.slice(0, 30),
-    },
-  });
-
-  async function onSubmit(values: CompradorFormValues) {
-    setSubmitError(null);
-    try {
-      const envio = await enviarOuEnfileirar("comprador", values, (payload, uuid) =>
-        createComprador({ ...(payload as CompradorFormValues), uuid_origem: uuid })
-      );
-      onCriado(
-        envio.sincronizado ? envio.resultado.comprador_id : idTemporario(envio.registro),
-        values.nome_empresa
-      );
-    } catch (err) {
-      setSubmitError(mensagemDeErro(err));
-    }
-  }
-
-  return (
-    <form onSubmit={handleSubmit(onSubmit)} className="form-stack">
-      <div className="form-fields">
-        <p className="form-hint">
-          Para usar {pecuarista.nome_pecuarista} como comprador, complete os dados abaixo. Isso é feito uma vez
-          só: depois ele aparece na lista de compradores.
-        </p>
-        {submitError ? <p className="form-error">{submitError}</p> : null}
-        <CompradorFields register={register} errors={errors} />
-      </div>
-      <Button type="submit" variant="brand" size="xl" className="w-full" disabled={isSubmitting}>
-        {isSubmitting ? "Salvando..." : "Usar como comprador"}
-      </Button>
-    </form>
   );
 }
