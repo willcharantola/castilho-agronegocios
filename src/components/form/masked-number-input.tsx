@@ -9,8 +9,12 @@ type MaskedNumberInputProps = {
   /** "moeda" → R$ 1.234,56 · "percentual" → 12,5% (limitado a 0–100). */
   formato: "moeda" | "percentual";
   value: number | string | null | undefined;
-  /** Recebe o número puro (sem máscara), ou `undefined` quando o campo é apagado. */
-  onValueChange: (value: number | undefined) => void;
+  /**
+   * Recebe o número puro (sem máscara), ou `null` quando o campo é apagado. Não é
+   * `undefined` de propósito: num Controller do react-hook-form, `undefined` faz o campo
+   * voltar ao valor inicial (defaultValues) e o valor apagado reaparece.
+   */
+  onValueChange: (value: number | null) => void;
   onBlur?: () => void;
   name?: string;
   tint?: "green" | "pink" | "none";
@@ -35,7 +39,7 @@ export const MaskedNumberInput = React.forwardRef<HTMLInputElement, MaskedNumber
         inputMode="decimal"
         // "" limpa o campo; NaN/strings vazias vindas do formulário também.
         value={value === null || value === undefined || value === "" || Number.isNaN(value) ? "" : value}
-        onValueChange={(values) => onValueChange(values.floatValue)}
+        onValueChange={(values) => onValueChange(values.floatValue ?? null)}
         thousandSeparator="."
         decimalSeparator=","
         decimalScale={2}

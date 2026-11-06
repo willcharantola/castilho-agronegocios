@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useParams } from "next/navigation";
 import { FileText, Plus } from "lucide-react";
+import { useAviso } from "@/components/aviso";
 import { BackLink } from "@/components/back-link";
 import { BotaoExcluir } from "@/components/botao-excluir";
 import { Button } from "@/components/ui/button";
@@ -26,9 +27,7 @@ export default function NegocioDetailPage() {
   const { negocio, erro, recarregar } = useNegocioComPendencias(Number(params.id));
 
   const [gerandoRelatorio, setGerandoRelatorio] = React.useState(false);
-  const [relatorioError, setRelatorioError] = React.useState<string | null>(null);
-  const [relatorioAvisos, setRelatorioAvisos] = React.useState<string[]>([]);
-  const [excluirError, setExcluirError] = React.useState<string | null>(null);
+  const avisar = useAviso();
 
   // Comissão: "-" para Normal; para Admin começa escondida e o olho revela.
   const comissao = useExibicaoComissao();
@@ -44,8 +43,6 @@ export default function NegocioDetailPage() {
 
   async function handleGerarRelatorio() {
     if (!negocio || !sincronizado) return;
-    setRelatorioError(null);
-    setRelatorioAvisos([]);
     setGerandoRelatorio(true);
     try {
       // Só o que já está no servidor: cabeças pendentes têm valores apenas estimados.
@@ -54,9 +51,9 @@ export default function NegocioDetailPage() {
         [servidor],
         servidor.fazenda ? { [servidor.fazenda.fazenda_id]: servidor.fazenda } : {}
       );
-      setRelatorioAvisos(avisos);
+      for (const aviso of avisos) avisar(aviso, "aviso");
     } catch (err) {
-      setRelatorioError(mensagemDeErro(err, "Erro ao gerar relatório."));
+      avisar(mensagemDeErro(err, "Erro ao gerar relatório."), "aviso");
     } finally {
       setGerandoRelatorio(false);
     }
@@ -75,7 +72,6 @@ export default function NegocioDetailPage() {
                 descricao="este negócio, com todos os lotes e cabeças"
                 excluir={() => deleteNegocio(negocio.negocio_id)}
                 destino="/negocios"
-                onErro={setExcluirError}
                 bloqueio={
                   !sincronizado || temPendencias ? "Disponível após a sincronização" : null
                 }
@@ -84,8 +80,6 @@ export default function NegocioDetailPage() {
           </div>
         ) : null}
       </div>
-
-      {excluirError ? <p className="form-error">{excluirError}</p> : null}
 
       {!negocio && !erro ? <div className="state-box glass-panel">Carregando negócio...</div> : null}
 
@@ -156,13 +150,6 @@ export default function NegocioDetailPage() {
           )}
         </>
       ) : null}
-
-      {relatorioError ? <p className="report-error">{relatorioError}</p> : null}
-      {relatorioAvisos.map((aviso) => (
-        <p key={aviso} className="report-notice">
-          {aviso}
-        </p>
-      ))}
 
       <Fab
         icon={FileText}

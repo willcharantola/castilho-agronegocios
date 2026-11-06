@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { MaskedNumberInput } from "@/components/form/masked-number-input";
+import { useAviso } from "@/components/aviso";
 import { Button } from "@/components/ui/button";
 import { updateNegocio } from "@/lib/api/negocios";
 import { calcularComissao, formatarCriterioComissao, type ModoComissao } from "@/lib/comissao";
@@ -71,8 +72,7 @@ function ComissaoFormVisivel({
 }: ComissaoFormProps) {
   const [valor, setValor] = React.useState<number | undefined>(porcentagem ?? undefined);
   const [salvando, setSalvando] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
-  const [sucesso, setSucesso] = React.useState(false);
+  const avisar = useAviso();
   const [aviso, setAviso] = React.useState<string | null>(null);
 
   // Se a forma de cálculo mudar com o campo preenchido, o número digitado perde o sentido.
@@ -99,21 +99,22 @@ function ComissaoFormVisivel({
 
   async function atualizar(event: React.FormEvent) {
     event.preventDefault();
-    setSucesso(false);
     // Mesma faixa do CHECK do banco (0 a 100) nos dois modos.
     if (Number.isNaN(informado) || informado < 0 || informado > 100) {
-      setError(modo === "por_arroba" ? "Informe um valor entre R$ 0,00 e R$ 100,00." : "Informe uma porcentagem entre 0 e 100.");
+      avisar(
+        modo === "por_arroba" ? "Informe um valor entre R$ 0,00 e R$ 100,00." : "Informe uma porcentagem entre 0 e 100.",
+        "aviso"
+      );
       return;
     }
-    setError(null);
     setAviso(null);
     setSalvando(true);
     try {
       const atualizado = await updateNegocio(negocioId, { porcentagem_comissao: informado });
       onUpdated(atualizado);
-      setSucesso(true);
+      avisar("Comissão atualizada.");
     } catch (err) {
-      setError(mensagemDeErro(err, "Erro ao atualizar."));
+      avisar(mensagemDeErro(err, "Erro ao atualizar."), "aviso");
     } finally {
       setSalvando(false);
     }
@@ -134,8 +135,7 @@ function ComissaoFormVisivel({
           className={styles.input}
           value={valor}
           onValueChange={(novo) => {
-            setValor(novo);
-            setSucesso(false);
+            setValor(novo ?? undefined);
           }}
         />
         <Button type="submit" variant="brand" className={styles.button} disabled={salvando || !alterado}>
@@ -162,8 +162,6 @@ function ComissaoFormVisivel({
         </p>
       ) : null}
       {aviso ? <p className="form-error">{aviso}</p> : null}
-      {error ? <p className="form-error">{error}</p> : null}
-      {sucesso ? <p className={styles.success}>Comissão atualizada.</p> : null}
     </form>
   );
 }

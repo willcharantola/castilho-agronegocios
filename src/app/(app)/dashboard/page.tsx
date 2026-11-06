@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { DollarSign, FileText, TrendingUp, Users, type LucideIcon } from "lucide-react";
-import { Fab } from "@/components/fab";
+import { useAviso } from "@/components/aviso";
 import { TintedInput } from "@/components/form/tinted-input";
 import { formatCurrency, startOfMonth, toDateInputValue } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -43,8 +43,7 @@ export default function DashboardPage() {
   const [error, setError] = React.useState<string | null>(null);
 
   const [gerandoRelatorio, setGerandoRelatorio] = React.useState(false);
-  const [relatorioError, setRelatorioError] = React.useState<string | null>(null);
-  const [relatorioAvisos, setRelatorioAvisos] = React.useState<string[]>([]);
+  const avisar = useAviso();
 
   React.useEffect(() => {
     let cancelled = false;
@@ -89,18 +88,16 @@ export default function DashboardPage() {
 
   async function handleGerarRelatorio() {
     if (!negocios || negocios.length === 0) return;
-    setRelatorioError(null);
-    setRelatorioAvisos([]);
     setGerandoRelatorio(true);
     try {
       // Romaneio de cada negócio do período (o romaneio precisa do detalhe: gados e pecuarista).
       const detalhes = await Promise.all(negocios.map((n) => fetchNegocio(n.negocio_id)));
       const { avisos } = await gerarRomaneios(detalhes, fazendasPorId);
-      setRelatorioAvisos(avisos);
+      for (const aviso of avisos) avisar(aviso, "aviso");
     } catch (err) {
-      setRelatorioError(
+      avisar(
         err instanceof ApiError || err instanceof Error ? err.message : "Erro ao gerar relatório."
-      );
+      , "aviso");
     } finally {
       setGerandoRelatorio(false);
     }
@@ -162,13 +159,6 @@ export default function DashboardPage() {
           value={resumo ? valorRestrito(resumo.total_cabecas, true) : "—"}
         />
       </div>
-
-      {relatorioError ? <p className="report-error">{relatorioError}</p> : null}
-      {relatorioAvisos.map((aviso) => (
-        <p key={aviso} className="report-notice">
-          {aviso}
-        </p>
-      ))}
 
     
     </div>

@@ -4,6 +4,7 @@ import * as React from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useAviso } from "@/components/aviso";
 import { BackLink } from "@/components/back-link";
 import { Field } from "@/components/form/field";
 import { MaskedNumberInput } from "@/components/form/masked-number-input";
@@ -36,8 +37,7 @@ export default function ImpostosETaxasPage() {
   // Só Admin altera (a API responde 403 aos demais); Normal vê em modo somente leitura.
   const admin = getUsuario()?.nivel_acesso === "Admin";
   const [loadError, setLoadError] = React.useState<string | null>(null);
-  const [submitError, setSubmitError] = React.useState<string | null>(null);
-  const [sucesso, setSucesso] = React.useState(false);
+  const avisar = useAviso();
   const [loaded, setLoaded] = React.useState(false);
   const {
     control,
@@ -64,13 +64,11 @@ export default function ImpostosETaxasPage() {
   }, [reset]);
 
   async function onSubmit(values: FormValues) {
-    setSubmitError(null);
-    setSucesso(false);
     try {
       reset(await updateImpostos(values));
-      setSucesso(true);
+      avisar("Alíquotas salvas.");
     } catch (err) {
-      setSubmitError(mensagemDeErro(err));
+      avisar(mensagemDeErro(err), "aviso");
     }
   }
 
@@ -89,7 +87,6 @@ export default function ImpostosETaxasPage() {
       {loaded ? (
         <form onSubmit={handleSubmit(onSubmit)} className="form-stack">
           <div className="form-fields">
-            {submitError ? <p className="form-error">{submitError}</p> : null}
 
             {CAMPOS.map(({ name, label }) => (
               <Field key={name} label={label} htmlFor={name} error={errors[name]?.message}>
@@ -102,10 +99,7 @@ export default function ImpostosETaxasPage() {
                       formato="percentual"
                       name={field.name}
                       value={field.value}
-                      onValueChange={(valor) => {
-                        field.onChange(valor);
-                        setSucesso(false);
-                      }}
+                      onValueChange={field.onChange}
                       onBlur={field.onBlur}
                       disabled={!admin}
                     />
@@ -120,7 +114,6 @@ export default function ImpostosETaxasPage() {
               <Button type="submit" variant="brand" size="xl" className="w-full" disabled={isSubmitting}>
                 {isSubmitting ? "Salvando..." : "Salvar"}
               </Button>
-              {sucesso ? <p className={styles.success}>Alíquotas salvas.</p> : null}
             </>
           ) : (
             <p className={styles.hint}>Apenas administradores podem alterar.</p>

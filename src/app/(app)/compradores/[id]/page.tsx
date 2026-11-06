@@ -18,7 +18,6 @@ export default function EditarCompradorPage() {
   const [submitError, setSubmitError] = React.useState<string | null>(null);
   const [loaded, setLoaded] = React.useState(false);
   const [nome, setNome] = React.useState("");
-  const [excluirError, setExcluirError] = React.useState<string | null>(null);
   const {
     register,
     control,
@@ -69,7 +68,6 @@ export default function EditarCompradorPage() {
             descricao={`o comprador "${nome}"`}
             excluir={() => deleteComprador(params.id)}
             destino="/compradores"
-            onErro={setExcluirError}
           />
         ) : null}
       </div>
@@ -77,7 +75,6 @@ export default function EditarCompradorPage() {
 
       {!loaded && !loadError ? <div className="state-box glass-panel">Carregando comprador...</div> : null}
       {loadError ? <div className="state-box state-error glass-panel">{loadError}</div> : null}
-      {excluirError ? <p className="form-error">{excluirError}</p> : null}
 
       {loaded ? (
         <form onSubmit={handleSubmit(onSubmit)} className="form-stack">
