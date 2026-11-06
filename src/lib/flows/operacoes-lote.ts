@@ -11,7 +11,7 @@ import { horaLocalAtual } from "@/lib/offline/rede";
 // sem conexão (ou com o negócio/lote ainda só no aparelho) entram na fila offline, que
 // sincroniza na ordem negócio → lotes → gados.
 
-type NegocioRef = { negocio_id: number; modalidade: Modalidade; tipo_gado: TipoGado; valor_unidade: number };
+type NegocioRef = { negocio_id: number; modalidade: Modalidade; tipo_gado: TipoGado };
 
 export function mensagemLoteComCabecas(qtd: number) {
   return (

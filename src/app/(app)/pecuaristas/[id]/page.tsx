@@ -1,5 +1,6 @@
 "use client";
 
+import { formatFazenda } from "@/lib/format";
 import * as React from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -75,7 +76,7 @@ export default function EditarPecuaristaPage() {
   }
 
   async function desvincular(fazenda: Fazenda) {
-    if (!window.confirm(`Desvincular a fazenda "${fazenda.nome_fazenda}" deste pecuarista?`)) return;
+    if (!window.confirm(`Desvincular a ${formatFazenda(fazenda.nome_fazenda)} deste pecuarista?`)) return;
     setDesvinculando(fazenda.fazenda_id);
     try {
       // A API recusa (409) se houver negócio deste pecuarista com esta fazenda.
@@ -140,7 +141,7 @@ export default function EditarPecuaristaPage() {
                       </span>
                       <div className="card-info">
                         <Link href={`/fazendas/${fazenda.fazenda_id}`} className={styles.linkFazenda}>
-                          <p className="card-name">{fazenda.nome_fazenda}</p>
+                          <p className="card-name">{formatFazenda(fazenda.nome_fazenda)}</p>
                         </Link>
                       </div>
                       {/* Precisa de ao menos uma fazenda: a última não é desvinculada. */}
@@ -150,7 +151,7 @@ export default function EditarPecuaristaPage() {
                           className={styles.desvincular}
                           onClick={() => desvincular(fazenda)}
                           disabled={desvinculando !== null}
-                          aria-label={`Desvincular ${fazenda.nome_fazenda}`}
+                          aria-label={`Desvincular ${formatFazenda(fazenda.nome_fazenda)}`}
                         >
                           {desvinculando === fazenda.fazenda_id ? "Desvinculando..." : "Desvincular"}
                         </button>

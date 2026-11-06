@@ -20,6 +20,7 @@ import type {
   UpdateLoteInput,
 } from "@/lib/api/types";
 import type { RegistroPendente } from "./db";
+import { estimarGado } from "@/lib/calculo-gado";
 import { idTemporario, idTemporarioFazendaAninhada, usePendentes, type RegistroSalvo } from "./fila";
 
 /**
@@ -106,8 +107,8 @@ export function compradorDePendente(r: RegistroSalvo): ComPendencia<Comprador> {
     comprador_id: idTemporario(r),
     nome_empresa: p.nome_empresa,
     cnpj: p.cnpj,
+    inscricao_estadual: p.inscricao_estadual,
     municipio: p.municipio,
-    pessoa_contato: p.pessoa_contato,
     pendente: info(r),
   };
 }
@@ -147,7 +148,7 @@ function compradorDePendenteNegocio(e: ExibicaoNegocio): CompradorDoNegocio {
     nome: e.compradorNome,
     documento: "",
     municipio: null,
-    pessoa_contato: null,
+    inscricao_estadual: null,
   };
 }
 
@@ -164,7 +165,6 @@ export function negocioDePendente(r: RegistroSalvo): ComPendencia<Negocio> {
     comprador_id: comprador.tipo === "frigorifico" ? comprador.id : null,
     comprador_pecuarista_id: comprador.tipo === "pecuarista" ? comprador.id : null,
     comprador,
-    valor_unidade: p.valor_unidade ?? 0,
     hora_inicio_pesagem: null,
     hora_fim_pesagem: null,
     modalidade: p.modalidade,
@@ -176,7 +176,8 @@ export function negocioDePendente(r: RegistroSalvo): ComPendencia<Negocio> {
     observacao: p.observacao ?? null,
     // Agregados, Funrural, Senar e alíquotas: só existem após a sincronização (calculados pela API).
     qtd_animais: null,
-    valor_total: null,
+    valor_total_bruto: null,
+    valor_total_liquido: null,
     valor_medio: null,
     funrural: null,
     senar: null,
@@ -213,12 +214,13 @@ export function loteDePendente(r: RegistroSalvo): ComPendencia<LoteDetail> {
     // Em "cabeca" a API grava o nome e o rendimento sozinha.
     nome_lote: porCabeca ? "Lote único" : (p.nome_lote ?? ""),
     tipo_lote: p.tipo_lote,
+    valor_unidade: p.valor_unidade ?? 0,
     genero: p.genero,
     rendimento_carcaca: e.modalidade === "arroba" ? (p.rendimento_carcaca ?? 100) : 100,
     media_carimbo: p.media_carimbo || null,
     ano_carimbo: p.ano_carimbo || null,
     qtd_animais: qtd,
-    // Valor (preço do negócio × quantidade, em "cabeca") estimado em comPendencias.
+    // Valor (preço do lote × quantidade, em "cabeca") estimado em comPendencias.
     valor_total_lote: 0,
     valor_medio_cabeca_lote: null,
     ...SEM_PESOS,
@@ -378,11 +380,20 @@ export function comPendencias(
       // Lote ainda na fila: sem valor calculado pela API, estimado aqui.
       if (!alteracao && novosGados.length === 0 && !lote.pendente) return lote;
       const atualizado = { ...lote, ...alteracao?.campos };
-      const gadosDoLote: ComPendencia<Gado>[] = [...lote.gados, ...novosGados];
+      // Preço ou rendimento alterados offline: as cabeças já gravadas são estimadas de novo.
+      const mudouCalculo =
+        alteracao !== undefined &&
+        (alteracao.campos.valor_unidade !== undefined || alteracao.campos.rendimento_carcaca !== undefined);
+      const gadosDoLote: ComPendencia<Gado>[] = [
+        ...(mudouCalculo
+          ? lote.gados.map((g) => ({ ...g, ...estimarGado(negocio, atualizado, g.peso_total) }))
+          : lote.gados),
+        ...novosGados,
+      ];
       const qtd = porCabeca ? atualizado.qtd_animais : gadosDoLote.length;
-      // O preço é o do negócio, o mesmo para todos os lotes.
+      // Cada lote tem o próprio preço.
       const valorTotal = porCabeca
-        ? negocio.valor_unidade * qtd
+        ? atualizado.valor_unidade * qtd
         : gadosDoLote.reduce((soma, g) => soma + (g.valor_total ?? 0), 0);
       return {
         ...atualizado,
@@ -402,7 +413,25 @@ export function comPendencias(
     ...(porCabeca ? {} : estimarPesos(todosLotes.flatMap((l) => l.gados))),
     lotes: todosLotes,
     qtd_animais: qtd,
-    valor_total: valorTotal,
+    valor_total_bruto: valorTotal,
     valor_medio: qtd > 0 ? valorTotal / qtd : null,
+    ...estimarImpostos(negocio, valorTotal),
   };
+}
+
+/**
+ * Funrural, Senar e líquido estimados (mesma regra da API) a partir das alíquotas gravadas
+ * no negócio. Negócio ainda só no aparelho não tem alíquotas: os três ficam null.
+ */
+function estimarImpostos(
+  negocio: Pick<NegocioDetail, "tipo_negocio" | "aliquota_funrural" | "aliquota_senar">,
+  bruto: number
+): Pick<NegocioDetail, "funrural" | "senar" | "valor_total_liquido"> {
+  if (negocio.aliquota_funrural === null || negocio.aliquota_senar === null) {
+    return { funrural: null, senar: null, valor_total_liquido: null };
+  }
+  const centavos = (v: number) => Math.round(v * 100) / 100;
+  const funrural = negocio.tipo_negocio === "Funrural" ? centavos((bruto * negocio.aliquota_funrural) / 100) : 0;
+  const senar = negocio.tipo_negocio === "Desconto em folha" ? centavos((bruto * negocio.aliquota_senar) / 100) : 0;
+  return { funrural, senar, valor_total_liquido: centavos(bruto - funrural - senar) };
 }

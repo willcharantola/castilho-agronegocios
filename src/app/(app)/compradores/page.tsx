@@ -53,7 +53,7 @@ export default function CompradoresPage() {
       buscaLower === "" ||
       c.nome_empresa.toLowerCase().includes(buscaLower) ||
       c.municipio.toLowerCase().includes(buscaLower) ||
-      c.pessoa_contato.toLowerCase().includes(buscaLower)
+      (c.inscricao_estadual ?? "").toLowerCase().includes(buscaLower)
   );
 
   return (
@@ -111,7 +111,7 @@ export default function CompradoresPage() {
                 <p className="card-name">{comprador.nome_empresa}</p>
                 <p className="card-meta">CNPJ: {comprador.cnpj}</p>
                 <p className="card-meta">Cidade: {comprador.municipio}</p>
-                 <p className="card-meta">Contato: {comprador.pessoa_contato}</p>
+                <p className="card-meta">I.E.: {comprador.inscricao_estadual}</p>
                 {comprador.pendente ? <PendenteBadge pendente={comprador.pendente} /> : null}
               </div>
             </Link>

@@ -18,8 +18,6 @@ export type NegocioFlowData = {
   compradorNome: string;
   compradorTipo: TipoComprador | "";
   modalidade: Modalidade | "";
-  /** R$ por arroba, kg ou cabeça (conforme a modalidade), o mesmo para todos os lotes. */
-  valorUnidade: number | null;
   tipoGado: TipoGado | "";
   tipoNegocio: TipoNegocio | "";
   /** Percentual (0 a 100). */
@@ -43,7 +41,6 @@ export const { Provider: NegocioFlowProvider, useFlow: useNegocioFlow } =
     compradorNome: "",
     compradorTipo: "",
     modalidade: "",
-    valorUnidade: null,
     tipoGado: "",
     tipoNegocio: "",
     porcentagemComissao: null,

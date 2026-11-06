@@ -162,7 +162,96 @@ class OfflineDB extends Dexie {
         await pendentes.bulkPut(migrarParaBd12(await pendentes.toArray()));
         await tx.table<CacheLeitura, string>("cache").clear();
       });
+    // v6: bd-13 (instrucoes-atualizacaobd13.md). O preço volta do negócio para cada lote,
+    // valor_total vira valor_total_bruto (mais o novo valor_total_liquido) e o frigorífico
+    // troca a pessoa de contato pela inscrição estadual. O preço dos negócios já
+    // sincronizados vem das leituras guardadas (formato bd-12), descartadas em seguida.
+    this.version(6)
+      .stores({
+        pendentes: "++id, uuid, entidade, status, [entidade+status]",
+        cache: "chave",
+        mapeamentos: "uuid, idLocal",
+      })
+      .upgrade(async (tx) => {
+        const pendentes = tx.table<RegistroPendente, number>("pendentes");
+        const cache = tx.table<CacheLeitura, string>("cache");
+        const precosNoCache = new Map<number, number>();
+        for (const item of await cache.toArray()) {
+          const negocio = item.chave.startsWith("negocio:")
+            ? (item.dados as { negocio_id?: number; valor_unidade?: unknown } | null)
+            : null;
+          if (negocio?.negocio_id != null && negocio.valor_unidade != null) {
+            precosNoCache.set(negocio.negocio_id, Number(negocio.valor_unidade));
+          }
+        }
+        await pendentes.bulkPut(migrarParaBd13(await pendentes.toArray(), precosNoCache));
+        await cache.clear();
+      });
   }
+}
+
+/**
+ * Migração v6 da fila (bd-13):
+ * - lote pendente sem preço recebe o `valor_unidade` do negócio: do negócio pendente na
+ *   fila ou, se o negócio já foi sincronizado, da leitura guardada dele (`precosNoCache`,
+ *   negocio_id → preço). Sem nenhum dos dois, fica em "revisao" (editar o lote e informar o
+ *   valor o devolve à fila);
+ * - o negócio pendente perde o `valor_unidade`; a alteração de negócio com preço perde o
+ *   campo e, se não sobrar mais nada, fica em "revisao" (o preço agora se altera em cada lote);
+ * - o frigorífico pendente perde a `pessoa_contato` e fica em "revisao" sem a inscrição estadual.
+ */
+export function migrarParaBd13(registros: RegistroPendente[], precosNoCache: Map<number, number>): RegistroPendente[] {
+  const precoDoNegocioPendente = new Map<string, number>();
+  for (const r of registros) {
+    if (r.entidade === "negocio" && r.payload.valor_unidade != null) {
+      precoDoNegocioPendente.set(r.uuid, Number(r.payload.valor_unidade));
+    }
+  }
+  for (const r of registros) {
+    const p = r.payload;
+    switch (r.entidade) {
+      case "negocio":
+        delete p.valor_unidade;
+        break;
+      case "negocio_atualizacao": {
+        if (!("valor_unidade" in p)) break;
+        delete p.valor_unidade;
+        if (Object.keys(p).every((campo) => campo === "negocio_id")) {
+          r.status = "revisao";
+          r.erroMensagem =
+            "Alteração do valor feita antes da atualização do sistema: agora cada lote tem o seu valor. " +
+            "Descarte e altere o valor em cada lote do negócio.";
+        }
+        break;
+      }
+      case "lote": {
+        if (p.valor_unidade != null) break;
+        const preco =
+          typeof p.negocio_uuid_local === "string"
+            ? precoDoNegocioPendente.get(p.negocio_uuid_local)
+            : precosNoCache.get(p.negocio_id as number);
+        if (preco !== undefined) {
+          p.valor_unidade = preco;
+        } else {
+          r.status = "revisao";
+          r.erroMensagem =
+            "Lote cadastrado antes da atualização do sistema: agora cada lote tem o seu valor. " +
+            "Edite o lote e informe o valor.";
+        }
+        break;
+      }
+      case "comprador":
+        delete p.pessoa_contato;
+        if (!p.inscricao_estadual) {
+          r.status = "revisao";
+          r.erroMensagem =
+            "Frigorífico cadastrado antes da atualização do sistema: agora a inscrição estadual é " +
+            "obrigatória. Descarte e cadastre de novo, informando a inscrição estadual.";
+        }
+        break;
+    }
+  }
+  return registros;
 }
 
 /**

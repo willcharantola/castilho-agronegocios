@@ -11,7 +11,7 @@ import { TintedInput } from "@/components/form/tinted-input";
 import { Button } from "@/components/ui/button";
 import { fetchTiposGado } from "@/lib/api/tipos-gado";
 import { formatCurrency } from "@/lib/format";
-import { GENERO_LABELS, TIPO_LOTE_LABELS } from "@/lib/labels";
+import { GENERO_LABELS, TIPO_LOTE_LABELS, VALOR_UNIDADE_LABELS } from "@/lib/labels";
 import { mensagemDeErro } from "@/lib/offline/rede";
 import type { CreateLoteInput, Genero, Lote, Modalidade, TipoGadoCatalogo, TipoLote } from "@/lib/api/types";
 import styles from "./lote-form.module.css";
@@ -27,6 +27,14 @@ function criarSchema(modalidade: Modalidade, nomesExistentes: string[]) {
   return z
     .object({
       nome_lote: z.string().trim().max(30, "Máximo de 30 caracteres.").optional(),
+      // R$ por arroba, kg ou cabeça (conforme a modalidade): cada lote tem o seu.
+      valor_unidade: z.preprocess(
+        vazioParaUndefined,
+        z.coerce
+          .number({ error: "Informe o valor." })
+          .positive("Deve ser maior que zero.")
+          .refine((v) => Math.round(v * 100) === v * 100, "Use no máximo 2 casas decimais.")
+      ),
       rendimento_carcaca: z.preprocess(
         vazioParaUndefined,
         z.coerce
@@ -73,13 +81,12 @@ type FormSchema = ReturnType<typeof criarSchema>;
 /**
  * Formulário do lote. Em "arroba"/"kg" é usado no modal "Adicionar lote" e na edição (com
  * "Excluir lote"); em "cabeca" é o formulário único do "Lote único" (sem nome nem
- * rendimento, com a quantidade de animais). O preço é do negócio (informações do negócio).
+ * rendimento, com a quantidade de animais). O preço por unidade é de cada lote.
  * O nome do lote tem sugestões (Configurações → Tipos de gado): tocar em uma preenche o
  * campo, que continua livre.
  */
 export function LoteForm({
   modalidade,
-  valorUnidade = 0,
   lote,
   nomesExistentes = [],
   submitLabel,
@@ -88,8 +95,6 @@ export function LoteForm({
   onExcluir,
 }: {
   modalidade: Modalidade;
-  /** Preço por cabeça do negócio, para a estimativa do "Lote único". */
-  valorUnidade?: number;
   /** Lote em edição; omitido para cadastro novo. */
   lote?: Lote;
   /** Nomes dos outros lotes do negócio (para o nome ser único, ignorando maiúsculas). */
@@ -118,6 +123,7 @@ export function LoteForm({
     defaultValues: lote
       ? {
           nome_lote: lote.nome_lote,
+          valor_unidade: lote.valor_unidade,
           rendimento_carcaca: lote.rendimento_carcaca,
           tipo_lote: lote.tipo_lote,
           genero: lote.genero,
@@ -130,6 +136,7 @@ export function LoteForm({
 
   const porCabeca = modalidade === "cabeca";
   const qtd = Number(useWatch({ control, name: "qtd_animais" })) || 0;
+  const valorUnidade = Number(useWatch({ control, name: "valor_unidade" })) || 0;
   const nomeAtual = (useWatch({ control, name: "nome_lote" }) ?? "").trim().toLowerCase();
 
   // Sugestões de nome: lista da empresa (guardada no aparelho para uso offline).
@@ -153,6 +160,7 @@ export function LoteForm({
       await onSubmit({
         ...(porCabeca ? { qtd_animais: v.qtd_animais } : { nome_lote: v.nome_lote }),
         ...(modalidade === "arroba" ? { rendimento_carcaca: v.rendimento_carcaca } : {}),
+        valor_unidade: v.valor_unidade,
         tipo_lote: v.tipo_lote as TipoLote,
         genero: v.genero as Genero,
         media_carimbo: v.media_carimbo || null,
@@ -205,6 +213,27 @@ export function LoteForm({
             ) : null}
           </Field>
         )}
+
+        <Field
+          label={VALOR_UNIDADE_LABELS[modalidade]}
+          htmlFor={id("valor_unidade")}
+          error={errors.valor_unidade?.message}
+        >
+          <Controller
+            control={control}
+            name="valor_unidade"
+            render={({ field }) => (
+              <MaskedNumberInput
+                id={id("valor_unidade")}
+                formato="moeda"
+                name={field.name}
+                value={field.value as number | string | undefined}
+                onValueChange={field.onChange}
+                onBlur={field.onBlur}
+              />
+            )}
+          />
+        </Field>
 
         <div className="form-row">
           {modalidade === "arroba" ? (

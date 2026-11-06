@@ -15,11 +15,11 @@ function normalizeNegocio(raw: Negocio): Negocio {
   return {
     ...raw,
     ...normalizeAgregadosPeso(raw),
-    valor_unidade: Number(raw.valor_unidade ?? 0),
     // Respostas guardadas no aparelho antes do bd-12 não têm o comprador unificado.
     comprador: raw.comprador ?? null,
     comprador_pecuarista_id: raw.comprador_pecuarista_id ?? null,
-    valor_total: decimalOuNull(raw.valor_total),
+    valor_total_bruto: decimalOuNull(raw.valor_total_bruto),
+    valor_total_liquido: decimalOuNull(raw.valor_total_liquido),
     valor_medio: decimalOuNull(raw.valor_medio),
     porcentagem_comissao: decimalOuNull(raw.porcentagem_comissao),
     comissao: decimalOuNull(raw.comissao),
@@ -99,8 +99,8 @@ export async function concluirNegocio(id: number | string, horaFim?: string) {
 }
 
 /**
- * PATCH /negocios/:id. Mudar o tipo_negocio recalcula Funrural e Senar; mudar o
- * valor_unidade recalcula todas as cabeças e lotes.
+ * PATCH /negocios/:id. Mudar o tipo_negocio recalcula Funrural, Senar e o valor líquido; o
+ * preço por unidade é de cada lote (PATCH /lotes/:id).
  */
 export async function updateNegocio(id: number | string, input: UpdateNegocioInput) {
   const negocio = await apiFetch<Negocio>(`/negocios/${id}`, { method: "PATCH", body: JSON.stringify(input) });

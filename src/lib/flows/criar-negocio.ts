@@ -22,9 +22,9 @@ async function referenciaComprador(tipo: TipoComprador, id: number) {
  * negócio em vez de criar outro. Devolve o id — negativo (temporário) se está na fila.
  */
 export async function salvarNegocioDoFluxo(data: NegocioFlowData): Promise<number> {
-  const { fazendaId, pecuaristaId, compradorId, modalidade, tipoGado, tipoNegocio, valorUnidade } = data;
+  const { fazendaId, pecuaristaId, compradorId, modalidade, tipoGado, tipoNegocio } = data;
   const compradorTipo = data.compradorTipo || "frigorifico";
-  if (!fazendaId || !pecuaristaId || !compradorId || !modalidade || !tipoGado || !tipoNegocio || valorUnidade == null) {
+  if (!fazendaId || !pecuaristaId || !compradorId || !modalidade || !tipoGado || !tipoNegocio) {
     throw new Error("Dados do negócio incompletos. Volte e preencha as informações.");
   }
   if (compradorTipo === "pecuarista" && compradorId === pecuaristaId) {
@@ -37,7 +37,6 @@ export async function salvarNegocioDoFluxo(data: NegocioFlowData): Promise<numbe
     modalidade,
     tipo_gado: tipoGado,
     tipo_negocio: tipoNegocio,
-    valor_unidade: valorUnidade,
     data_negocio: new Date(data.dataNegocio).toISOString(),
     porcentagem_comissao: data.porcentagemComissao ?? undefined,
     observacao: data.observacao || undefined,

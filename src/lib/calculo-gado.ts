@@ -9,8 +9,8 @@ export function kgPorArroba(modalidade: Modalidade, tipoGado: TipoGado) {
 
 /**
  * Prévia dos valores calculados de uma cabeça — mesma fórmula do backend (calcularGado),
- * que continua sendo a fonte autoritativa ao salvar. `rendimento` é o do lote escolhido e
- * `valorUnidade`, o preço do negócio. Usada no formulário (tempo real) e para exibir
+ * que continua sendo a fonte autoritativa ao salvar. `rendimento` e `valorUnidade` são os do
+ * lote escolhido. Usada no formulário (tempo real) e para exibir
  * cabeças ainda pendentes de sincronização.
  */
 export function estimarValoresGado(
@@ -41,18 +41,18 @@ export function estimarValoresGado(
 
 /**
  * Prévia de uma cabeça no formato gravado (guardada também para cabeças na fila offline):
- * rendimento do lote, preço e tipo de gado do negócio.
+ * rendimento e preço do lote, modalidade e tipo de gado do negócio.
  */
 export function estimarGado(
-  negocio: { modalidade: Modalidade; tipo_gado: TipoGado; valor_unidade: number },
-  lote: Pick<Lote, "rendimento_carcaca">,
+  negocio: { modalidade: Modalidade; tipo_gado: TipoGado },
+  lote: Pick<Lote, "rendimento_carcaca" | "valor_unidade">,
   pesoTotal: number
 ) {
   const v = estimarValoresGado(
     negocio.modalidade,
     pesoTotal,
     lote.rendimento_carcaca,
-    negocio.valor_unidade,
+    lote.valor_unidade,
     negocio.tipo_gado
   );
   return { peso_calculo: v.pesoCalculo, peso_arroba: v.pesoArroba, valor_total: v.valorTotal };

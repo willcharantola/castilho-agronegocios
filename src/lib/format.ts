@@ -48,3 +48,10 @@ export function toDateInputValue(date: Date) {
 export function startOfMonth(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), 1);
 }
+
+/** Nome da fazenda para exibição, com "Fazenda" na frente (sem repetir se o cadastro já começar assim). */
+export function formatFazenda(nome: string) {
+  const limpo = nome.trim();
+  if (limpo === "" || /^fazenda(\s|$)/i.test(limpo)) return limpo;
+  return `Fazenda ${limpo}`;
+}

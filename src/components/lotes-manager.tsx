@@ -6,8 +6,8 @@ import { LoteForm } from "@/components/lote-form";
 import { PendenteBadge } from "@/components/offline/pendente-badge";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
-import { formatPercent } from "@/lib/format";
-import { GENERO_LABELS, TIPO_LOTE_LABELS } from "@/lib/labels";
+import { formatCurrency, formatPercent } from "@/lib/format";
+import { GENERO_LABELS, TIPO_LOTE_LABELS, VALOR_UNIDADE_LABELS } from "@/lib/labels";
 import { criarLote, editarLote, excluirLote } from "@/lib/flows/operacoes-lote";
 import type { LoteComPendencia, NegocioComPendencias } from "@/lib/offline/pendentes";
 import { cn } from "@/lib/utils";
@@ -66,6 +66,9 @@ export function LotesManager({
                 <p className="card-name">{lote.nome_lote}</p>
                 <p className="card-meta">
                   {TIPO_LOTE_LABELS[lote.tipo_lote]} · {GENERO_LABELS[lote.genero]}
+                </p>
+                <p className="card-meta">
+                  {VALOR_UNIDADE_LABELS[modalidade]}: {formatCurrency(lote.valor_unidade)}
                 </p>
                 {modalidade === "arroba" ? (
                   <p className="card-meta">Rend.: {formatPercent(lote.rendimento_carcaca)}</p>

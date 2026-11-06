@@ -1,5 +1,6 @@
 "use client";
 
+import { formatFazenda } from "@/lib/format";
 import * as React from "react";
 import { Search, Warehouse } from "lucide-react";
 import { FazendaForm } from "@/components/fazenda-form";
@@ -79,7 +80,7 @@ function VincularFazenda({
                 <Warehouse size={18} />
               </span>
               <div className="card-info">
-                <p className="card-name">{fazenda.nome_fazenda}</p>
+                <p className="card-name">{formatFazenda(fazenda.nome_fazenda)}</p>
                 <p className="card-meta">
                   Município: {fazenda.municipio} · I.E.: {fazenda.inscricao_estadual}
                 </p>

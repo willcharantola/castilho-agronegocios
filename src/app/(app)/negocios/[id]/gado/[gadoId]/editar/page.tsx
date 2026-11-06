@@ -44,7 +44,6 @@ export default function EditarGadoPage() {
         <GadoForm
           modalidade={negocio.modalidade}
           tipoGado={negocio.tipo_gado}
-          valorUnidade={negocio.valor_unidade}
           lotes={negocio.lotes}
           defaultValues={{ loteId: gado.lote_id, pesoTotal: gado.peso_total }}
           submitLabel="Salvar Alterações"

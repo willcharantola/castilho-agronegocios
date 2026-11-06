@@ -1,5 +1,6 @@
 "use client";
 
+import { formatFazenda } from "@/lib/format";
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -18,7 +19,8 @@ import { mensagemDeErro, novoUuid } from "@/lib/offline/rede";
 import { cn } from "@/lib/utils";
 import styles from "../page.module.css";
 
-const nomeDa = (f: FazendaNoCadastro) => (f.tipo === "nova" ? f.dados.nome_fazenda : f.fazenda.nome_fazenda);
+const nomeDa = (f: FazendaNoCadastro) =>
+  formatFazenda(f.tipo === "nova" ? f.dados.nome_fazenda : f.fazenda.nome_fazenda);
 const municipioDa = (f: FazendaNoCadastro) => (f.tipo === "nova" ? f.dados.municipio : f.fazenda.municipio);
 
 /**
