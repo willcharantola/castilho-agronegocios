@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useAviso } from "@/components/aviso";
 import { Button } from "@/components/ui/button";
 import { OpcoesBotoes, opcoesDeLabels } from "@/components/form/opcoes-botoes";
 import { updateNegocio } from "@/lib/api/negocios";
@@ -27,19 +28,16 @@ export function TipoNegocioForm({
 }) {
   const [valor, setValor] = React.useState<TipoNegocio>(tipoNegocio);
   const [salvando, setSalvando] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
-  const [sucesso, setSucesso] = React.useState(false);
+  const avisar = useAviso();
 
   async function atualizar(event: React.FormEvent) {
     event.preventDefault();
-    setSucesso(false);
-    setError(null);
     setSalvando(true);
     try {
       onUpdated(await updateNegocio(negocioId, { tipo_negocio: valor }));
-      setSucesso(true);
+      avisar("Tipo de negócio atualizado.");
     } catch (err) {
-      setError(mensagemDeErro(err, "Erro ao atualizar."));
+      avisar(mensagemDeErro(err, "Erro ao atualizar."), "aviso");
     } finally {
       setSalvando(false);
     }
@@ -55,15 +53,12 @@ export function TipoNegocioForm({
         value={valor}
         onChange={(novo) => {
           setValor(novo);
-          setSucesso(false);
         }}
       />
       <Button type="submit" variant="brand" disabled={salvando || valor === tipoNegocio}>
         {salvando ? "Atualizando..." : "Atualizar"}
       </Button>
       <p className={styles.hint}>Funrural e Senar são recalculados conforme o tipo.</p>
-      {error ? <p className="form-error">{error}</p> : null}
-      {sucesso ? <p className={styles.success}>Tipo de negócio atualizado.</p> : null}
     </form>
   );
 }

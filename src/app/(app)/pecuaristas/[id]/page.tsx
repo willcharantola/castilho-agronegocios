@@ -6,6 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import { Plus, Warehouse } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useAviso } from "@/components/aviso";
 import { BackLink } from "@/components/back-link";
 import { BotaoExcluir } from "@/components/botao-excluir";
 import { PecuaristaFields, pecuaristaSchema, type PecuaristaFormValues } from "@/components/pecuarista-fields";
@@ -23,11 +24,10 @@ export default function EditarPecuaristaPage() {
   const [fazendas, setFazendas] = React.useState<Fazenda[]>([]);
   const [loadError, setLoadError] = React.useState<string | null>(null);
   const [submitError, setSubmitError] = React.useState<string | null>(null);
-  const [vinculoError, setVinculoError] = React.useState<string | null>(null);
+  const avisar = useAviso();
   const [desvinculando, setDesvinculando] = React.useState<number | null>(null);
   const [loaded, setLoaded] = React.useState(false);
   const [nome, setNome] = React.useState("");
-  const [excluirError, setExcluirError] = React.useState<string | null>(null);
   const {
     register,
     handleSubmit,
@@ -76,14 +76,13 @@ export default function EditarPecuaristaPage() {
 
   async function desvincular(fazenda: Fazenda) {
     if (!window.confirm(`Desvincular a fazenda "${fazenda.nome_fazenda}" deste pecuarista?`)) return;
-    setVinculoError(null);
     setDesvinculando(fazenda.fazenda_id);
     try {
       // A API recusa (409) se houver negócio deste pecuarista com esta fazenda.
       const atualizado = await desvincularFazenda(params.id, fazenda.fazenda_id);
       setFazendas((atualizado.pecuarista_fazenda ?? []).map((v) => v.fazenda));
     } catch (err) {
-      setVinculoError(mensagemDeErro(err, "Erro ao desvincular."));
+      avisar(mensagemDeErro(err, "Erro ao desvincular."), "aviso");
     } finally {
       setDesvinculando(null);
     }
@@ -98,7 +97,6 @@ export default function EditarPecuaristaPage() {
             descricao={`o pecuarista "${nome}"`}
             excluir={() => deletePecuarista(params.id)}
             destino="/pecuaristas"
-            onErro={setExcluirError}
           />
         ) : null}
       </div>
@@ -106,7 +104,6 @@ export default function EditarPecuaristaPage() {
 
       {!loaded && !loadError ? <div className="state-box glass-panel">Carregando pecuarista...</div> : null}
       {loadError ? <div className="state-box state-error glass-panel">{loadError}</div> : null}
-      {excluirError ? <p className="form-error">{excluirError}</p> : null}
 
       {loaded ? (
         <>
@@ -126,7 +123,6 @@ export default function EditarPecuaristaPage() {
               >
                 <Plus size={16} aria-hidden /> Adicionar fazenda
               </Button>
-              {vinculoError ? <p className="form-error">{vinculoError}</p> : null}
               {fazendas.length === 0 ? (
                 <div className="state-box glass-panel">Nenhuma fazenda vinculada.</div>
               ) : (

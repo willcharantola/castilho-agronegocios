@@ -41,7 +41,6 @@ export default function EditarFazendaPage() {
   const [submitError, setSubmitError] = React.useState<string | null>(null);
   const [loaded, setLoaded] = React.useState(false);
   const [nome, setNome] = React.useState("");
-  const [excluirError, setExcluirError] = React.useState<string | null>(null);
   const [pecuaristas, setPecuaristas] = React.useState<Pecuarista[]>([]);
   const [enviandoMarca, setEnviandoMarca] = React.useState(false);
   // marca_url como veio da API: só é reenviada se mudar (trocada ou removida).
@@ -121,7 +120,6 @@ export default function EditarFazendaPage() {
             descricao={`a fazenda "${nome}"`}
             excluir={() => deleteFazenda(params.id)}
             destino="/fazendas"
-            onErro={setExcluirError}
           />
         ) : null}
       </div>
@@ -129,7 +127,6 @@ export default function EditarFazendaPage() {
 
       {!loaded && !loadError ? <div className="state-box glass-panel">Carregando fazenda...</div> : null}
       {loadError ? <div className="state-box state-error glass-panel">{loadError}</div> : null}
-      {excluirError ? <p className="form-error">{excluirError}</p> : null}
 
       {loaded ? (
         <form onSubmit={handleSubmit(onSubmit)} className="form-stack">

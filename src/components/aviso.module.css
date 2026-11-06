@@ -1,0 +1,72 @@
+/* Acima dos modais (40/41) e do popup do Select (50): um aviso pode surgir de dentro deles. */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: color-mix(in oklch, var(--color-dark) 45%, transparent);
+  transition: opacity 0.15s ease;
+}
+
+.backdrop[data-starting-style],
+.backdrop[data-ending-style] {
+  opacity: 0;
+}
+
+/* Cartão centralizado, com 16px de margem lateral no celular. */
+.popup {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: 61;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  width: calc(100% - 2rem);
+  max-width: 22rem;
+  min-height: 15rem;
+  transform: translate(-50%, -50%);
+  border-radius: var(--radius-box);
+  background: var(--color-cream);
+  padding: 1.5rem 1.25rem 1.25rem;
+  text-align: center;
+  box-shadow: 0 20px 50px -12px color-mix(in oklch, var(--color-dark) 40%, transparent);
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.popup[data-starting-style],
+.popup[data-ending-style] {
+  transform: translate(-50%, calc(-50% + 0.75rem));
+  opacity: 0;
+}
+
+.icone {
+  flex-shrink: 0;
+}
+
+.iconeSucesso {
+  color: var(--color-teal);
+}
+
+.iconeAviso {
+  color: #d97706;
+}
+
+/* Ocupa o espaço livre entre o ícone e o botão, com o texto centralizado nele: o botão
+   fica sempre embaixo. */
+.mensagem {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--color-dark);
+  overflow-wrap: anywhere;
+}
+
+.ok {
+  width: 100%;
+  margin-top: auto;
+}

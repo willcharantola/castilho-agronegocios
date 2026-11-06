@@ -3,6 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { FileText, Search, Warehouse } from "lucide-react";
+import { useAviso } from "@/components/aviso";
 import { Button } from "@/components/ui/button";
 import { Fab } from "@/components/fab";
 import { formatCurrency, formatDate, formatPercent } from "@/lib/format";
@@ -48,8 +49,7 @@ export default function NegociosPage() {
   const comissao = useExibicaoComissao();
 
   const [gerandoRelatorio, setGerandoRelatorio] = React.useState(false);
-  const [relatorioError, setRelatorioError] = React.useState<string | null>(null);
-  const [relatorioAvisos, setRelatorioAvisos] = React.useState<string[]>([]);
+  const avisar = useAviso();
 
   const fazendasPorId = React.useMemo(
     () => Object.fromEntries(fazendas.map((f) => [f.fazenda_id, f.nome_fazenda])),
@@ -101,8 +101,6 @@ export default function NegociosPage() {
     // Só negócios já no servidor: os pendentes ainda não têm valores calculados.
     const sincronizados = filtrados?.filter((n) => !n.pendente);
     if (!sincronizados || sincronizados.length === 0) return;
-    setRelatorioError(null);
-    setRelatorioAvisos([]);
     setGerandoRelatorio(true);
     try {
       // O romaneio precisa de gados, pecuarista e dados bancários, que só vêm no detalhe.
@@ -111,11 +109,11 @@ export default function NegociosPage() {
         detalhes,
         Object.fromEntries(fazendas.map((f) => [f.fazenda_id, f]))
       );
-      setRelatorioAvisos(avisos);
+      for (const aviso of avisos) avisar(aviso, "aviso");
     } catch (err) {
-      setRelatorioError(
+      avisar(
         err instanceof ApiError || err instanceof Error ? err.message : "Erro ao gerar relatório."
-      );
+      , "aviso");
     } finally {
       setGerandoRelatorio(false);
     }
@@ -236,13 +234,6 @@ export default function NegociosPage() {
           ))}
         </div>
       ) : null}
-
-      {relatorioError ? <p className="report-error">{relatorioError}</p> : null}
-      {relatorioAvisos.map((aviso) => (
-        <p key={aviso} className="report-notice">
-          {aviso}
-        </p>
-      ))}
 
       <Fab
         icon={FileText}

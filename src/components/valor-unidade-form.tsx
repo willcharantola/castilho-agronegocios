@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useAviso } from "@/components/aviso";
 import { Button } from "@/components/ui/button";
 import { MaskedNumberInput } from "@/components/form/masked-number-input";
 import { updateNegocio } from "@/lib/api/negocios";
@@ -28,21 +29,18 @@ export function ValorUnidadeForm({
 }) {
   const [valor, setValor] = React.useState<number | undefined>(valorUnidade);
   const [salvando, setSalvando] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
-  const [sucesso, setSucesso] = React.useState(false);
+  const avisar = useAviso();
   const invalido = valor === undefined || valor <= 0;
 
   async function atualizar(event: React.FormEvent) {
     event.preventDefault();
     if (invalido) return;
-    setSucesso(false);
-    setError(null);
     setSalvando(true);
     try {
       onUpdated(await updateNegocio(negocioId, { valor_unidade: valor }));
-      setSucesso(true);
+      avisar(`Valor atualizado: ${formatCurrency(valor ?? 0)}.`);
     } catch (err) {
-      setError(mensagemDeErro(err, "Erro ao atualizar."));
+      avisar(mensagemDeErro(err, "Erro ao atualizar."), "aviso");
     } finally {
       setSalvando(false);
     }
@@ -60,8 +58,7 @@ export function ValorUnidadeForm({
           className={styles.input}
           value={valor}
           onValueChange={(novo) => {
-            setValor(novo);
-            setSucesso(false);
+            setValor(novo ?? undefined);
           }}
         />
         <Button
@@ -74,8 +71,6 @@ export function ValorUnidadeForm({
         </Button>
       </div>
       <p className={styles.hint}>O mesmo valor vale para todos os lotes; as cabeças são recalculadas.</p>
-      {error ? <p className="form-error">{error}</p> : null}
-      {sucesso ? <p className={styles.success}>Valor atualizado: {formatCurrency(valor ?? 0)}.</p> : null}
     </form>
   );
 }
