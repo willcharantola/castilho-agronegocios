@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { GadoForm } from "@/components/gado-form";
 import { GadoEditDialog } from "@/components/gado-edit-dialog";
 import { PendenteBadge } from "@/components/offline/pendente-badge";
-import { formatCurrency, formatNumber } from "@/lib/format";
+import { formatCurrency, formatNumber, formatFazenda } from "@/lib/format";
 import { MODALIDADE_LABELS } from "@/lib/labels";
 import { cadastrarGado } from "@/lib/flows/operacoes-lote";
 import { PASSOS_NOVO_NEGOCIO, useNegocioFlow } from "@/lib/flows/negocio-flow";
@@ -70,7 +70,7 @@ export default function NovoNegocioGadoPage() {
               <Warehouse size={18} />
             </span>
             <div>
-              <p className={styles.summaryFarm}>{data.fazendaNome}</p>
+              <p className={styles.summaryFarm}>{formatFazenda(data.fazendaNome)}</p>
               <p className="card-meta-on-dark">Pecuarista: {negocio.pecuarista.nome_pecuarista}</p>
               <p className="card-meta-on-dark">Comprador: {negocio.comprador?.nome ?? data.compradorNome}</p>
             </div>
@@ -90,7 +90,7 @@ export default function NovoNegocioGadoPage() {
               Cabeças: <b>{cabecas.length}</b>
             </span>
             <span>
-              Valor total: <b>{negocio.valor_total !== null ? formatCurrency(negocio.valor_total) : "—"}</b>
+              Valor bruto: <b>{negocio.valor_total_bruto !== null ? formatCurrency(negocio.valor_total_bruto) : "—"}</b>
             </span>
           </div>
         </div>
@@ -102,7 +102,6 @@ export default function NovoNegocioGadoPage() {
           key={negocio.lotes.map((l) => l.lote_id).join(",")}
           modalidade={negocio.modalidade}
           tipoGado={negocio.tipo_gado}
-          valorUnidade={negocio.valor_unidade}
           lotes={negocio.lotes}
           defaultValues={{ loteId: data.ultimoLoteId ?? (negocio.lotes.length === 1 ? negocio.lotes[0].lote_id : null) }}
           submitLabel="Cadastrar"

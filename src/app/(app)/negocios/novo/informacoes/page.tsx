@@ -9,33 +9,25 @@ import { z } from "zod";
 import { BackLink } from "@/components/back-link";
 import { ProgressSteps } from "@/components/progress-steps";
 import { Field } from "@/components/form/field";
-import { MaskedNumberInput } from "@/components/form/masked-number-input";
 import { TintedInput } from "@/components/form/tinted-input";
 import { OpcoesBotoes, opcoesDeLabels } from "@/components/form/opcoes-botoes";
 import { Button } from "@/components/ui/button";
-import { toDateInputValue } from "@/lib/format";
-import { MODALIDADE_LABELS, TIPO_GADO_LABELS, TIPO_NEGOCIO_LABELS, VALOR_UNIDADE_LABELS } from "@/lib/labels";
+import { toDateInputValue, formatFazenda } from "@/lib/format";
+import { MODALIDADE_LABELS, TIPO_GADO_LABELS, TIPO_NEGOCIO_LABELS } from "@/lib/labels";
 import { PASSOS_NOVO_NEGOCIO, useNegocioFlow } from "@/lib/flows/negocio-flow";
 import { salvarNegocioDoFluxo } from "@/lib/flows/criar-negocio";
 import { mensagemDeErro } from "@/lib/offline/rede";
 import { cn } from "@/lib/utils";
 import styles from "./page.module.css";
 
-// A modalidade é escolhida no passo anterior. O valor da unidade é do negócio (o mesmo para
-// todos os lotes); tipo de lote, carimbo e rendimento são de cada lote (próxima tela). Horários de pesagem são registrados pela API.
+// A modalidade é escolhida no passo anterior. Valor da unidade, tipo de lote, carimbo e
+// rendimento são de cada lote (próxima tela). Horários de pesagem são registrados pela API.
 // A data do negócio não aparece no formulário: vai a data de hoje (ou a já salva no fluxo).
 // A comissão é preenchida depois, no detalhe do negócio; aqui o negócio nasce sem ela.
 const schema = z.object({
   tipo_gado: z.enum(["Gordo", "Reposicao"], { error: "Selecione o tipo de gado." }),
   // Sem valor padrão: o usuário precisa escolher (define Funrural e Senar).
   tipo_negocio: z.enum(["Desconto em folha", "Livre", "Funrural"], { error: "Selecione o tipo de negócio." }),
-  valor_unidade: z.preprocess(
-    (v) => (v === "" || v === null || Number.isNaN(v) ? undefined : v),
-    z.coerce
-      .number({ error: "Informe o valor." })
-      .positive("Deve ser maior que zero.")
-      .refine((v) => Math.round(v * 100) === v * 100, "Use no máximo 2 casas decimais.")
-  ),
   observacao: z.string().max(100).optional(),
 });
 type FormInput = z.input<typeof schema>;
@@ -58,7 +50,6 @@ export default function NovoNegocioInformacoesPage() {
     defaultValues: {
       tipo_gado: data.tipoGado || undefined,
       tipo_negocio: data.tipoNegocio || undefined,
-      valor_unidade: data.valorUnidade ?? undefined,
       observacao: data.observacao,
     },
   });
@@ -76,7 +67,6 @@ export default function NovoNegocioInformacoesPage() {
     const informacoes = {
       tipoGado: values.tipo_gado,
       tipoNegocio: values.tipo_negocio,
-      valorUnidade: values.valor_unidade,
       dataNegocio: data.dataNegocio || toDateInputValue(new Date()),
       porcentagemComissao: null,
       observacao: values.observacao ?? "",
@@ -105,7 +95,7 @@ export default function NovoNegocioInformacoesPage() {
             <Warehouse size={18} />
           </span>
           <div>
-            <p className={styles.fazendaNome}>{data.fazendaNome}</p>
+            <p className={styles.fazendaNome}>{formatFazenda(data.fazendaNome)}</p>
             <p>Pecuarista: {data.pecuaristaNome}</p>
             <p>Comprador: {data.compradorNome}</p>
             <p>Modalidade: {MODALIDADE_LABELS[data.modalidade]}</p>
@@ -149,26 +139,6 @@ export default function NovoNegocioInformacoesPage() {
             />
           </Field>
 
-          <Field
-            label={VALOR_UNIDADE_LABELS[data.modalidade]}
-            htmlFor="valor_unidade"
-            error={errors.valor_unidade?.message}
-          >
-            <Controller
-              control={control}
-              name="valor_unidade"
-              render={({ field }) => (
-                <MaskedNumberInput
-                  id="valor_unidade"
-                  formato="moeda"
-                  name={field.name}
-                  value={field.value as number | string | undefined}
-                  onValueChange={field.onChange}
-                  onBlur={field.onBlur}
-                />
-              )}
-            />
-          </Field>
 
           <Field label="Observação (opcional)" htmlFor="observacao" error={errors.observacao?.message}>
             <TintedInput id="observacao" tint="pink" {...register("observacao")} />

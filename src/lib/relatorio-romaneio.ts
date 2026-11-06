@@ -8,6 +8,7 @@ import {
   formatGenero,
   formatHora,
   formatNumber,
+  formatFazenda,
   formatPercent,
 } from "@/lib/format";
 import type { Fazenda, Gado, Lote, NegocioDetail } from "@/lib/api/types";
@@ -22,11 +23,11 @@ import { docxParaPdf } from "@/lib/docx-para-pdf";
  * montados aqui e saem no documento quando o placeholder existe no .docx:
  *
  * - Totais: {{total-kg}} {{total-arroba}} {{rend-arroba}}
- *   {{media-peso}} {{media-arroba}} {{valor-bruto}} {{funrural}} {{senar}}
+ *   {{media-peso}} {{media-arroba}} {{valor-bruto}} {{funrural}} {{senar}} {{valor-liquido}}
  *   {{aliquota_funrural}} {{aliquota_senar}} (alíquotas em %, ex.: "1,5") — lidos
  *   dos campos calculados pela API (peso_total_quilos, peso_total_arroba,
- *   rendimento_medio, peso_medio_quilos, peso_medio_arroba, valor_total, funrural,
- *   senar), nunca recalculados aqui. {{rend-arroba}} é o rendimento médio do
+ *   rendimento_medio, peso_medio_quilos, peso_medio_arroba, valor_total_bruto, funrural,
+ *   senar, valor_total_liquido), nunca recalculados aqui. {{rend-arroba}} é o rendimento médio do
  *   negócio (ponderado pelo peso); funrural/senar já vêm conforme o tipo de negócio
  *   (zero sai "R$ 0,00").
  * - Cabeçalho, opcional: {{tipo-negocio}}.
@@ -65,7 +66,7 @@ function gadosOrdenados(negocio: NegocioDetail): { gado: Gado; lote: Lote }[] {
 }
 
 function nomeFazenda(negocio: NegocioDetail, fazenda: Fazenda | undefined) {
-  return fazenda?.nome_fazenda ?? `Fazenda #${negocio.fazenda_id}`;
+  return formatFazenda(fazenda?.nome_fazenda ?? `#${negocio.fazenda_id}`);
 }
 
 export function montarDadosCabecalho(negocio: NegocioDetail, fazenda: Fazenda | undefined): DadosDocumento {
@@ -89,9 +90,10 @@ export function montarDadosCabecalho(negocio: NegocioDetail, fazenda: Fazenda | 
     "rend-arroba": campo(negocio.rendimento_medio, formatPercent),
     "media-peso": campo(negocio.peso_medio_quilos, (v) => formatNumber(v)),
     "media-arroba": campo(negocio.peso_medio_arroba, (v) => formatNumber(v)),
-    "valor-bruto": campo(negocio.valor_total, formatCurrency),
+    "valor-bruto": campo(negocio.valor_total_bruto, formatCurrency),
     funrural: campo(negocio.funrural, formatCurrency),
     senar: campo(negocio.senar, formatCurrency),
+    "valor-liquido": campo(negocio.valor_total_liquido, formatCurrency),
     // Alíquotas do próprio negócio, sem "%" (o modelo traz "{{aliquota_funrural}}% Funrural:").
     aliquota_funrural: campo(negocio.aliquota_funrural, formatDecimalCurto),
     aliquota_senar: campo(negocio.aliquota_senar, formatDecimalCurto),

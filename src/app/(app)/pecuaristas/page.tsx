@@ -1,5 +1,6 @@
 "use client";
 
+import { formatFazenda } from "@/lib/format";
 import * as React from "react";
 import Link from "next/link";
 import { Plus, Search, User } from "lucide-react";
@@ -16,7 +17,7 @@ import { mesclarPendentes, usePecuaristasPendentes } from "@/lib/offline/pendent
 import styles from "./page.module.css";
 
 function nomesDasFazendas(pecuarista: Pecuarista) {
-  return (pecuarista.pecuarista_fazenda ?? []).map((a) => a.fazenda.nome_fazenda).join(", ");
+  return (pecuarista.pecuarista_fazenda ?? []).map((a) => formatFazenda(a.fazenda.nome_fazenda)).join(", ");
 }
 
 export default function PecuaristasPage() {

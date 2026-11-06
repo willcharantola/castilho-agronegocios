@@ -19,7 +19,7 @@ export function GadoEditDialog({
 }: {
   /** Cabeça em edição; `null` fecha o modal. */
   gado: Gado | null;
-  negocio: { negocio_id: number; modalidade: Modalidade; tipo_gado: TipoGado; valor_unidade: number };
+  negocio: { negocio_id: number; modalidade: Modalidade; tipo_gado: TipoGado };
   lotes: LoteComPendencia[];
   onClose: () => void;
   onSaved: () => Promise<void> | void;
@@ -33,7 +33,6 @@ export function GadoEditDialog({
           idPrefix="editar-"
           modalidade={negocio.modalidade}
           tipoGado={negocio.tipo_gado}
-          valorUnidade={negocio.valor_unidade}
           lotes={lotes}
           defaultValues={{ loteId: gado.lote_id, pesoTotal: gado.peso_total }}
           submitLabel="Salvar Alterações"

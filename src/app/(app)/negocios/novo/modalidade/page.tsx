@@ -1,5 +1,6 @@
 "use client";
 
+import { formatFazenda } from "@/lib/format";
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { Beef, Check, Scale, Warehouse, Weight, type LucideIcon } from "lucide-react";
@@ -44,7 +45,7 @@ export default function NovoNegocioModalidadePage() {
         <span className="card-icon-on-dark">
           <Warehouse size={18} />
         </span>
-        <p className={styles.fazendaNome}>{data.fazendaNome}</p>
+        <p className={styles.fazendaNome}>{formatFazenda(data.fazendaNome)}</p>
       </div>
 
       <p className="section-title">Selecione a modalidade</p>

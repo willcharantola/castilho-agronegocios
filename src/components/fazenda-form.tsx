@@ -88,7 +88,7 @@ export function FazendaForm({
         />
 
         <IconField icon={Warehouse} label="Nome Fazenda" htmlFor="nome_fazenda" error={errors.nome_fazenda?.message}>
-          <TintedInput id="nome_fazenda" tint="pink" placeholder="Ex: Fazenda Santa Maria" {...register("nome_fazenda")} />
+          <TintedInput id="nome_fazenda" tint="pink" placeholder="Ex: Santa Maria" {...register("nome_fazenda")} />
         </IconField>
 
         <IconField icon={MapPin} label="Município" htmlFor="municipio" error={errors.municipio?.message}>

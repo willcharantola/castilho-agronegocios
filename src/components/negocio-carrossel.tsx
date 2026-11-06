@@ -3,7 +3,7 @@
 import * as React from "react";
 import { BotaoMapa } from "@/components/botao-mapa";
 import { PendenteBadge } from "@/components/offline/pendente-badge";
-import { formatCurrency, formatDate, formatHora, formatNumber, formatPercent } from "@/lib/format";
+import { formatCurrency, formatDate, formatHora, formatNumber, formatPercent, formatFazenda } from "@/lib/format";
 import {
   GENERO_LABELS,
   MODALIDADE_LABELS,
@@ -95,10 +95,18 @@ function CartaoGeral({
     { label: "Tipo de gado", valor: TIPO_GADO_LABELS[negocio.tipo_gado] ?? negocio.tipo_gado },
     { label: "Tipo de negócio", valor: TIPO_NEGOCIO_LABELS[negocio.tipo_negocio] ?? "—" },
   ];
+  // Bruto, o imposto descontado conforme o tipo de negócio (nenhum em "Livre") e o líquido.
+  const descontos: Item[] =
+    negocio.tipo_negocio === "Funrural"
+      ? [{ label: rotuloAliquota("Funrural", negocio.aliquota_funrural), valor: ou(negocio.funrural, formatCurrency) }]
+      : negocio.tipo_negocio === "Desconto em folha"
+        ? [{ label: rotuloAliquota("Senar", negocio.aliquota_senar), valor: ou(negocio.senar, formatCurrency) }]
+        : [];
   const detalhes: Item[] = [
-    { label: VALOR_UNIDADE_LABELS[negocio.modalidade], valor: formatCurrency(negocio.valor_unidade) },
     { label: "Cabeças", valor: ou(negocio.qtd_animais, String) },
-    { label: "Valor total", valor: ou(negocio.valor_total, formatCurrency) },
+    { label: "Valor bruto", valor: ou(negocio.valor_total_bruto, formatCurrency) },
+    ...descontos,
+    { label: "Valor líquido", valor: ou(negocio.valor_total_liquido, formatCurrency) },
     { label: "Valor médio por cabeça", valor: ou(negocio.valor_medio, formatCurrency) },
     ...(porCabeca
       ? []
@@ -107,8 +115,6 @@ function CartaoGeral({
           { label: "Início da pesagem", valor: negocio.hora_inicio_pesagem ? formatHora(negocio.hora_inicio_pesagem) : "—" },
           { label: "Fim da pesagem", valor: negocio.hora_fim_pesagem ? formatHora(negocio.hora_fim_pesagem) : "—" },
         ]),
-    { label: rotuloAliquota("Funrural", negocio.aliquota_funrural), valor: ou(negocio.funrural, formatCurrency) },
-    { label: rotuloAliquota("Senar", negocio.aliquota_senar), valor: ou(negocio.senar, formatCurrency) },
     {
       label: "Critério da comissão",
       valor: exibirComissao(negocio.porcentagem_comissao, comissao, (v) =>
@@ -118,7 +124,7 @@ function CartaoGeral({
     { label: "Comissão", valor: exibirComissao(negocio.comissao, comissao, formatCurrency) },
     { label: "Observação", valor: negocio.observacao || "—" },
   ];
-  const nomeFazenda = fazenda?.nome_fazenda ?? negocio.fazenda?.nome_fazenda ?? `Fazenda #${negocio.fazenda_id}`;
+  const nomeFazenda = formatFazenda(fazenda?.nome_fazenda ?? negocio.fazenda?.nome_fazenda ?? `#${negocio.fazenda_id}`);
   return (
     <>
       <div className="carrossel-cartao glass-dark">
@@ -160,6 +166,7 @@ function CartaoLote({
     { label: "Ano do carimbo", valor: lote.ano_carimbo || "—" },
   ];
   const detalhes: Item[] = [
+    { label: VALOR_UNIDADE_LABELS[modalidade], valor: formatCurrency(lote.valor_unidade) },
     ...(modalidade === "arroba" ? [{ label: "Rendimento de carcaça", valor: formatPercent(lote.rendimento_carcaca) }] : []),
     { label: "Cabeças", valor: String(lote.qtd_animais) },
     { label: "Valor total do lote", valor: formatCurrency(lote.valor_total_lote) },

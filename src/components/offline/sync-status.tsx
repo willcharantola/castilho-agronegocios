@@ -7,7 +7,7 @@ import type { EntidadeOffline } from "@/lib/offline/db";
 import { usePendentes, type RegistroSalvo } from "@/lib/offline/fila";
 import { contarDependentes, descartar, sincronizar, tentarNovamente } from "@/lib/offline/sync";
 import { useOnlineStatus } from "@/lib/offline/use-online-status";
-import { formatDate } from "@/lib/format";
+import { formatDate, formatFazenda } from "@/lib/format";
 import styles from "./offline.module.css";
 
 const NOME_ENTIDADE: Record<EntidadeOffline, string> = {
@@ -27,13 +27,13 @@ function descrever(r: RegistroSalvo): string {
   const p = r.payload;
   const e = r.exibicao ?? {};
   const detalhe =
-    (p.nome_fazenda as string | undefined) ??
+    (typeof p.nome_fazenda === "string" ? formatFazenda(p.nome_fazenda) : undefined) ??
     (p.nome_pecuarista as string | undefined) ??
     (p.nome_empresa as string | undefined) ??
     (p.nome_lote as string | undefined) ??
     (r.entidade === "gado" && typeof p.peso_total === "number" ? `${p.peso_total} kg` : undefined) ??
     (r.entidade === "negocio"
-      ? `${e.fazendaNome as string} · ${formatDate(p.data_negocio as string)}`
+      ? `${formatFazenda(e.fazendaNome as string)} · ${formatDate(p.data_negocio as string)}`
       : undefined);
   return detalhe ? `${NOME_ENTIDADE[r.entidade]}: ${detalhe}` : NOME_ENTIDADE[r.entidade];
 }

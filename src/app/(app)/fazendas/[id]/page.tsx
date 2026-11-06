@@ -1,5 +1,6 @@
 "use client";
 
+import { formatFazenda } from "@/lib/format";
 import * as React from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -117,7 +118,7 @@ export default function EditarFazendaPage() {
         <BackLink href="/fazendas" />
         {loaded ? (
           <BotaoExcluir
-            descricao={`a fazenda "${nome}"`}
+            descricao={`a ${formatFazenda(nome)}`}
             excluir={() => deleteFazenda(params.id)}
             destino="/fazendas"
           />

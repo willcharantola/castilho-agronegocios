@@ -6,7 +6,7 @@ import { FileText, Search, Warehouse } from "lucide-react";
 import { useAviso } from "@/components/aviso";
 import { Button } from "@/components/ui/button";
 import { Fab } from "@/components/fab";
-import { formatCurrency, formatDate, formatPercent } from "@/lib/format";
+import { formatCurrency, formatDate, formatPercent, formatFazenda } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { fetchNegocio, fetchNegocios } from "@/lib/api/negocios";
 import { fetchFazendas } from "@/lib/api/fazendas";
@@ -201,9 +201,11 @@ export default function NegociosPage() {
               <div className="card-info">
 
                 <p className="card-name">
-                  {nomesPendentes[negocio.negocio_id]?.fazendaNome ??
-                    fazendasPorId[negocio.fazenda_id] ??
-                    `Fazenda #${negocio.fazenda_id}`}
+                  {formatFazenda(
+                    nomesPendentes[negocio.negocio_id]?.fazendaNome ??
+                      fazendasPorId[negocio.fazenda_id] ??
+                      `#${negocio.fazenda_id}`
+                  )}
                 </p>
 
                 <p className="card-meta">
@@ -222,11 +224,15 @@ export default function NegociosPage() {
                 </p>
 
                 <p className="card-meta">Cabeças negociadas: {negocio.qtd_animais ?? "—"}</p>
+                <p className="card-meta">
+                  Valor líquido:{" "}
+                  {negocio.valor_total_liquido !== null ? formatCurrency(negocio.valor_total_liquido) : "—"}
+                </p>
                 {negocio.pendente ? <PendenteBadge pendente={negocio.pendente} /> : null}
               </div>
               <div className={styles.cardAmount}>
-                 <p className={styles.cardCommission}>{negocio.valor_total !== null ? formatCurrency(negocio.valor_total) : "—"}</p>
-                <p className={styles.cardHeads}>Valor Total</p>
+                 <p className={styles.cardCommission}>{negocio.valor_total_bruto !== null ? formatCurrency(negocio.valor_total_bruto) : "—"}</p>
+                <p className={styles.cardHeads}>Valor bruto</p>
 
                 
               </div>

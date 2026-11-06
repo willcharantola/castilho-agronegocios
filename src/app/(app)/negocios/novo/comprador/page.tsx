@@ -1,5 +1,6 @@
 "use client";
 
+import { formatFazenda } from "@/lib/format";
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -36,7 +37,7 @@ const deFrigorifico = (c: Comprador & { pendente?: InfoPendente }): Opcao => ({
   tipo: "frigorifico",
   id: c.comprador_id,
   nome: c.nome_empresa,
-  detalhe: [c.municipio, c.pessoa_contato && `Contato: ${c.pessoa_contato}`].filter(Boolean).join(" · "),
+  detalhe: [c.municipio, c.inscricao_estadual && `I.E.: ${c.inscricao_estadual}`].filter(Boolean).join(" · "),
   pendente: c.pendente,
 });
 
@@ -113,7 +114,7 @@ export default function NovoNegocioCompradorPage() {
         <span className="card-icon-on-dark">
           <Warehouse size={18} />
         </span>
-        <p className={styles.fazendaNome}>{data.fazendaNome}</p>
+        <p className={styles.fazendaNome}>{formatFazenda(data.fazendaNome)}</p>
       </div>
 
       <p className="section-title">Selecione o comprador</p>

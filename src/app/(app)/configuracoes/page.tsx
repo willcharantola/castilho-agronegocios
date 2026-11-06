@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronRight, Percent, Tags, UserRound, Users, type LucideIcon } from "lucide-react";
+import { Building2, ChevronRight, Percent, Tags, UserRound, Users, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { clearSession } from "@/lib/api-client";
 import { limparCacheDeLeitura } from "@/lib/offline/cache";
@@ -15,6 +15,13 @@ type ItemConfiguracao = { href: string; icon: LucideIcon; titulo: string; descri
 
 /** Uma linha por opção: novas configurações entram aqui. */
 const ITENS: ItemConfiguracao[] = [
+  {
+    href: "/configuracoes/dados-da-empresa",
+    icon: Building2,
+    titulo: "Dados da empresa",
+    // Normal abre só para consulta; só Admin altera.
+    descricao: "Nome, CNPJ, CRECI e dados bancários",
+  },
   {
     href: "/configuracoes/impostos-e-taxas",
     icon: Percent,

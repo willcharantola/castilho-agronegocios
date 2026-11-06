@@ -40,7 +40,6 @@ export function resumoLote(lote: Pick<Lote, "tipo_lote" | "genero" | "rendimento
 export function GadoForm({
   modalidade,
   tipoGado,
-  valorUnidade,
   lotes,
   defaultValues,
   submitLabel,
@@ -52,9 +51,7 @@ export function GadoForm({
   modalidade: Modalidade;
   /** Tipo de gado do negócio: em "kg", define a arroba da prévia (÷ 15 ou ÷ 30). */
   tipoGado: TipoGado;
-  /** Preço por unidade do negócio (o mesmo para todos os lotes), para a prévia. */
-  valorUnidade: number;
-  /** Lotes do negócio, em grade, seleção única. */
+  /** Lotes do negócio, em grade, seleção única (a prévia usa o preço do lote escolhido). */
   lotes: Lote[];
   /** Cabeça em edição, ou o lote pré-selecionado (o último usado) no cadastro. */
   defaultValues?: { loteId?: number | null; pesoTotal?: number };
@@ -93,7 +90,7 @@ export function GadoForm({
         modalidade,
         pesoTotal,
         loteEscolhido.rendimento_carcaca,
-        valorUnidade,
+        loteEscolhido.valor_unidade,
         tipoGado
       )
     : { pesoCalculo: 0, pesoArroba: 0, valorTotal: 0 };
@@ -101,7 +98,7 @@ export function GadoForm({
   const opcoes: OpcaoBotao<string>[] = lotes.map((lote) => ({
     value: String(lote.lote_id),
     label: lote.nome_lote,
-    detalhe: resumoLote(lote, modalidade),
+    detalhe: `${resumoLote(lote, modalidade)} · ${formatCurrency(lote.valor_unidade)}`,
   }));
 
   async function submit(values: GadoFormOutput) {

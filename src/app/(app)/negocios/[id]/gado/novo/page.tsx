@@ -44,7 +44,6 @@ export default function AdicionarGadoPage() {
         <GadoForm
           modalidade={negocio.modalidade}
           tipoGado={negocio.tipo_gado}
-          valorUnidade={negocio.valor_unidade}
           lotes={negocio.lotes}
           defaultValues={{ loteId: negocio.lotes.length === 1 ? negocio.lotes[0].lote_id : null }}
           submitLabel="Cadastrar"

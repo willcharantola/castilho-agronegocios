@@ -34,8 +34,8 @@ export default function EditarCompradorPage() {
         reset({
           nome_empresa: comprador.nome_empresa,
           cnpj: comprador.cnpj,
+          inscricao_estadual: comprador.inscricao_estadual ?? "",
           municipio: comprador.municipio,
-          pessoa_contato: comprador.pessoa_contato,
         });
         setNome(comprador.nome_empresa);
         setLoaded(true);

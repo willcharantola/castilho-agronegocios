@@ -1,5 +1,6 @@
 "use client";
 
+import { formatFazenda } from "@/lib/format";
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { Warehouse } from "lucide-react";
@@ -42,7 +43,7 @@ export default function NovoNegocioLoteUnicoPage() {
           <Warehouse size={18} />
         </span>
         <div>
-          <p className={styles.fazendaNome}>{data.fazendaNome}</p>
+          <p className={styles.fazendaNome}>{formatFazenda(data.fazendaNome)}</p>
           <p className={styles.fazendaMeta}>Comprador: {data.compradorNome} · Por Cabeça</p>
         </div>
       </div>

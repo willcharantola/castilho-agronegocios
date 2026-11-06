@@ -1,5 +1,6 @@
 "use client";
 
+import { formatFazenda } from "@/lib/format";
 import * as React from "react";
 import Link from "next/link";
 import { Search, Warehouse } from "lucide-react";
@@ -114,7 +115,7 @@ export default function FazendasPage() {
                   )}
               </span>
               <div className="card-info">
-                <p className="card-name">{fazenda.nome_fazenda}</p>
+                <p className="card-name">{formatFazenda(fazenda.nome_fazenda)}</p>
                 <p className="card-meta"> Município: {fazenda.municipio} </p>
                  <p className="card-meta">I.E.: {fazenda.inscricao_estadual}</p>
                   {fazenda.pendente ? <PendenteBadge pendente={fazenda.pendente} /> : null}

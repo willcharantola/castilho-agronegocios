@@ -1,5 +1,5 @@
 import type { Control, FieldErrors, UseFormRegister } from "react-hook-form";
-import { Building2, CreditCard, MapPin, User } from "lucide-react";
+import { Building2, CreditCard, FileText, MapPin } from "lucide-react";
 import { z } from "zod";
 import { IconField } from "@/components/form/icon-field";
 import { MaskedTextField } from "@/components/form/masked-text-field";
@@ -9,8 +9,9 @@ import { cnpjValido, mascaraCnpj } from "@/lib/documentos";
 export const compradorSchema = z.object({
   nome_empresa: z.string().min(2, "Informe o nome da empresa.").max(50),
   cnpj: z.string().min(1, "Informe o CNPJ.").refine(cnpjValido, "CNPJ inválido. Confira os números."),
+  // Texto livre (ex.: "ISENTO"); o formato ainda será definido com o cliente.
+  inscricao_estadual: z.string().trim().min(1, "Informe a inscrição estadual.").max(12, "Máximo de 12 caracteres."),
   municipio: z.string().min(2, "Informe o município.").max(30),
-  pessoa_contato: z.string().min(2, "Informe a pessoa de contato.").max(30),
 });
 export type CompradorFormValues = z.infer<typeof compradorSchema>;
 
@@ -35,12 +36,17 @@ export function CompradorFields({
         <MaskedTextField control={control} name="cnpj" mascara={mascaraCnpj} id="cnpj" placeholder="00.000.000/0000-00" />
       </IconField>
 
-      <IconField icon={MapPin} label="Município" htmlFor="municipio" error={errors.municipio?.message}>
-        <TintedInput id="municipio" tint="pink" placeholder="Ex: Campo Grande" {...register("municipio")} />
+      <IconField
+        icon={FileText}
+        label="Inscrição Estadual"
+        htmlFor="inscricao_estadual"
+        error={errors.inscricao_estadual?.message}
+      >
+        <TintedInput id="inscricao_estadual" tint="pink" maxLength={12} {...register("inscricao_estadual")} />
       </IconField>
 
-      <IconField icon={User} label="Pessoa de Contato" htmlFor="pessoa_contato" error={errors.pessoa_contato?.message}>
-        <TintedInput id="pessoa_contato" tint="pink" {...register("pessoa_contato")} />
+      <IconField icon={MapPin} label="Município" htmlFor="municipio" error={errors.municipio?.message}>
+        <TintedInput id="municipio" tint="pink" placeholder="Ex: Campo Grande" {...register("municipio")} />
       </IconField>
     </>
   );

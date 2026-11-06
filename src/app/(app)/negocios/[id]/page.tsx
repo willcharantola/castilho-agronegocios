@@ -12,7 +12,6 @@ import { ComissaoForm } from "@/components/comissao-form";
 import { ListaGados } from "@/components/lista-gados";
 import { NegocioCarrossel } from "@/components/negocio-carrossel";
 import { TipoNegocioForm } from "@/components/tipo-negocio-form";
-import { ValorUnidadeForm } from "@/components/valor-unidade-form";
 import { cn } from "@/lib/utils";
 import { modoDoNegocio } from "@/lib/comissao";
 import { deleteNegocio, fetchNegocio } from "@/lib/api/negocios";
@@ -106,16 +105,6 @@ export default function NegocioDetailPage() {
           />
 
           {sincronizado ? (
-            <ValorUnidadeForm
-              key={negocio.valor_unidade}
-              negocioId={negocio.negocio_id}
-              modalidade={negocio.modalidade}
-              valorUnidade={negocio.valor_unidade}
-              onUpdated={() => recarregar()}
-            />
-          ) : null}
-
-          {sincronizado ? (
             <TipoNegocioForm
               key={negocio.tipo_negocio}
               negocioId={negocio.negocio_id}
@@ -133,7 +122,7 @@ export default function NegocioDetailPage() {
               modo={modoDoNegocio(negocio)}
               tipoGado={negocio.tipo_gado}
               modalidade={negocio.modalidade}
-              valorTotal={negocio.valor_total}
+              valorTotal={negocio.valor_total_bruto}
               pesoTotalQuilos={negocio.peso_total_quilos}
               // Na fila desde a versão anterior: o valor foi digitado como percentual.
               revisar={

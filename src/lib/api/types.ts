@@ -67,8 +67,9 @@ export type Comprador = {
   comprador_id: number;
   nome_empresa: string;
   cnpj: string;
+  /** Obrigatória; texto livre até 12 caracteres (ex.: "ISENTO"). */
+  inscricao_estadual: string;
   municipio: string;
-  pessoa_contato: string;
 };
 
 /** Quem compra num negócio: um frigorífico ou um pecuarista. */
@@ -77,7 +78,7 @@ export type TipoComprador = "frigorifico" | "pecuarista";
 /**
  * Comprador do negócio como a API devolve, igual para frigorífico e pecuarista. Do
  * pecuarista: `documento` é o CPF/CNPJ, `municipio` vem da primeira fazenda dele e
- * `pessoa_contato` é null.
+ * `inscricao_estadual` é null.
  */
 export type CompradorDoNegocio = {
   tipo: TipoComprador;
@@ -85,7 +86,7 @@ export type CompradorDoNegocio = {
   nome: string;
   documento: string;
   municipio: string | null;
-  pessoa_contato: string | null;
+  inscricao_estadual: string | null;
 };
 
 /** Nome sugerido para os lotes (Configurações → Tipos de gado). Não é o `tipo_gado` do negócio. */
@@ -128,8 +129,6 @@ export type Negocio = {
   comprador_pecuarista_id: number | null;
   /** Comprador unificado (null em respostas antigas guardadas no aparelho). */
   comprador: CompradorDoNegocio | null;
-  /** R$ por arroba, por kg ou por cabeça, conforme a modalidade — o mesmo para todos os lotes. */
-  valor_unidade: number;
   /**
    * TIME do Postgres, serializado como ISO em 1970-01-01 — use `formatHora`. Registrados
    * pela API (início: 1º gado cadastrado; fim: PATCH /negocios/:id/concluir). NULL na
@@ -156,10 +155,12 @@ export type Negocio = {
   /** Soma de `lote.qtd_animais`. */
   qtd_animais: number | null;
   /** Soma de `lote.valor_total_lote`. */
-  valor_total: number | null;
+  valor_total_bruto: number | null;
+  /** Bruto − Funrural − Senar (a comissão não entra). */
+  valor_total_liquido: number | null;
   valor_medio: number | null;
   /**
-   * R$, calculados pela API conforme o tipo_negocio: "Funrural" → valor_total ×
+   * R$, calculados pela API conforme o tipo_negocio: "Funrural" → valor_total_bruto ×
    * aliquota_funrural / 100 (senar 0); "Desconto em folha" → só senar; "Livre" → ambos 0.
    */
   funrural: number | null;
@@ -173,15 +174,17 @@ export type Negocio = {
 } & AgregadosPeso;
 
 /**
- * Lote do negócio: gênero, rendimento, carimbo e tipo de lote são do lote; o preço por
- * unidade é do negócio. Na modalidade "cabeca" há um único lote ("Lote único"), sem
- * cabeças pesadas.
+ * Lote do negócio: preço por unidade, gênero, rendimento, carimbo e tipo de lote são do
+ * lote (lotes do mesmo negócio podem ter preços diferentes). Na modalidade "cabeca" há um
+ * único lote ("Lote único"), sem cabeças pesadas.
  */
 export type Lote = {
   lote_id: number;
   negocio_id: number;
   nome_lote: string;
   tipo_lote: TipoLote;
+  /** R$ por arroba, por kg ou por cabeça, conforme a modalidade do negócio. */
+  valor_unidade: number;
   genero: Genero;
   /** % (0 a 100). 100 nas modalidades "kg" e "cabeca". */
   rendimento_carcaca: number;
@@ -222,6 +225,17 @@ export type NegocioDetail = Negocio & {
   lotes: LoteDetail[];
   pecuarista: Pecuarista;
   fazenda?: Fazenda;
+};
+
+/** Configurações > Dados da empresa: todos consultam, só Admin altera. */
+export type DadosEmpresa = {
+  nome: string;
+  cnpj: string;
+  creci: string;
+  banco: string;
+  agencia: string;
+  conta: string;
+  chave_pix: string;
 };
 
 /** Configurações > Impostos e taxas: alíquotas em % (1.5 = 1,5%). */
@@ -291,8 +305,6 @@ export type CreateNegocioInput = {
   pecuarista_id: number;
   /** Um pecuarista não pode comprar do próprio negócio (400). */
   comprador: CompradorDoNegocioInput;
-  /** Preço por unidade (2 casas); alterá-lo recalcula todas as cabeças e lotes. */
-  valor_unidade: number;
   modalidade: Modalidade;
   tipo_gado: TipoGado;
   tipo_negocio: TipoNegocio;
@@ -311,6 +323,8 @@ export type UpdateNegocioInput = Partial<CreateNegocioInput>;
 export type CreateLoteInput = {
   nome_lote?: string;
   tipo_lote: TipoLote;
+  /** Preço por unidade do lote (2 casas); alterá-lo recalcula as cabeças do lote. */
+  valor_unidade: number;
   genero: Genero;
   rendimento_carcaca?: number;
   /** Opcionais: null (ou '') limpa. */
