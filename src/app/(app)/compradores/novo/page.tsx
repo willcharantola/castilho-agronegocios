@@ -22,6 +22,7 @@ function NovoCompradorForm() {
   const [submitError, setSubmitError] = React.useState<string | null>(null);
   const {
     register,
+    control,
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<CompradorFormValues>({ resolver: zodResolver(compradorSchema) });
@@ -47,7 +48,7 @@ function NovoCompradorForm() {
       <form onSubmit={handleSubmit(onSubmit)} className="form-stack">
         <div className="form-fields">
           {submitError ? <p className="form-error">{submitError}</p> : null}
-          <CompradorFields register={register} errors={errors} autoFocus />
+          <CompradorFields register={register} control={control} errors={errors} autoFocus />
         </div>
 
         <Button type="submit" variant="brand" size="xl" className="w-full" disabled={isSubmitting}>

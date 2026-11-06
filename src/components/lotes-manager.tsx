@@ -6,8 +6,8 @@ import { LoteForm } from "@/components/lote-form";
 import { PendenteBadge } from "@/components/offline/pendente-badge";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
-import { formatCurrency, formatPercent } from "@/lib/format";
-import { GENERO_LABELS, TIPO_LOTE_LABELS, VALOR_UNIDADE_LABELS } from "@/lib/labels";
+import { formatPercent } from "@/lib/format";
+import { GENERO_LABELS, TIPO_LOTE_LABELS } from "@/lib/labels";
 import { criarLote, editarLote, excluirLote } from "@/lib/flows/operacoes-lote";
 import type { LoteComPendencia, NegocioComPendencias } from "@/lib/offline/pendentes";
 import { cn } from "@/lib/utils";
@@ -67,10 +67,9 @@ export function LotesManager({
                 <p className="card-meta">
                   {TIPO_LOTE_LABELS[lote.tipo_lote]} · {GENERO_LABELS[lote.genero]}
                 </p>
-                <p className="card-meta">
-                  {VALOR_UNIDADE_LABELS[modalidade]}: {formatCurrency(lote.valor_unidade)}
-                  {modalidade === "arroba" ? ` · Rend.: ${formatPercent(lote.rendimento_carcaca)}` : null}
-                </p>
+                {modalidade === "arroba" ? (
+                  <p className="card-meta">Rend.: {formatPercent(lote.rendimento_carcaca)}</p>
+                ) : null}
                 <p className="card-meta">
                   {lote.gados.length} {lote.gados.length === 1 ? "cabeça pesada" : "cabeças pesadas"}
                 </p>

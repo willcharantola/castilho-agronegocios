@@ -1,10 +1,57 @@
-.botaoMapa {
-  align-self: flex-start;
+/* O mapa inteiro é o link: o iframe não recebe cliques (senão o link não dispara). */
+.mapaLink {
+  display: block;
+  /* Mais perto do campo de localização (os campos são separados em 1,25rem). */
+  margin-top: -0.75rem;
+  border-radius: var(--radius-box);
+  cursor: pointer;
+}
+
+.mapaLink:focus-visible {
+  outline: 2px solid var(--color-dark);
+  outline-offset: 2px;
 }
 
 .mapa {
+  display: block;
   width: 100%;
-  height: 240px;
+  height: 120px;
   border: 0;
   border-radius: var(--radius-box);
+  pointer-events: none;
+}
+
+.pecuaristas {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  /* Aproxima o último pecuarista do botão Salvar (o form-stack separa os blocos em 1,5rem). */
+  margin-bottom: -0.75rem;
+}
+
+.cardPecuarista {
+  position: relative;
+  cursor: pointer;
+}
+
+/* O link cobre o card inteiro: qualquer ponto dele abre a edição do pecuarista. */
+.linkPecuarista {
+  color: inherit;
+  text-decoration: none;
+}
+
+.linkPecuarista::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+
+.linkPecuarista:focus-visible {
+  outline: none;
+}
+
+.cardPecuarista:has(.linkPecuarista:focus-visible) {
+  outline: 2px solid var(--color-dark);
+  outline-offset: 2px;
 }

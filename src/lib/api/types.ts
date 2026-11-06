@@ -36,6 +36,8 @@ export type Fazenda = {
   fazenda_id: number;
   nome_fazenda: string;
   municipio: string;
+  /** CNPJ próprio da fazenda (00.000.000/0000-00), opcional. */
+  cnpj?: string | null;
   inscricao_estadual: string;
   marca_url: string | null;
   marca_escrita: string | null;
@@ -60,13 +62,37 @@ export type Pecuarista = {
   pecuarista_fazenda?: { fazenda_id: number; pecuarista_id: number; fazenda: Fazenda }[];
 };
 
+/** Frigorífico (tabela comprador, CRUD em /compradores). */
 export type Comprador = {
   comprador_id: number;
   nome_empresa: string;
   cnpj: string;
-  telefone: string;
   municipio: string;
   pessoa_contato: string;
+};
+
+/** Quem compra num negócio: um frigorífico ou um pecuarista. */
+export type TipoComprador = "frigorifico" | "pecuarista";
+
+/**
+ * Comprador do negócio como a API devolve, igual para frigorífico e pecuarista. Do
+ * pecuarista: `documento` é o CPF/CNPJ, `municipio` vem da primeira fazenda dele e
+ * `pessoa_contato` é null.
+ */
+export type CompradorDoNegocio = {
+  tipo: TipoComprador;
+  id: number;
+  nome: string;
+  documento: string;
+  municipio: string | null;
+  pessoa_contato: string | null;
+};
+
+/** Nome sugerido para os lotes (Configurações → Tipos de gado). Não é o `tipo_gado` do negócio. */
+export type TipoGadoCatalogo = {
+  tipo_gado_id: number;
+  empresa_id: number;
+  nome_gado: string;
 };
 
 export type Modalidade = "arroba" | "kg" | "cabeca";
@@ -97,7 +123,13 @@ export type Negocio = {
   empresa_id: number;
   fazenda_id: number;
   pecuarista_id: number;
-  comprador_id: number;
+  /** Exatamente um dos dois: frigorífico ou pecuarista comprador. Prefira `comprador`. */
+  comprador_id: number | null;
+  comprador_pecuarista_id: number | null;
+  /** Comprador unificado (null em respostas antigas guardadas no aparelho). */
+  comprador: CompradorDoNegocio | null;
+  /** R$ por arroba, por kg ou por cabeça, conforme a modalidade — o mesmo para todos os lotes. */
+  valor_unidade: number;
   /**
    * TIME do Postgres, serializado como ISO em 1970-01-01 — use `formatHora`. Registrados
    * pela API (início: 1º gado cadastrado; fim: PATCH /negocios/:id/concluir). NULL na
@@ -141,22 +173,22 @@ export type Negocio = {
 } & AgregadosPeso;
 
 /**
- * Lote do negócio: gênero, rendimento, preço por unidade, carimbo e tipo de lote são do
- * lote. Na modalidade "cabeca" há um único lote ("Lote único"), sem cabeças pesadas.
+ * Lote do negócio: gênero, rendimento, carimbo e tipo de lote são do lote; o preço por
+ * unidade é do negócio. Na modalidade "cabeca" há um único lote ("Lote único"), sem
+ * cabeças pesadas.
  */
 export type Lote = {
   lote_id: number;
   negocio_id: number;
   nome_lote: string;
-  /** R$ por arroba, por kg ou por cabeça, conforme a modalidade do negócio. */
-  valor_unidade: number;
   tipo_lote: TipoLote;
   genero: Genero;
   /** % (0 a 100). 100 nas modalidades "kg" e "cabeca". */
   rendimento_carcaca: number;
-  /** Texto livre (ex.: "8,9 e 10"). */
-  media_carimbo: string;
-  ano_carimbo: string;
+  /** Texto livre (ex.: "8,9 e 10"), opcional. */
+  media_carimbo: string | null;
+  /** 4 dígitos, opcional. */
+  ano_carimbo: string | null;
   // Calculados pela API. Em "cabeca", qtd_animais é a informada.
   qtd_animais: number;
   valor_total_lote: number;
@@ -188,7 +220,6 @@ export type ResumoNegocios = {
 export type NegocioDetail = Negocio & {
   /** Em ordem de cadastro; as cabeças de cada lote também. */
   lotes: LoteDetail[];
-  comprador: Comprador;
   pecuarista: Pecuarista;
   fazenda?: Fazenda;
 };
@@ -216,6 +247,8 @@ export type OrigemOffline = { uuid_origem?: string };
 export type CreateFazendaInput = {
   nome_fazenda: string;
   municipio: string;
+  /** Opcional; '' ou null limpa. A API valida os dígitos verificadores. */
+  cnpj?: string | null;
   inscricao_estadual: string;
   /** finalUrl de POST /uploads/marca-fazenda; `null` remove a imagem (PATCH). */
   marca_url?: string | null;
@@ -249,11 +282,17 @@ export type UpdatePecuaristaInput = Partial<DadosPecuaristaInput>;
 export type CreateCompradorInput = Omit<Comprador, "comprador_id">;
 export type UpdateCompradorInput = Partial<CreateCompradorInput>;
 
+/** Comprador na entrada: a API grava o id na coluna do tipo e deixa a outra null. */
+export type CompradorDoNegocioInput = { tipo: TipoComprador; id: number };
+
 export type CreateNegocioInput = {
   empresa_id: number;
   fazenda_id: number;
   pecuarista_id: number;
-  comprador_id: number;
+  /** Um pecuarista não pode comprar do próprio negócio (400). */
+  comprador: CompradorDoNegocioInput;
+  /** Preço por unidade (2 casas); alterá-lo recalcula todas as cabeças e lotes. */
+  valor_unidade: number;
   modalidade: Modalidade;
   tipo_gado: TipoGado;
   tipo_negocio: TipoNegocio;
@@ -271,12 +310,12 @@ export type UpdateNegocioInput = Partial<CreateNegocioInput>;
  */
 export type CreateLoteInput = {
   nome_lote?: string;
-  valor_unidade: number;
   tipo_lote: TipoLote;
   genero: Genero;
   rendimento_carcaca?: number;
-  media_carimbo: string;
-  ano_carimbo: string;
+  /** Opcionais: null (ou '') limpa. */
+  media_carimbo?: string | null;
+  ano_carimbo?: string | null;
   /** Só na modalidade "cabeca". */
   qtd_animais?: number;
 };

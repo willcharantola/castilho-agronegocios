@@ -18,3 +18,42 @@
 .novoPecuaristaButton {
   margin-top: 0.75rem;
 }
+
+/* Busca do seletor de comprador. */
+.busca {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 44px;
+  padding: 0 0.9rem;
+  border-radius: var(--radius-box);
+  color: var(--color-ink-muted);
+}
+
+.busca input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  color: var(--color-dark);
+  font: inherit;
+  outline: none;
+}
+
+/* Rótulo discreto da origem: "Frigorífico" ou "Pecuarista". */
+.rotulo {
+  flex-shrink: 0;
+  align-self: flex-start;
+  padding: 0.15rem 0.5rem;
+  border: 1px solid color-mix(in oklch, white 45%, transparent);
+  border-radius: 999px;
+  color: color-mix(in oklch, white 85%, transparent);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+}
+
+/* O vendedor do negócio não pode ser o comprador. */
+.cardDesabilitado {
+  opacity: 0.55;
+  cursor: not-allowed;
+}

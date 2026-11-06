@@ -72,7 +72,7 @@ export default function NovoNegocioGadoPage() {
             <div>
               <p className={styles.summaryFarm}>{data.fazendaNome}</p>
               <p className="card-meta-on-dark">Pecuarista: {negocio.pecuarista.nome_pecuarista}</p>
-              <p className="card-meta-on-dark">Comprador: {negocio.comprador.nome_empresa}</p>
+              <p className="card-meta-on-dark">Comprador: {negocio.comprador?.nome ?? data.compradorNome}</p>
             </div>
           </div>
           <div className={styles.summaryStats}>
@@ -101,6 +101,8 @@ export default function NovoNegocioGadoPage() {
           // Remonta quando a lista de lotes muda (ex.: lote sincronizado ganhou id real).
           key={negocio.lotes.map((l) => l.lote_id).join(",")}
           modalidade={negocio.modalidade}
+          tipoGado={negocio.tipo_gado}
+          valorUnidade={negocio.valor_unidade}
           lotes={negocio.lotes}
           defaultValues={{ loteId: data.ultimoLoteId ?? (negocio.lotes.length === 1 ? negocio.lotes[0].lote_id : null) }}
           submitLabel="Cadastrar"

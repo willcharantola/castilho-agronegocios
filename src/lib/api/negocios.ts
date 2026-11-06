@@ -15,6 +15,10 @@ function normalizeNegocio(raw: Negocio): Negocio {
   return {
     ...raw,
     ...normalizeAgregadosPeso(raw),
+    valor_unidade: Number(raw.valor_unidade ?? 0),
+    // Respostas guardadas no aparelho antes do bd-12 não têm o comprador unificado.
+    comprador: raw.comprador ?? null,
+    comprador_pecuarista_id: raw.comprador_pecuarista_id ?? null,
     valor_total: decimalOuNull(raw.valor_total),
     valor_medio: decimalOuNull(raw.valor_medio),
     porcentagem_comissao: decimalOuNull(raw.porcentagem_comissao),
@@ -24,6 +28,20 @@ function normalizeNegocio(raw: Negocio): Negocio {
     aliquota_funrural: decimalOuNull(raw.aliquota_funrural),
     aliquota_senar: decimalOuNull(raw.aliquota_senar),
   };
+}
+
+/**
+ * Payload da fila/fluxo → formato da API: as colunas planas do comprador (`comprador_id`
+ * de frigorífico ou `comprador_pecuarista_id`, já resolvidas pela fila offline) viram
+ * `comprador: { tipo, id }`. Sem nenhuma das duas, o comprador fica como está.
+ */
+export function compradorParaApi(payload: Record<string, unknown>): Record<string, unknown> {
+  const { comprador_id, comprador_pecuarista_id, ...resto } = payload;
+  if (comprador_pecuarista_id != null) {
+    return { ...resto, comprador: { tipo: "pecuarista", id: comprador_pecuarista_id } };
+  }
+  if (comprador_id != null) return { ...resto, comprador: { tipo: "frigorifico", id: comprador_id } };
+  return resto;
 }
 
 export async function fetchNegocios(params?: {
@@ -80,7 +98,10 @@ export async function concluirNegocio(id: number | string, horaFim?: string) {
   return normalizeNegocio(negocio);
 }
 
-/** PATCH /negocios/:id. Mudar o tipo_negocio recalcula Funrural e Senar. */
+/**
+ * PATCH /negocios/:id. Mudar o tipo_negocio recalcula Funrural e Senar; mudar o
+ * valor_unidade recalcula todas as cabeças e lotes.
+ */
 export async function updateNegocio(id: number | string, input: UpdateNegocioInput) {
   const negocio = await apiFetch<Negocio>(`/negocios/${id}`, { method: "PATCH", body: JSON.stringify(input) });
   return normalizeNegocio(negocio);

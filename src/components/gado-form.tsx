@@ -12,7 +12,7 @@ import { formatCurrency, formatNumber, formatPercent } from "@/lib/format";
 import { mensagemDeErro } from "@/lib/offline/rede";
 import { GENERO_LABELS, TIPO_LOTE_LABELS } from "@/lib/labels";
 import { estimarValoresGado } from "@/lib/calculo-gado";
-import type { Lote, Modalidade } from "@/lib/api/types";
+import type { Lote, Modalidade, TipoGado } from "@/lib/api/types";
 import styles from "./gado-form.module.css";
 
 const schema = z.object({
@@ -39,6 +39,8 @@ export function resumoLote(lote: Pick<Lote, "tipo_lote" | "genero" | "rendimento
  */
 export function GadoForm({
   modalidade,
+  tipoGado,
+  valorUnidade,
   lotes,
   defaultValues,
   submitLabel,
@@ -48,6 +50,10 @@ export function GadoForm({
   onSubmit,
 }: {
   modalidade: Modalidade;
+  /** Tipo de gado do negócio: em "kg", define a arroba da prévia (÷ 15 ou ÷ 30). */
+  tipoGado: TipoGado;
+  /** Preço por unidade do negócio (o mesmo para todos os lotes), para a prévia. */
+  valorUnidade: number;
   /** Lotes do negócio, em grade, seleção única. */
   lotes: Lote[];
   /** Cabeça em edição, ou o lote pré-selecionado (o último usado) no cadastro. */
@@ -83,7 +89,13 @@ export function GadoForm({
   const loteEscolhido = lotes.find((l) => String(l.lote_id) === loteSelecionado);
   const pesoTotal = Number(useWatch({ control, name: "peso_total" })) || 0;
   const previa = loteEscolhido
-    ? estimarValoresGado(modalidade, pesoTotal, loteEscolhido.rendimento_carcaca, loteEscolhido.valor_unidade)
+    ? estimarValoresGado(
+        modalidade,
+        pesoTotal,
+        loteEscolhido.rendimento_carcaca,
+        valorUnidade,
+        tipoGado
+      )
     : { pesoCalculo: 0, pesoArroba: 0, valorTotal: 0 };
 
   const opcoes: OpcaoBotao<string>[] = lotes.map((lote) => ({

@@ -9,9 +9,8 @@ import { formatCurrency, formatDate, formatPercent } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { fetchNegocio, fetchNegocios } from "@/lib/api/negocios";
 import { fetchFazendas } from "@/lib/api/fazendas";
-import { fetchCompradores } from "@/lib/api/compradores";
 import { gerarRomaneios } from "@/lib/relatorio-romaneio";
-import type { Comprador, Fazenda, Negocio } from "@/lib/api/types";
+import type { Fazenda, Negocio } from "@/lib/api/types";
 import { ApiError } from "@/lib/api-client";
 import { PendenteBadge } from "@/components/offline/pendente-badge";
 import { idTemporario, usePendentes, useVersaoSincronizacao } from "@/lib/offline/fila";
@@ -37,7 +36,6 @@ export default function NegociosPage() {
   );
   const versaoSincronizacao = useVersaoSincronizacao();
   const [fazendas, setFazendas] = React.useState<Fazenda[]>([]);
-  const [compradores, setCompradores] = React.useState<Comprador[]>([]);
   const [error, setError] = React.useState<string | null>(null);
   const [reloadKey, setReloadKey] = React.useState(0);
 
@@ -58,11 +56,6 @@ export default function NegociosPage() {
     [fazendas]
   );
 
-  const compradoresPorId = React.useMemo(
-    () => Object.fromEntries(compradores.map((c) => [c.comprador_id, c.nome_empresa])),
-    [compradores]
-  );
-
   React.useEffect(() => {
     let cancelled = false;
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -76,13 +69,11 @@ export default function NegociosPage() {
         data_fim: dataFim || undefined,
       }),
       fetchFazendas(),
-      fetchCompradores(),
     ])
-      .then(([negociosData, fazendasData, compradoresData]) => {
+      .then(([negociosData, fazendasData]) => {
         if (cancelled) return;
         setNegocios(negociosData);
         setFazendas(fazendasData);
-        setCompradores(compradoresData);
       })
       .catch((err: unknown) => {
         if (cancelled) return;
@@ -98,8 +89,8 @@ export default function NegociosPage() {
   const filtrados = negocios?.filter((negocio) => {
     if (buscaLower === "") return true;
     const fazendaNome = nomesPendentes[negocio.negocio_id]?.fazendaNome ?? fazendasPorId[negocio.fazenda_id] ?? "";
-    const compradorNome =
-      nomesPendentes[negocio.negocio_id]?.compradorNome ?? compradoresPorId[negocio.comprador_id] ?? "";
+    // Frigorífico ou pecuarista: o nome vem no comprador unificado da API.
+    const compradorNome = nomesPendentes[negocio.negocio_id]?.compradorNome ?? negocio.comprador?.nome ?? "";
     return (
       fazendaNome.toLowerCase().includes(buscaLower) ||
       compradorNome.toLowerCase().includes(buscaLower)
@@ -219,10 +210,7 @@ export default function NegociosPage() {
 
                 <p className="card-meta">
                   Comprador:{" "}
-                  {nomesPendentes[negocio.negocio_id]?.compradorNome ??
-                    compradoresPorId[negocio.comprador_id] ??
-                    `#${negocio.comprador_id}`}{" "}
-                  
+                  {nomesPendentes[negocio.negocio_id]?.compradorNome ?? negocio.comprador?.nome ?? "—"}
                 </p>
                 <p className="card-meta">{formatDate(negocio.data_negocio)}</p>
 

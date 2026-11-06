@@ -5,8 +5,8 @@ import { criarLote, editarLote } from "@/lib/flows/operacoes-lote";
 import type { NegocioComPendencias } from "@/lib/offline/pendentes";
 
 /**
- * Modalidade "cabeca": formulário único do "Lote único" (valor por cabeça, quantidade,
- * tipo de lote, gênero e carimbo). Cria o lote na primeira vez e o edita depois — a API
+ * Modalidade "cabeca": formulário único do "Lote único" (quantidade, tipo de lote, gênero
+ * e carimbo; o valor por cabeça é o do negócio). Cria o lote na primeira vez e o edita depois — a API
  * grava o nome e o rendimento 100 sozinha.
  */
 export function LoteUnicoForm({
@@ -23,6 +23,7 @@ export function LoteUnicoForm({
     <LoteForm
       key={lote?.lote_id ?? "novo"}
       modalidade="cabeca"
+      valorUnidade={negocio.valor_unidade}
       lote={lote}
       submitLabel={submitLabel}
       onSubmit={async (input) => {

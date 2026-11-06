@@ -3,7 +3,7 @@
 import { Dialog } from "@/components/ui/dialog";
 import { GadoForm } from "@/components/gado-form";
 import { editarGado } from "@/lib/flows/operacoes-lote";
-import type { Gado, Modalidade } from "@/lib/api/types";
+import type { Gado, Modalidade, TipoGado } from "@/lib/api/types";
 import type { LoteComPendencia } from "@/lib/offline/pendentes";
 
 /**
@@ -19,7 +19,7 @@ export function GadoEditDialog({
 }: {
   /** Cabeça em edição; `null` fecha o modal. */
   gado: Gado | null;
-  negocio: { negocio_id: number; modalidade: Modalidade };
+  negocio: { negocio_id: number; modalidade: Modalidade; tipo_gado: TipoGado; valor_unidade: number };
   lotes: LoteComPendencia[];
   onClose: () => void;
   onSaved: () => Promise<void> | void;
@@ -32,6 +32,8 @@ export function GadoEditDialog({
           key={gado.gado_id}
           idPrefix="editar-"
           modalidade={negocio.modalidade}
+          tipoGado={negocio.tipo_gado}
+          valorUnidade={negocio.valor_unidade}
           lotes={lotes}
           defaultValues={{ loteId: gado.lote_id, pesoTotal: gado.peso_total }}
           submitLabel="Salvar Alterações"

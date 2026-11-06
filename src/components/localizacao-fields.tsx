@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Crosshair, Home, MapPinned } from "lucide-react";
+import { Home, MapPinned } from "lucide-react";
 import type { FieldErrors, UseFormRegister, UseFormSetValue } from "react-hook-form";
 import { z } from "zod";
 import { IconField } from "@/components/form/icon-field";
@@ -34,7 +34,7 @@ const ERROS_GPS: Record<number, string> = {
 };
 
 /**
- * Endereço + localização, com "Usar minha localização atual" (GPS do aparelho — funciona
+ * Endereço + localização, com "Usar Localização Atual" (GPS do aparelho — funciona
  * sem internet). Usado no cadastro e na edição da fazenda.
  */
 export function LocalizacaoFields<T extends CamposLocalizacao>({
@@ -88,12 +88,20 @@ export function LocalizacaoFields<T extends CamposLocalizacao>({
         />
       </IconField>
 
+      {/* GPS do aparelho, logo acima do campo que ele preenche. */}
+      
       <IconField
         icon={MapPinned}
-        label="Localização (link do Google Maps ou coordenadas)"
+        label="Localização"
         htmlFor="localizacao_google"
         error={erros.localizacao_google?.message}
       >
+        <div className={styles.gps}>
+        <Button type="button" variant="brand" onClick={usarLocalizacaoAtual} disabled={buscando}>
+          {buscando ? "Obtendo localização..." : "Usar Localização Atual"}
+        </Button>
+        {erroGps ? <p className="form-error">{erroGps}</p> : null}
+      </div>
         <TintedInput
           id="localizacao_google"
           tint="pink"
@@ -105,12 +113,6 @@ export function LocalizacaoFields<T extends CamposLocalizacao>({
           {...reg("localizacao_google")}
         />
       </IconField>
-      <div className={styles.gps}>
-        <Button type="button" variant="ghost" onClick={usarLocalizacaoAtual} disabled={buscando}>
-          <Crosshair size={16} aria-hidden /> {buscando ? "Obtendo localização..." : "Usar minha localização atual"}
-        </Button>
-        {erroGps ? <p className="form-error">{erroGps}</p> : null}
-      </div>
     </>
   );
 }

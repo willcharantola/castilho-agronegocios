@@ -111,8 +111,9 @@ function linhaGado({ gado, lote }: { gado: Gado; lote: Lote }): Record<string, s
     denominacao: lote.nome_lote,
     lote: lote.nome_lote,
     genero: formatGenero(lote.genero),
-    carimbo: lote.media_carimbo,
-    ano: lote.ano_carimbo,
+    // Carimbo é opcional: vazio sai em branco.
+    carimbo: lote.media_carimbo ?? "",
+    ano: lote.ano_carimbo ?? "",
     "peso-total": formatNumber(gado.peso_total),
     "peso-calculo": formatNumber(gado.peso_calculo),
     "rend-carcaca": formatPercent(lote.rendimento_carcaca),

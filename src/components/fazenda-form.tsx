@@ -6,6 +6,7 @@ import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { AvatarUpload } from "@/components/form/avatar-upload";
+import { DocumentosFazendaFields, documentosFazendaSchema } from "@/components/cnpj-fazenda-field";
 import { IconField } from "@/components/form/icon-field";
 import { LocalizacaoFields, localizacaoSchema } from "@/components/localizacao-fields";
 import { TintedInput } from "@/components/form/tinted-input";
@@ -16,7 +17,7 @@ import type { CreateFazendaInput } from "@/lib/api/types";
 export const fazendaSchema = z.object({
   nome_fazenda: z.string().min(2, "Informe o nome da fazenda.").max(50),
   municipio: z.string().min(2, "Informe o município.").max(20),
-  inscricao_estadual: z.string().min(1, "Informe a inscrição estadual.").max(12),
+  ...documentosFazendaSchema,
   // URL pública no S3, preenchida pelo AvatarUpload (opcional; null = sem imagem).
   marca_url: z.string().nullable().optional(),
   marca_escrita: z.string().max(10, "Máximo de 10 caracteres.").optional(),
@@ -56,6 +57,7 @@ export function FazendaForm({
         nome_fazenda: values.nome_fazenda,
         municipio: values.municipio,
         inscricao_estadual: values.inscricao_estadual,
+        cnpj: values.cnpj || undefined,
         marca_url: values.marca_url ?? undefined,
         marca_escrita: values.marca_escrita || undefined,
         endereco_fazenda: values.endereco_fazenda || undefined,
@@ -93,14 +95,7 @@ export function FazendaForm({
           <TintedInput id="municipio" tint="pink" placeholder="Ex: Três Lagoas" {...register("municipio")} />
         </IconField>
 
-        <IconField
-          icon={FileText}
-          label="Inscrição Estadual"
-          htmlFor="inscricao_estadual"
-          error={errors.inscricao_estadual?.message}
-        >
-          <TintedInput id="inscricao_estadual" tint="pink" placeholder="Ex: 234567891" {...register("inscricao_estadual")} />
-        </IconField>
+        <DocumentosFazendaFields control={control} errors={errors} icone={FileText} />
 
         <IconField icon={Type} label="Marca escrita" htmlFor="marca_escrita" error={errors.marca_escrita?.message}>
           <TintedInput id="marca_escrita" tint="pink" maxLength={10} {...register("marca_escrita")} />

@@ -21,6 +21,7 @@ export default function EditarCompradorPage() {
   const [excluirError, setExcluirError] = React.useState<string | null>(null);
   const {
     register,
+    control,
     handleSubmit,
     reset,
     formState: { errors, isSubmitting },
@@ -34,7 +35,6 @@ export default function EditarCompradorPage() {
         reset({
           nome_empresa: comprador.nome_empresa,
           cnpj: comprador.cnpj,
-          telefone: comprador.telefone,
           municipio: comprador.municipio,
           pessoa_contato: comprador.pessoa_contato,
         });
@@ -83,7 +83,7 @@ export default function EditarCompradorPage() {
         <form onSubmit={handleSubmit(onSubmit)} className="form-stack">
           <div className="form-fields">
             {submitError ? <p className="form-error">{submitError}</p> : null}
-            <CompradorFields register={register} errors={errors} />
+            <CompradorFields register={register} control={control} errors={errors} />
           </div>
 
           <Button type="submit" variant="brand" size="xl" className="w-full" disabled={isSubmitting}>

@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { Pencil, Plus, Warehouse } from "lucide-react";
+import { Plus, Warehouse } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { BackLink } from "@/components/back-link";
@@ -117,32 +117,36 @@ export default function EditarPecuaristaPage() {
               <PecuaristaFields register={register} control={control} errors={errors} />
             </div>
 
-            <Button type="submit" variant="brand" size="xl" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? "Salvando..." : "Salvar Dados"}
-            </Button>
-          </form>
-
-          <section className={styles.fazendas}>
-            <p className="section-title">Fazendas vinculadas</p>
-            {vinculoError ? <p className="form-error">{vinculoError}</p> : null}
-            {fazendas.length === 0 ? (
-              <div className="state-box glass-panel">Nenhuma fazenda vinculada.</div>
-            ) : (
-              <div className="card-list">
-                {fazendas.map((fazenda) => (
-                  <div key={fazenda.fazenda_id} className={cn("list-card", "glass-panel")}>
-                    <span className="card-icon">
-                      {fazenda.marca_url ? (
-                        <img src={fazenda.marca_url} alt={fazenda.nome_fazenda} className={styles.cardImage} />
-                      ) : (
-                        <Warehouse size={18} />
-                      )}
-                    </span>
-                    <div className="card-info">
-                      <p className="card-name">{fazenda.nome_fazenda}</p>
-                      <p className="card-meta">
-                        {fazenda.municipio} · I.E.: {fazenda.inscricao_estadual}
-                      </p>
+            <section className={styles.fazendas}>
+              <p className="section-title">Fazendas vinculadas</p>
+              <Button
+                variant="brand"
+                className={styles.adicionarFazenda}
+                render={<Link href={`/pecuaristas/${params.id}/fazendas/nova`} />}
+              >
+                <Plus size={16} aria-hidden /> Adicionar fazenda
+              </Button>
+              {vinculoError ? <p className="form-error">{vinculoError}</p> : null}
+              {fazendas.length === 0 ? (
+                <div className="state-box glass-panel">Nenhuma fazenda vinculada.</div>
+              ) : (
+                <div className="card-list">
+                  {fazendas.map((fazenda) => (
+                    // O card inteiro abre a edição da fazenda (o link cobre o card); o botão
+                    // Desvincular fica por cima do link.
+                    <div key={fazenda.fazenda_id} className={cn("list-card", "glass-panel", styles.cardFazenda)}>
+                      <span className="card-icon">
+                        {fazenda.marca_url ? (
+                          <img src={fazenda.marca_url} alt="" className={styles.cardImage} />
+                        ) : (
+                          <Warehouse size={18} />
+                        )}
+                      </span>
+                      <div className="card-info">
+                        <Link href={`/fazendas/${fazenda.fazenda_id}`} className={styles.linkFazenda}>
+                          <p className="card-name">{fazenda.nome_fazenda}</p>
+                        </Link>
+                      </div>
                       {/* Precisa de ao menos uma fazenda: a última não é desvinculada. */}
                       {fazendas.length > 1 ? (
                         <button
@@ -150,30 +154,22 @@ export default function EditarPecuaristaPage() {
                           className={styles.desvincular}
                           onClick={() => desvincular(fazenda)}
                           disabled={desvinculando !== null}
+                          aria-label={`Desvincular ${fazenda.nome_fazenda}`}
                         >
                           {desvinculando === fazenda.fazenda_id ? "Desvinculando..." : "Desvincular"}
                         </button>
                       ) : null}
                     </div>
-                    <Link
-                      href={`/fazendas/${fazenda.fazenda_id}`}
-                      className={styles.editarFazenda}
-                      aria-label={`Editar ${fazenda.nome_fazenda}`}
-                    >
-                      <Pencil size={16} />
-                    </Link>
-                  </div>
-                ))}
-              </div>
-            )}
-            <Button
-              variant="brand"
-              className={styles.adicionarFazenda}
-              render={<Link href={`/pecuaristas/${params.id}/fazendas/nova`} />}
-            >
-              <Plus size={16} aria-hidden /> Adicionar fazenda
+                  ))}
+                </div>
+              )}
+            </section>
+
+            <Button type="submit" variant="brand" size="xl" className="w-full" disabled={isSubmitting}>
+              {isSubmitting ? "Salvando..." : "Salvar Dados"}
             </Button>
-          </section>
+          </form>
+
         </>
       ) : null}
     </div>
