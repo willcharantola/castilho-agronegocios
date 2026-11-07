@@ -46,22 +46,33 @@
   cursor: pointer;
 }
 
-/* As folhas uma embaixo da outra, rolando. */
+/* Área rolável nos dois sentidos (a folha ampliada fica mais larga que a tela). Só a
+   rolagem fica com o navegador: a pinça é tratada em FolhasComZoom. */
 .folhas {
-  display: flex;
   flex: 1;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.75rem;
-  overflow-y: auto;
+  min-height: 0;
+  overflow: auto;
   padding: 0 1rem 1rem;
+  touch-action: pan-x pan-y;
+  overscroll-behavior: contain;
+}
+
+/* A largura muda com o zoom (style.width); margin auto centraliza enquanto cabe na tela. */
+.conteudo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: min(100%, 48rem);
+  margin-inline: auto;
 }
 
 .folha {
   display: block;
   width: 100%;
-  max-width: 48rem;
   height: auto;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
   border-radius: 4px;
   background: #fff;
   box-shadow: 0 8px 24px -8px rgb(0 0 0 / 50%);
