@@ -14,9 +14,11 @@ import { NegocioCarrossel } from "@/components/negocio-carrossel";
 import { TipoNegocioForm } from "@/components/tipo-negocio-form";
 import { cn } from "@/lib/utils";
 import { modoDoNegocio } from "@/lib/comissao";
-import { deleteNegocio, fetchNegocio } from "@/lib/api/negocios";
+import { deleteNegocio } from "@/lib/api/negocios";
 import { gerarRomaneios } from "@/lib/relatorio-romaneio";
+import { negocioParaRomaneio, temPendenciaNoRomaneio } from "@/lib/flows/romaneio-local";
 import { useNegocioComPendencias } from "@/lib/flows/use-negocio-com-pendencias";
+import { useFazendasPendentes, usePecuaristasPendentes } from "@/lib/offline/pendentes";
 import { mensagemDeErro } from "@/lib/offline/rede";
 import { BotaoOlhoComissao, useExibicaoComissao } from "@/lib/permissoes";
 import styles from "./page.module.css";
@@ -27,6 +29,9 @@ export default function NegocioDetailPage() {
 
   const [gerandoRelatorio, setGerandoRelatorio] = React.useState(false);
   const avisar = useAviso();
+  // Cadastros ainda na fila: completam o romaneio de um negócio criado offline.
+  const fazendasPendentes = useFazendasPendentes();
+  const pecuaristasPendentes = usePecuaristasPendentes();
 
   // Comissão: "-" para Normal; para Admin começa escondida e o olho revela.
   const comissao = useExibicaoComissao();
@@ -41,16 +46,28 @@ export default function NegocioDetailPage() {
   const temPendencias = lotes.some((lote) => lote.pendente || lote.gados.some((gado) => gado.pendente));
 
   async function handleGerarRelatorio() {
-    if (!negocio || !sincronizado) return;
+    if (!negocio) return;
     setGerandoRelatorio(true);
     try {
-      // Só o que já está no servidor: cabeças pendentes têm valores apenas estimados.
-      const servidor = await fetchNegocio(negocio.negocio_id);
+      // O que está na tela, inclusive o que ainda está na fila offline (valores estimados).
+      // Com um lote selecionado nos chips, o romaneio sai só com ele.
+      const loteId = loteFiltrado?.lote_id;
+      const dados = await negocioParaRomaneio(negocio, {
+        fazendas: fazendasPendentes,
+        pecuaristas: pecuaristasPendentes,
+      });
       const { avisos } = await gerarRomaneios(
-        [servidor],
-        servidor.fazenda ? { [servidor.fazenda.fazenda_id]: servidor.fazenda } : {}
+        [dados],
+        dados.fazenda ? { [dados.fazenda_id]: dados.fazenda } : {},
+        loteId !== undefined ? { loteId } : undefined
       );
       for (const aviso of avisos) avisar(aviso, "aviso");
+      if (temPendenciaNoRomaneio(negocio, loteId)) {
+        avisar(
+          "Relatório gerado com dados ainda não sincronizados: os valores são estimados e podem mudar na sincronização.",
+          "aviso"
+        );
+      }
     } catch (err) {
       avisar(mensagemDeErro(err, "Erro ao gerar relatório."), "aviso");
     } finally {
@@ -144,8 +161,8 @@ export default function NegocioDetailPage() {
         icon={FileText}
         label="Gerar relatório"
         onClick={handleGerarRelatorio}
-        disabled={gerandoRelatorio || !negocio || !sincronizado}
-        disabledTitle={gerandoRelatorio ? "Gerando relatório..." : "Disponível após a sincronização"}
+        disabled={gerandoRelatorio || !negocio}
+        disabledTitle={gerandoRelatorio ? "Gerando relatório..." : "Carregando negócio..."}
       />
 
       {/* Negócios "cabeca" não têm pesagem; sem lote não há onde registrar a cabeça. */}
