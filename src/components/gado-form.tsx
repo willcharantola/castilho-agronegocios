@@ -174,7 +174,7 @@ export function GadoForm({
       </div>
 
       <div className={styles.totalRow}>
-        <span className={styles.totalLabel}>Valor (estimado)</span>
+        <span className={styles.totalLabel}>Valor</span>
         <span className={styles.totalValue}>{formatCurrency(previa.valorTotal)}</span>
       </div>
 

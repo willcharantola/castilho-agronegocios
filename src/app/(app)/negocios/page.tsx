@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { fetchNegocio, fetchNegocios } from "@/lib/api/negocios";
 import { fetchFazendas } from "@/lib/api/fazendas";
 import { gerarRomaneios } from "@/lib/relatorio-romaneio";
+import { oferecerCompartilhamento } from "@/lib/entregar-arquivo";
 import type { Fazenda, Negocio } from "@/lib/api/types";
 import { ApiError } from "@/lib/api-client";
 import { PendenteBadge } from "@/components/offline/pendente-badge";
@@ -105,11 +106,12 @@ export default function NegociosPage() {
     try {
       // O romaneio precisa de gados, pecuarista e dados bancários, que só vêm no detalhe.
       const detalhes = await Promise.all(sincronizados.map((n) => fetchNegocio(n.negocio_id)));
-      const { avisos } = await gerarRomaneios(
+      const { avisos, aguardandoToque } = await gerarRomaneios(
         detalhes,
         Object.fromEntries(fazendas.map((f) => [f.fazenda_id, f]))
       );
       for (const aviso of avisos) avisar(aviso, "aviso");
+      if (aguardandoToque) oferecerCompartilhamento(avisar, aguardandoToque);
     } catch (err) {
       avisar(
         err instanceof ApiError || err instanceof Error ? err.message : "Erro ao gerar relatório."

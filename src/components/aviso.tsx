@@ -10,9 +10,14 @@ import styles from "./aviso.module.css";
 /** "sucesso": confirmação (check); "aviso": algo não deu certo ou precisa de atenção. */
 export type TipoAviso = "sucesso" | "aviso";
 
-type Aviso = { mensagem: string; tipo: TipoAviso };
+/** Botão extra acima do OK (ex.: "Compartilhar"); o clique dele também fecha o aviso. */
+export type AcaoAviso = { rotulo: string; executar: () => void };
 
-const AvisoContext = React.createContext<((mensagem: string, tipo?: TipoAviso) => void) | null>(null);
+type Aviso = { mensagem: string; tipo: TipoAviso; acao?: AcaoAviso };
+
+type Avisar = (mensagem: string, tipo?: TipoAviso, acao?: AcaoAviso) => void;
+
+const AvisoContext = React.createContext<Avisar | null>(null);
 
 /**
  * Pop-up de aviso do sistema: ícone (check ou alerta), a mensagem e o botão OK. Avisos
@@ -25,8 +30,8 @@ export function AvisoProvider({ children }: { children: React.ReactNode }) {
   const [exibido, setExibido] = React.useState<Aviso | null>(null);
   if (atual && atual !== exibido) setExibido(atual);
 
-  const avisar = React.useCallback((mensagem: string, tipo: TipoAviso = "sucesso") => {
-    setFila((anteriores) => [...anteriores, { mensagem, tipo }]);
+  const avisar = React.useCallback<Avisar>((mensagem, tipo = "sucesso", acao) => {
+    setFila((anteriores) => [...anteriores, { mensagem, tipo, acao }]);
   }, []);
 
   const fechar = () => setFila((anteriores) => anteriores.slice(1));
@@ -43,7 +48,28 @@ export function AvisoProvider({ children }: { children: React.ReactNode }) {
             <Icone size={44} className={cn(styles.icone, sucesso ? styles.iconeSucesso : styles.iconeAviso)} aria-hidden />
             {/* Só o ícone e a mensagem: a própria mensagem é o título do diálogo. */}
             <DialogPrimitive.Title className={styles.mensagem}>{exibido?.mensagem}</DialogPrimitive.Title>
-            <Button type="button" variant="brand" className={styles.ok} onClick={fechar} autoFocus>
+            {exibido?.acao && (
+              <Button
+                type="button"
+                variant="brand"
+                className={cn(styles.ok, styles.acao)}
+                onClick={() => {
+                  // Chamado direto no clique: o compartilhamento do celular exige um toque recente.
+                  exibido.acao?.executar();
+                  fechar();
+                }}
+                autoFocus
+              >
+                {exibido.acao.rotulo}
+              </Button>
+            )}
+            <Button
+              type="button"
+              variant={exibido?.acao ? "ghost" : "brand"}
+              className={cn(styles.ok, exibido?.acao && styles.secundario)}
+              onClick={fechar}
+              autoFocus={!exibido?.acao}
+            >
               OK
             </Button>
           </DialogPrimitive.Popup>
@@ -53,7 +79,10 @@ export function AvisoProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-/** `avisar(mensagem)` mostra uma confirmação; `avisar(mensagem, "aviso")`, um alerta. */
+/**
+ * `avisar(mensagem)` mostra uma confirmação; `avisar(mensagem, "aviso")`, um alerta;
+ * `avisar(mensagem, tipo, { rotulo, executar })` acrescenta um botão de ação.
+ */
 export function useAviso() {
   const avisar = React.useContext(AvisoContext);
   if (!avisar) throw new Error("useAviso precisa estar dentro de <AvisoProvider>.");

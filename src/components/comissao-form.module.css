@@ -29,6 +29,11 @@
   margin-bottom: 0;
 }
 
+/* O botão base tem margin-bottom: 50%: aqui o cartão termina no botão. */
+.card > .atualizar {
+  margin-bottom: 0;
+}
+
 .hint {
   font-size: 0.8rem;
   color: var(--color-ink-muted);

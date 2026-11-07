@@ -1,6 +1,5 @@
 import PizZip from "pizzip";
 import Docxtemplater from "docxtemplater";
-import { saveAs } from "file-saver";
 import {
   formatCurrency,
   formatDate,
@@ -14,6 +13,7 @@ import {
 import type { Fazenda, Gado, Lote, NegocioDetail } from "@/lib/api/types";
 import { centavos, estimarImpostos } from "@/lib/calculo-gado";
 import { docxParaPdf } from "@/lib/docx-para-pdf";
+import { entregarArquivo } from "@/lib/entregar-arquivo";
 
 /**
  * Romaneio de pesagens em PDF: o modelo 1 (.docx) é preenchido e convertido em PDF no
@@ -52,6 +52,11 @@ type ArquivoGerado = { nome: string; blob: Blob };
 export type ResultadoRomaneios = {
   /** Mensagens para exibir na tela (hoje nenhuma: era o aviso do modelo 2). */
   avisos: string[];
+  /**
+   * Arquivo que o celular não deixou compartilhar sem um novo toque (ver entregarArquivo):
+   * a tela oferece um botão "Compartilhar" que chama `compartilharArquivo` com ele.
+   */
+  aguardandoToque?: File;
 };
 
 /** Campo calculado pela API → texto; null (sem gados / sem valor) sai em branco. */
@@ -214,8 +219,9 @@ function renderizar(template: ArrayBuffer, dados: DadosDocumento) {
 }
 
 /**
- * Gera o romaneio (PDF) de cada negócio. Um negócio: baixa o PDF direto; mais de um:
- * junta tudo num .zip (PizZip, o mesmo usado para ler o modelo). Com `loteId`, só aquele
+ * Gera o romaneio (PDF) de cada negócio. Um negócio: entrega o PDF (compartilhamento no
+ * celular, download no computador; ver entregarArquivo); mais de um: junta tudo num .zip
+ * (PizZip, o mesmo usado para ler o modelo). Com `loteId`, só aquele
  * lote entra no romaneio (ver negocioDoLote).
  */
 export async function gerarRomaneios(
@@ -250,13 +256,17 @@ export async function gerarRomaneios(
     });
   }
 
-  if (negocios.length === 1) {
-    for (const arquivo of arquivos) saveAs(arquivo.blob, arquivo.nome);
+  let final: File;
+  if (arquivos.length === 1) {
+    final = new File([arquivos[0].blob], arquivos[0].nome, { type: "application/pdf" });
   } else {
     const zip = new PizZip();
     for (const arquivo of arquivos) zip.file(arquivo.nome, await arquivo.blob.arrayBuffer());
-    saveAs(zip.generate({ type: "blob", mimeType: "application/zip" }), `romaneios-${Date.now()}.zip`);
+    final = new File([zip.generate({ type: "blob", mimeType: "application/zip" })], `romaneios-${Date.now()}.zip`, {
+      type: "application/zip",
+    });
   }
 
-  return { avisos };
+  const entrega = await entregarArquivo(final);
+  return entrega === "pedir-toque" ? { avisos, aguardandoToque: final } : { avisos };
 }

@@ -2,6 +2,47 @@ import PizZip from "pizzip";
 
 const PT_POR_EMU = 1 / 12700;
 
+/** Marca d'água do Word (imagem VML no cabeçalho), tirada do documento para ser desenhada no PDF. */
+type MarcaDagua = { dataUrl: string; larguraPt: number; alturaPt: number };
+
+const TIPOS_IMAGEM: Record<string, string> = { png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", gif: "image/gif" };
+
+/**
+ * O docx-preview desenha a marca d'água (`<v:shape id="WordPictureWatermark…">`) onde está o
+ * cabeçalho, ignorando o "centralizado na página" do Word (mso-position-*: center), e o
+ * cabeçalho só aparece na primeira folha de uma página longa. Ela sai do cabeçalho aqui e é
+ * desenhada depois, centralizada entre as margens, atrás do texto de cada folha do PDF.
+ */
+function extrairMarcaDagua(zip: PizZip): MarcaDagua | null {
+  for (const arquivo of zip.file(/^word\/header\d*\.xml$/)) {
+    const xml = arquivo.asText();
+    const pict = /<w:pict\b(?:(?!<\/w:pict>)[\s\S])*?WordPictureWatermark[\s\S]*?<\/w:pict>/.exec(xml);
+    if (!pict) continue;
+    const largura = /width:\s*([\d.]+)pt/.exec(pict[0]);
+    const altura = /height:\s*([\d.]+)pt/.exec(pict[0]);
+    const relId = /<v:imagedata\b[^>]*\br:id="([^"]+)"/.exec(pict[0]);
+    const rels = zip.file(arquivo.name.replace(/^word\/(.+)$/, "word/_rels/$1.rels"))?.asText() ?? "";
+    const alvo = relId ? new RegExp(`Id="${relId[1]}"[^>]*Target="([^"]+)"`).exec(rels) : null;
+    const imagem = alvo ? zip.file(`word/${alvo[1].replace(/^\.?\//, "")}`) : null;
+    const tipo = alvo ? TIPOS_IMAGEM[alvo[1].split(".").pop()!.toLowerCase()] : undefined;
+    if (!largura || !altura || !imagem || !tipo) return null;
+
+    zip.file(arquivo.name, xml.replace(pict[0], ""));
+    const base64 = btoa(Array.from(imagem.asUint8Array(), (byte) => String.fromCharCode(byte)).join(""));
+    return { dataUrl: `data:${tipo};base64,${base64}`, larguraPt: Number(largura[1]), alturaPt: Number(altura[1]) };
+  }
+  return null;
+}
+
+function carregarImagem(src: string) {
+  return new Promise<HTMLImageElement>((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error("Não foi possível carregar a marca d'água do romaneio."));
+    img.src = src;
+  });
+}
+
 /**
  * Corrige, só na cópia que vai para a conversão, duas coisas do Word que o docx-preview
  * ignora e que nos modelos do romaneio levam conteúdo para fora da página (cortado):
@@ -23,6 +64,8 @@ function prepararParaConversao(docx: ArrayBuffer) {
     );
   }
 
+  const marcaDagua = extrairMarcaDagua(zip);
+
   const deslocamentosCabecalho = zip
     .file(/^word\/header\d*\.xml$/)
     .sort((a, b) => a.name.localeCompare(b.name))
@@ -33,7 +76,7 @@ function prepararParaConversao(docx: ArrayBuffer) {
       })
     );
 
-  return { arquivo: zip.generate({ type: "arraybuffer" }), deslocamentosCabecalho };
+  return { arquivo: zip.generate({ type: "arraybuffer" }), deslocamentosCabecalho, marcaDagua };
 }
 
 /** Aplica os deslocamentos das imagens do cabeçalho (ver prepararParaConversao) a cada página. */
@@ -120,7 +163,8 @@ export async function docxParaPdf(docx: Blob): Promise<Blob> {
   document.body.appendChild(palco);
 
   try {
-    const { arquivo, deslocamentosCabecalho } = prepararParaConversao(await docx.arrayBuffer());
+    const { arquivo, deslocamentosCabecalho, marcaDagua } = prepararParaConversao(await docx.arrayBuffer());
+    const imagemMarca = marcaDagua ? await carregarImagem(marcaDagua.dataUrl) : null;
     await renderAsync(arquivo, palco, undefined, {
       inWrapper: false,
       breakPages: true,
@@ -146,24 +190,43 @@ export async function docxParaPdf(docx: Blob): Promise<Blob> {
       const ptPorPx = largura / pagina.offsetWidth;
       const estilo = getComputedStyle(pagina);
       const margemTopo = parseFloat(estilo.paddingTop) || 0;
-      const fatias = fatiar(pagina, altura / ptPorPx, margemTopo, parseFloat(estilo.paddingBottom) || 0);
+      const margemBase = parseFloat(estilo.paddingBottom) || 0;
+      const margemEsquerda = parseFloat(estilo.paddingLeft) || 0;
+      const margemDireita = parseFloat(estilo.paddingRight) || 0;
+      const fatias = fatiar(pagina, altura / ptPorPx, margemTopo, margemBase);
 
-      const canvas = await html2canvas(pagina, { scale: 2, backgroundColor: "#ffffff" });
+      // Fundo transparente: cada folha recebe primeiro o branco e a marca d'água, depois o texto.
+      pagina.style.background = "transparent";
+      const canvas = await html2canvas(pagina, { scale: 2, backgroundColor: null });
       const escala = canvas.width / pagina.offsetWidth;
+      const pxPorPt = escala / ptPorPx;
 
       fatias.forEach(({ inicio, fim }, i) => {
-        const fatia = document.createElement("canvas");
-        fatia.width = canvas.width;
-        fatia.height = Math.max(1, Math.round((fim - inicio) * escala));
-        fatia
-          .getContext("2d")!
-          .drawImage(canvas, 0, Math.round(inicio * escala), canvas.width, fatia.height, 0, 0, canvas.width, fatia.height);
+        // A folha inteira (não só o trecho), para a marca d'água nunca ser cortada.
+        const folha = document.createElement("canvas");
+        folha.width = canvas.width;
+        folha.height = Math.round(altura * pxPorPt);
+        const ctx = folha.getContext("2d")!;
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, folha.width, folha.height);
+
+        if (imagemMarca && marcaDagua) {
+          // Centro da área entre as margens (mso-position-*-relative: margin), como no Word.
+          const centroX = (margemEsquerda + (pagina.offsetWidth - margemEsquerda - margemDireita) / 2) * escala;
+          const centroY = (margemTopo + (altura / ptPorPx - margemTopo - margemBase) / 2) * escala;
+          const w = marcaDagua.larguraPt * pxPorPt;
+          const h = marcaDagua.alturaPt * pxPorPt;
+          ctx.drawImage(imagemMarca, centroX - w / 2, centroY - h / 2, w, h);
+        }
+
+        // A continuação de uma página começa abaixo da margem de cima, como no Word.
+        const y = i === 0 ? 0 : Math.round(margemTopo * escala);
+        const alturaTrecho = Math.max(1, Math.round((fim - inicio) * escala));
+        ctx.drawImage(canvas, 0, Math.round(inicio * escala), canvas.width, alturaTrecho, 0, y, canvas.width, alturaTrecho);
 
         if (!pdf) pdf = new jsPDF({ unit: "pt", format: [largura, altura], orientation: orientacao });
         else pdf.addPage([largura, altura], orientacao);
-        // A continuação de uma página começa abaixo da margem de cima, como no Word.
-        const y = i === 0 ? 0 : margemTopo * ptPorPx;
-        pdf.addImage(fatia.toDataURL("image/jpeg", 0.92), "JPEG", 0, y, largura, (fim - inicio) * ptPorPx);
+        pdf.addImage(folha.toDataURL("image/jpeg", 0.92), "JPEG", 0, 0, largura, altura);
       });
     }
 

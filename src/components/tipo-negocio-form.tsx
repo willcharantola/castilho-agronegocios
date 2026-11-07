@@ -55,10 +55,14 @@ export function TipoNegocioForm({
           setValor(novo);
         }}
       />
-      <Button type="submit" variant="brand" disabled={salvando || valor === tipoNegocio}>
+      <Button
+        type="submit"
+        variant="brand"
+        className={styles.atualizar}
+        disabled={salvando || valor === tipoNegocio}
+      >
         {salvando ? "Atualizando..." : "Atualizar"}
       </Button>
-      <p className={styles.hint}>Funrural e Senar são recalculados conforme o tipo.</p>
     </form>
   );
 }
