@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 import { modoDoNegocio } from "@/lib/comissao";
 import { deleteNegocio } from "@/lib/api/negocios";
 import { gerarRomaneios } from "@/lib/relatorio-romaneio";
+import { oferecerCompartilhamento } from "@/lib/entregar-arquivo";
 import { negocioParaRomaneio, temPendenciaNoRomaneio } from "@/lib/flows/romaneio-local";
 import { useNegocioComPendencias } from "@/lib/flows/use-negocio-com-pendencias";
 import { useFazendasPendentes, usePecuaristasPendentes } from "@/lib/offline/pendentes";
@@ -56,12 +57,13 @@ export default function NegocioDetailPage() {
         fazendas: fazendasPendentes,
         pecuaristas: pecuaristasPendentes,
       });
-      const { avisos } = await gerarRomaneios(
+      const { avisos, aguardandoToque } = await gerarRomaneios(
         [dados],
         dados.fazenda ? { [dados.fazenda_id]: dados.fazenda } : {},
         loteId !== undefined ? { loteId } : undefined
       );
       for (const aviso of avisos) avisar(aviso, "aviso");
+      if (aguardandoToque) oferecerCompartilhamento(avisar, aguardandoToque);
       if (temPendenciaNoRomaneio(negocio, loteId)) {
         avisar(
           "Relatório gerado com dados ainda não sincronizados: os valores são estimados e podem mudar na sincronização.",

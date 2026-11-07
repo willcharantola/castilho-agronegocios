@@ -70,3 +70,13 @@
   width: 100%;
   margin-top: auto;
 }
+
+/* Com um botão de ação, ele desce para o fim e o OK fica logo abaixo (o botão base tem
+   margin-bottom: 50%). */
+.acao {
+  margin-bottom: 0;
+}
+
+.secundario {
+  margin-top: 0;
+}

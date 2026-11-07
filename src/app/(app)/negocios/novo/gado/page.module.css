@@ -49,6 +49,15 @@
   color: var(--color-danger);
 }
 
+/* O botão base tem margin-bottom: 50%; aqui as cabeças vêm logo abaixo do "Cadastrar". */
+.page > form button[type="submit"] {
+  margin-bottom: 0;
+}
+
+.page > form + .sessionList {
+  margin-top: -0.75rem;
+}
+
 /* Session list */
 .sessionList {
   display: flex;

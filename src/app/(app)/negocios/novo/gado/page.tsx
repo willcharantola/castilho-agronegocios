@@ -4,7 +4,6 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { Beef, Pencil, Warehouse } from "lucide-react";
 import { BackLink } from "@/components/back-link";
-import { ProgressSteps } from "@/components/progress-steps";
 import { Button } from "@/components/ui/button";
 import { GadoForm } from "@/components/gado-form";
 import { GadoEditDialog } from "@/components/gado-edit-dialog";
@@ -12,7 +11,7 @@ import { PendenteBadge } from "@/components/offline/pendente-badge";
 import { formatCurrency, formatNumber, formatFazenda } from "@/lib/format";
 import { MODALIDADE_LABELS } from "@/lib/labels";
 import { cadastrarGado } from "@/lib/flows/operacoes-lote";
-import { PASSOS_NOVO_NEGOCIO, useNegocioFlow } from "@/lib/flows/negocio-flow";
+import { useNegocioFlow } from "@/lib/flows/negocio-flow";
 import { useNegocioComPendencias } from "@/lib/flows/use-negocio-com-pendencias";
 import { cn } from "@/lib/utils";
 import type { Gado } from "@/lib/api/types";
@@ -59,7 +58,6 @@ export default function NovoNegocioGadoPage() {
   return (
     <div className={cn("page-narrow", styles.page, "pt-safe")}>
       <BackLink href="/negocios/novo/lotes" label="Lotes" />
-      <ProgressSteps current={7} total={PASSOS_NOVO_NEGOCIO} />
 
       {erro && !negocio ? <div className="state-box state-error glass-panel">{erro}</div> : null}
 

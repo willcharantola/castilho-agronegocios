@@ -24,10 +24,11 @@ export const TIPO_GADO_LABELS: Record<TipoGado, string> = {
   Reposicao: "Reposição",
 };
 
+/** A ordem aqui é a ordem dos botões (novo negócio e edição no detalhe). */
 export const TIPO_NEGOCIO_LABELS: Record<TipoNegocio, string> = {
+  Funrural: "Funrural",
   "Desconto em folha": "Desconto em folha",
   Livre: "Livre",
-  Funrural: "Funrural",
 };
 
 export const TIPO_LOTE_LABELS: Record<TipoLote, string> = {
