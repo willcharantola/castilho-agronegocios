@@ -123,12 +123,19 @@ export default function PecuaristasPage() {
                   {pecuarista.pendente ? <PendenteBadge pendente={pecuarista.pendente} /> : null}
                 </div>
               </div>
-              <div className={styles.cardFooter}>
-                <span>Banco: {pecuarista.banco}</span>
-                <span>Agência: {pecuarista.agencia}</span>
-                <span>Conta: {pecuarista.conta}</span>
-                  <span>Chave pix: {pecuarista.chave_pix}</span>
-              </div>
+              {/* Dados bancários são opcionais: só aparece o que foi informado. */}
+              {pecuarista.banco || pecuarista.chave_pix ? (
+                <div className={styles.cardFooter}>
+                  {pecuarista.banco ? (
+                    <>
+                      <span>Banco: {pecuarista.banco}</span>
+                      <span>Agência: {pecuarista.agencia}</span>
+                      <span>Conta: {pecuarista.conta}</span>
+                    </>
+                  ) : null}
+                  {pecuarista.chave_pix ? <span>Chave pix: {pecuarista.chave_pix}</span> : null}
+                </div>
+              ) : null}
             </Link>
           ))}
         </div>

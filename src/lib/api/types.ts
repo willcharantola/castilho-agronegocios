@@ -54,10 +54,11 @@ export type Pecuarista = {
   nome_pecuarista: string;
   fisico_juridico: "fisico" | "juridico";
   cpf_cnpj: string;
-  banco: string;
-  agencia: string;
-  conta: string;
-  chave_pix: string;
+  /** Dados bancários opcionais: banco, agência e conta vêm juntos ou nenhum; Pix é independente. */
+  banco: string | null;
+  agencia: string | null;
+  conta: string | null;
+  chave_pix: string | null;
   /** Vínculos N:N com fazendas (tabela vendedor_fazenda). */
   pecuarista_fazenda?: { fazenda_id: number; pecuarista_id: number; fazenda: Fazenda }[];
 };
@@ -67,7 +68,7 @@ export type Comprador = {
   comprador_id: number;
   nome_empresa: string;
   cnpj: string;
-  /** Obrigatória; texto livre até 12 caracteres (ex.: "ISENTO"). */
+  /** Obrigatória, no formato da fazenda (00.000.000-0). */
   inscricao_estadual: string;
   municipio: string;
 };
@@ -276,6 +277,7 @@ export type DadosPecuaristaInput = {
   nome_pecuarista: string;
   fisico_juridico: "fisico" | "juridico";
   cpf_cnpj: string;
+  /** Opcionais: "" (campo em branco) é gravado como null pela API. */
   banco: string;
   agencia: string;
   conta: string;

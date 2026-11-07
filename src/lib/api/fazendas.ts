@@ -23,3 +23,11 @@ export function updateFazenda(id: number | string, input: UpdateFazendaInput) {
 export function deleteFazenda(id: number | string) {
   return apiFetch<Fazenda>(`/fazendas/${id}`, { method: "DELETE" });
 }
+
+/** Link completo por trás de um link curto do Google Maps (a API segue o redirecionamento); null se não conseguir. */
+export async function expandirLinkMapa(link: string) {
+  const { link: completo } = await apiFetch<{ link: string | null }>(
+    `/fazendas/mapa/expandir?link=${encodeURIComponent(link)}`
+  );
+  return completo;
+}

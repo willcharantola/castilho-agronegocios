@@ -80,7 +80,7 @@ export default function EditarCompradorPage() {
         <form onSubmit={handleSubmit(onSubmit)} className="form-stack">
           <div className="form-fields">
             {submitError ? <p className="form-error">{submitError}</p> : null}
-            <CompradorFields register={register} control={control} errors={errors} />
+            <CompradorFields register={register} control={control} errors={errors} copiavel />
           </div>
 
           <Button type="submit" variant="brand" size="xl" className="w-full" disabled={isSubmitting}>

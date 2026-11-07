@@ -13,6 +13,7 @@ import {
   VALOR_UNIDADE_LABELS,
 } from "@/lib/labels";
 import type { AgregadosPeso, Fazenda, Gado } from "@/lib/api/types";
+import { estimarImpostos } from "@/lib/calculo-gado";
 import type { ComPendencia, LoteComPendencia, NegocioComPendencias } from "@/lib/offline/pendentes";
 import { formatarCriterioComissao, modoDoNegocio } from "@/lib/comissao";
 import { exibirComissao, type ExibicaoComissao } from "@/lib/permissoes";
@@ -71,6 +72,20 @@ function rotuloAliquota(nome: string, aliquota: number | null) {
   return aliquota !== null ? `${nome} (${formatPercent(aliquota)})` : nome;
 }
 
+/** O imposto descontado conforme o tipo de negócio: Funrural, Senar ou nenhum ("Livre"). */
+function itensDesconto(
+  negocio: NegocioComPendencias,
+  valores: { funrural: number | null; senar: number | null }
+): Item[] {
+  if (negocio.tipo_negocio === "Funrural") {
+    return [{ label: rotuloAliquota("Funrural", negocio.aliquota_funrural), valor: ou(valores.funrural, formatCurrency) }];
+  }
+  if (negocio.tipo_negocio === "Desconto em folha") {
+    return [{ label: rotuloAliquota("Senar", negocio.aliquota_senar), valor: ou(valores.senar, formatCurrency) }];
+  }
+  return [];
+}
+
 /**
  * "Geral": o quadro verde traz só os destaques (fazenda, partes, data, modalidade e tipos);
  * os demais dados ficam abaixo, em quadros brancos. `children` entra no fim do quadro verde.
@@ -96,16 +111,10 @@ function CartaoGeral({
     { label: "Tipo de negócio", valor: TIPO_NEGOCIO_LABELS[negocio.tipo_negocio] ?? "—" },
   ];
   // Bruto, o imposto descontado conforme o tipo de negócio (nenhum em "Livre") e o líquido.
-  const descontos: Item[] =
-    negocio.tipo_negocio === "Funrural"
-      ? [{ label: rotuloAliquota("Funrural", negocio.aliquota_funrural), valor: ou(negocio.funrural, formatCurrency) }]
-      : negocio.tipo_negocio === "Desconto em folha"
-        ? [{ label: rotuloAliquota("Senar", negocio.aliquota_senar), valor: ou(negocio.senar, formatCurrency) }]
-        : [];
   const detalhes: Item[] = [
     { label: "Cabeças", valor: ou(negocio.qtd_animais, String) },
     { label: "Valor bruto", valor: ou(negocio.valor_total_bruto, formatCurrency) },
-    ...descontos,
+    ...itensDesconto(negocio, negocio),
     { label: "Valor líquido", valor: ou(negocio.valor_total_liquido, formatCurrency) },
     { label: "Valor médio por cabeça", valor: ou(negocio.valor_medio, formatCurrency) },
     ...(porCabeca
@@ -165,11 +174,16 @@ function CartaoLote({
     { label: "Média do carimbo", valor: lote.media_carimbo || "—" },
     { label: "Ano do carimbo", valor: lote.ano_carimbo || "—" },
   ];
+  // Imposto e líquido do lote: o bruto do lote com as alíquotas do negócio (a API só grava os
+  // do negócio inteiro). Cada lote é arredondado à parte: a soma pode diferir do total em centavos.
+  const impostos = estimarImpostos(negocio, lote.valor_total_lote);
   const detalhes: Item[] = [
     { label: VALOR_UNIDADE_LABELS[modalidade], valor: formatCurrency(lote.valor_unidade) },
     ...(modalidade === "arroba" ? [{ label: "Rendimento de carcaça", valor: formatPercent(lote.rendimento_carcaca) }] : []),
     { label: "Cabeças", valor: String(lote.qtd_animais) },
     { label: "Valor total do lote", valor: formatCurrency(lote.valor_total_lote) },
+    ...itensDesconto(negocio, impostos),
+    { label: "Valor líquido do lote", valor: ou(impostos.valor_total_liquido, formatCurrency) },
     { label: "Valor médio por cabeça", valor: ou(lote.valor_medio_cabeca_lote, formatCurrency) },
     ...(porCabeca ? [] : itensPeso(lote)),
   ];

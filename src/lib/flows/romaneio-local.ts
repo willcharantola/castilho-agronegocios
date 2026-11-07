@@ -1,7 +1,8 @@
 import { fetchImpostos } from "@/lib/api/configuracoes";
+import { fetchCompradores } from "@/lib/api/compradores";
 import { fetchFazendas } from "@/lib/api/fazendas";
 import { fetchPecuaristas } from "@/lib/api/pecuaristas";
-import type { Fazenda, NegocioDetail, Pecuarista } from "@/lib/api/types";
+import type { Comprador, Fazenda, NegocioDetail, Pecuarista } from "@/lib/api/types";
 import { centavos, estimarImpostos } from "@/lib/calculo-gado";
 import type { NegocioComPendencias } from "@/lib/offline/pendentes";
 
@@ -27,14 +28,14 @@ async function talvez<T>(buscar: () => Promise<T>): Promise<T | null> {
  * O negócio como aparece na tela (servidor + fila offline) no formato do romaneio. Os
  * valores do que ainda não sincronizou já vêm estimados de `comPendencias`; aqui só se
  * completa o que um negócio criado offline não tem:
- * - fazenda e pecuarista completos (I.E., município, dados bancários), das listas guardadas
- *   no aparelho ou dos cadastros pendentes (`pendentes`);
+ * - fazenda, pecuarista e comprador completos (I.E., município, documentos, dados
+ *   bancários), das listas guardadas no aparelho ou dos cadastros pendentes (`pendentes`);
  * - alíquotas da empresa (as que a API vai gravar ao sincronizar), para Funrural, Senar e líquido;
  * - horários inicial e final (negócio criado offline), pela primeira e pela última cabeça pesada.
  */
 export async function negocioParaRomaneio(
   negocio: NegocioComPendencias,
-  pendentes: { fazendas: Fazenda[]; pecuaristas: Pecuarista[] }
+  pendentes: { fazendas: Fazenda[]; pecuaristas: Pecuarista[]; compradores: Comprador[] }
 ): Promise<NegocioDetail> {
   const resultado: NegocioDetail = { ...negocio };
 
@@ -42,10 +43,37 @@ export async function negocioParaRomaneio(
     const fazendas = [...pendentes.fazendas, ...((await talvez(fetchFazendas)) ?? [])];
     resultado.fazenda = fazendas.find((f) => f.fazenda_id === negocio.fazenda_id) ?? resultado.fazenda;
   }
+  const listaPecuaristas = async () => [...pendentes.pecuaristas, ...((await talvez(fetchPecuaristas)) ?? [])];
   if (!resultado.pecuarista?.cpf_cnpj) {
-    const pecuaristas = [...pendentes.pecuaristas, ...((await talvez(fetchPecuaristas)) ?? [])];
-    const pecuarista = pecuaristas.find((p) => p.pecuarista_id === negocio.pecuarista_id);
+    const pecuarista = (await listaPecuaristas()).find((p) => p.pecuarista_id === negocio.pecuarista_id);
     if (pecuarista) resultado.pecuarista = pecuarista as NegocioDetail["pecuarista"];
+  }
+
+  // Negócio criado offline só guarda o nome do comprador.
+  const comprador = resultado.comprador;
+  if (comprador && !comprador.documento) {
+    if (comprador.tipo === "frigorifico") {
+      const lista = [...pendentes.compradores, ...((await talvez(fetchCompradores)) ?? [])];
+      const achado = lista.find((c) => c.comprador_id === comprador.id);
+      if (achado) {
+        resultado.comprador = {
+          ...comprador,
+          documento: achado.cnpj,
+          inscricao_estadual: achado.inscricao_estadual,
+          municipio: achado.municipio,
+        };
+      }
+    } else {
+      const achado = (await listaPecuaristas()).find((p) => p.pecuarista_id === comprador.id);
+      if (achado) {
+        // Como a API: município da primeira fazenda do pecuarista, sem inscrição estadual.
+        resultado.comprador = {
+          ...comprador,
+          documento: achado.cpf_cnpj,
+          municipio: achado.pecuarista_fazenda?.[0]?.fazenda.municipio ?? null,
+        };
+      }
+    }
   }
 
   if (resultado.aliquota_funrural === null || resultado.aliquota_senar === null) {

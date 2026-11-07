@@ -46,10 +46,10 @@ export default function EditarPecuaristaPage() {
           nome_pecuarista: pecuarista.nome_pecuarista,
           fisico_juridico: pecuarista.fisico_juridico,
           cpf_cnpj: pecuarista.cpf_cnpj,
-          banco: pecuarista.banco,
-          agencia: pecuarista.agencia,
-          conta: pecuarista.conta,
-          chave_pix: pecuarista.chave_pix,
+          banco: pecuarista.banco ?? "",
+          agencia: pecuarista.agencia ?? "",
+          conta: pecuarista.conta ?? "",
+          chave_pix: pecuarista.chave_pix ?? "",
         });
         setFazendas((pecuarista.pecuarista_fazenda ?? []).map((v) => v.fazenda));
         setNome(pecuarista.nome_pecuarista);
@@ -112,7 +112,7 @@ export default function EditarPecuaristaPage() {
             <div className="form-fields">
               <p className="section-title">Dados do pecuarista</p>
               {submitError ? <p className="form-error">{submitError}</p> : null}
-              <PecuaristaFields register={register} control={control} errors={errors} />
+              <PecuaristaFields register={register} control={control} errors={errors} copiavel />
             </div>
 
             <section className={styles.fazendas}>
