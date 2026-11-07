@@ -1,16 +1,21 @@
 import type { Control, FieldErrors, UseFormRegister } from "react-hook-form";
 import { Building2, CreditCard, FileText, MapPin } from "lucide-react";
 import { z } from "zod";
+import { ComCopiar } from "@/components/form/botao-copiar";
 import { IconField } from "@/components/form/icon-field";
 import { MaskedTextField } from "@/components/form/masked-text-field";
 import { TintedInput } from "@/components/form/tinted-input";
-import { cnpjValido, mascaraCnpj } from "@/lib/documentos";
+import { cnpjValido, INSCRICAO_ESTADUAL, mascaraCnpj, mascaraInscricaoEstadual } from "@/lib/documentos";
 
 export const compradorSchema = z.object({
   nome_empresa: z.string().min(2, "Informe o nome da empresa.").max(50),
   cnpj: z.string().min(1, "Informe o CNPJ.").refine(cnpjValido, "CNPJ inválido. Confira os números."),
-  // Texto livre (ex.: "ISENTO"); o formato ainda será definido com o cliente.
-  inscricao_estadual: z.string().trim().min(1, "Informe a inscrição estadual.").max(12, "Máximo de 12 caracteres."),
+  // Mesmo formato da inscrição da fazenda (MS); a API valida igual.
+  inscricao_estadual: z
+    .string()
+    .trim()
+    .min(1, "Informe a inscrição estadual.")
+    .regex(INSCRICAO_ESTADUAL, "Inscrição estadual inválida. Use o formato 00.000.000-0."),
   municipio: z.string().min(2, "Informe o município.").max(30),
 });
 export type CompradorFormValues = z.infer<typeof compradorSchema>;
@@ -20,11 +25,14 @@ export function CompradorFields({
   control,
   errors,
   autoFocus,
+  copiavel,
 }: {
   register: UseFormRegister<CompradorFormValues>;
   control: Control<CompradorFormValues>;
   errors: FieldErrors<CompradorFormValues>;
   autoFocus?: boolean;
+  /** Botão de copiar ao lado do CNPJ e da inscrição estadual (detalhe do frigorífico). */
+  copiavel?: boolean;
 }) {
   return (
     <>
@@ -33,7 +41,9 @@ export function CompradorFields({
       </IconField>
 
       <IconField icon={CreditCard} label="CNPJ" htmlFor="cnpj" error={errors.cnpj?.message}>
-        <MaskedTextField control={control} name="cnpj" mascara={mascaraCnpj} id="cnpj" placeholder="00.000.000/0000-00" />
+        <ComCopiar alvo={copiavel ? "cnpj" : undefined} rotulo="CNPJ">
+          <MaskedTextField control={control} name="cnpj" mascara={mascaraCnpj} id="cnpj" placeholder="00.000.000/0000-00" />
+        </ComCopiar>
       </IconField>
 
       <IconField
@@ -42,7 +52,15 @@ export function CompradorFields({
         htmlFor="inscricao_estadual"
         error={errors.inscricao_estadual?.message}
       >
-        <TintedInput id="inscricao_estadual" tint="pink" maxLength={12} {...register("inscricao_estadual")} />
+        <ComCopiar alvo={copiavel ? "inscricao_estadual" : undefined} rotulo="inscrição estadual">
+          <MaskedTextField
+            control={control}
+            name="inscricao_estadual"
+            mascara={mascaraInscricaoEstadual}
+            id="inscricao_estadual"
+            placeholder="00.000.000-0"
+          />
+        </ComCopiar>
       </IconField>
 
       <IconField icon={MapPin} label="Município" htmlFor="municipio" error={errors.municipio?.message}>

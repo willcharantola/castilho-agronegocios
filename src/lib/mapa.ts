@@ -69,10 +69,63 @@ export function resolverLinkMapa(
   return null;
 }
 
-/** Pré-visualização embutida (sem chave de API) — só com coordenadas. */
+/** Link curto (maps.app.goo.gl, goo.gl/maps): não traz o lugar; a API o expande (expandirLinkMapa). */
+export function ehLinkCurto(valor: string | null | undefined): boolean {
+  if (!valor || !ehLinkMapaPermitido(valor)) return false;
+  const host = new URL(valor.trim()).hostname;
+  return host === "maps.app.goo.gl" || host === "goo.gl";
+}
+
+/** Primeiro parâmetro de busca presente (q, query, ll…), sem espaços nas pontas. */
+function parametro(url: URL, nomes: string[]) {
+  for (const nome of nomes) {
+    const valor = url.searchParams.get(nome)?.trim();
+    if (valor) return valor;
+  }
+  return null;
+}
+
+/**
+ * O que mostrar no mapa a partir de um link completo do Google Maps, na ordem de precisão:
+ * 1. o marcador do lugar (!3d<lat>!4d<lng>, nos links de /maps/place/);
+ * 2. o nome do lugar (/maps/place/<nome>/ ou /maps/search/<texto>/);
+ * 3. a busca (q=, query=, ll=, center=, destination=), com coordenadas ou texto;
+ * 4. o centro da tela do mapa (@<lat>,<lng>,<zoom>z).
+ */
+function consultaDoLink(link: string): string | null {
+  const url = new URL(link.trim());
+  const marcador = /!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)/.exec(url.href);
+  if (marcador) return `${marcador[1]},${marcador[2]}`;
+
+  const lugar = /^\/maps\/(?:place|search)\/([^/@]+)/.exec(url.pathname);
+  if (lugar) {
+    let nome = lugar[1].replace(/\+/g, " ");
+    try {
+      nome = decodeURIComponent(nome);
+    } catch {
+      // "%" solto no link: usa o nome como veio.
+    }
+    if (nome.trim()) return nome.trim();
+  }
+
+  const busca = parametro(url, ["q", "query", "ll", "center", "destination"]);
+  if (busca) return busca;
+
+  const centro = /@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/.exec(url.pathname);
+  return centro ? `${centro[1]},${centro[2]}` : null;
+}
+
+/**
+ * Pré-visualização embutida (sem chave de API): coordenadas ou link completo do Google
+ * Maps. O link curto precisa ser expandido antes (ehLinkCurto → expandirLinkMapa da API).
+ */
 export function urlMapaEmbutido(localizacao: string | null | undefined): string | null {
-  const c = localizacao ? coordenadas(localizacao) : null;
-  return c ? `https://www.google.com/maps?q=${c.latitude},${c.longitude}&output=embed` : null;
+  const local = localizacao?.trim();
+  if (!local) return null;
+  const c = coordenadas(local);
+  let consulta: string | null = c ? `${c.latitude},${c.longitude}` : null;
+  if (!consulta && ehLinkMapaPermitido(local) && !ehLinkCurto(local)) consulta = consultaDoLink(local);
+  return consulta ? `https://www.google.com/maps?q=${encodeURIComponent(consulta)}&output=embed` : null;
 }
 
 /** Coordenadas do GPS no formato aceito pelo campo (até 6 casas decimais). */

@@ -11,6 +11,7 @@ import {
   formatPercent,
 } from "@/lib/format";
 import type { Fazenda, Gado, Lote, NegocioDetail } from "@/lib/api/types";
+import { TIPO_COMPRADOR_LABELS } from "@/lib/labels";
 import { centavos, estimarImpostos } from "@/lib/calculo-gado";
 import { docxParaPdf } from "@/lib/docx-para-pdf";
 
@@ -31,6 +32,9 @@ import { docxParaPdf } from "@/lib/docx-para-pdf";
  *   negócio (ponderado pelo peso); funrural/senar já vêm conforme o tipo de negócio
  *   (zero sai "R$ 0,00").
  * - Cabeçalho, opcional: {{tipo-negocio}}.
+ * - Comprador: {{nome-comprador}} {{tipo-comprador}} ("Frigorífico"/"Pecuarista")
+ *   {{documento-comprador}} (CNPJ, ou CPF/CNPJ do pecuarista) {{inscricao-estadual-comprador}}
+ *   {{municipio-comprador}}. Comprador pecuarista: I.E. em branco e município da 1ª fazenda dele.
  * - Modelo 1, linha da tabela "Cabeças Negociadas": {{#gados}} na primeira
  *   célula e {{/gados}} na última. Do LOTE da cabeça: {{denominacao}} (nome do lote),
  *   {{lote}} (idem, para uma coluna "Lote"), {{genero}}, {{carimbo}} (média do carimbo),
@@ -147,6 +151,13 @@ export function montarDadosCabecalho(negocio: NegocioDetail, fazenda: Fazenda | 
     aliquota_funrural: campo(negocio.aliquota_funrural, formatDecimalCurto),
     aliquota_senar: campo(negocio.aliquota_senar, formatDecimalCurto),
     "tipo-negocio": negocio.tipo_negocio ?? "",
+
+    // Comprador: frigorífico (CNPJ + I.E.) ou pecuarista (CPF/CNPJ, município da 1ª fazenda, sem I.E.).
+    "nome-comprador": negocio.comprador?.nome ?? "",
+    "tipo-comprador": negocio.comprador ? TIPO_COMPRADOR_LABELS[negocio.comprador.tipo] : "",
+    "documento-comprador": negocio.comprador?.documento ?? "",
+    "inscricao-estadual-comprador": negocio.comprador?.inscricao_estadual ?? "",
+    "municipio-comprador": negocio.comprador?.municipio ?? "",
 
     // Dados bancários do pecuarista (o campo "Nome" reaproveita {{nome-pecuarista}}).
     "cpf-cnpj": pecuarista?.cpf_cnpj ?? "",

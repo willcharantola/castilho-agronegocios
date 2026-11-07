@@ -4,6 +4,7 @@ import * as React from "react";
 import { Home, MapPinned } from "lucide-react";
 import type { FieldErrors, UseFormRegister, UseFormSetValue } from "react-hook-form";
 import { z } from "zod";
+import { ComCopiar } from "@/components/form/botao-copiar";
 import { IconField } from "@/components/form/icon-field";
 import { TintedInput } from "@/components/form/tinted-input";
 import { Button } from "@/components/ui/button";
@@ -41,10 +42,13 @@ export function LocalizacaoFields<T extends CamposLocalizacao>({
   register,
   setValue,
   errors,
+  copiavel,
 }: {
   register: UseFormRegister<T>;
   setValue: UseFormSetValue<T>;
   errors: FieldErrors<T>;
+  /** Botão de copiar ao lado de cada campo (detalhe da fazenda). */
+  copiavel?: boolean;
 }) {
   const [buscando, setBuscando] = React.useState(false);
   const [erroGps, setErroGps] = React.useState<string | null>(null);
@@ -79,13 +83,15 @@ export function LocalizacaoFields<T extends CamposLocalizacao>({
   return (
     <>
       <IconField icon={Home} label="Endereço (opcional)" htmlFor="endereco_fazenda" error={erros.endereco_fazenda?.message}>
-        <TintedInput
-          id="endereco_fazenda"
-          tint="pink"
-          maxLength={200}
-          placeholder="Ex: Rodovia MS-134, km 20"
-          {...reg("endereco_fazenda")}
-        />
+        <ComCopiar alvo={copiavel ? "endereco_fazenda" : undefined} rotulo="endereço">
+          <TintedInput
+            id="endereco_fazenda"
+            tint="pink"
+            maxLength={200}
+            placeholder="Ex: Rodovia MS-134, km 20"
+            {...reg("endereco_fazenda")}
+          />
+        </ComCopiar>
       </IconField>
 
       {/* GPS do aparelho, logo acima do campo que ele preenche. */}
@@ -102,16 +108,18 @@ export function LocalizacaoFields<T extends CamposLocalizacao>({
         </Button>
         {erroGps ? <p className="form-error">{erroGps}</p> : null}
       </div>
-        <TintedInput
-          id="localizacao_google"
-          tint="pink"
-          maxLength={500}
-          inputMode="url"
-          autoCapitalize="none"
-          autoCorrect="off"
-          placeholder="Ex: -20.7123,-51.6543"
-          {...reg("localizacao_google")}
-        />
+        <ComCopiar alvo={copiavel ? "localizacao_google" : undefined} rotulo="localização">
+          <TintedInput
+            id="localizacao_google"
+            tint="pink"
+            maxLength={500}
+            inputMode="url"
+            autoCapitalize="none"
+            autoCorrect="off"
+            placeholder="Ex: -20.7123,-51.6543"
+            {...reg("localizacao_google")}
+          />
+        </ComCopiar>
       </IconField>
     </>
   );

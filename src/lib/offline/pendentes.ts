@@ -88,10 +88,11 @@ export function pecuaristaDePendente(r: RegistroSalvo): ComPendencia<Pecuarista>
     nome_pecuarista: p.nome_pecuarista,
     fisico_juridico: p.fisico_juridico,
     cpf_cnpj: p.cpf_cnpj,
-    banco: p.banco,
-    agencia: p.agencia,
-    conta: p.conta,
-    chave_pix: p.chave_pix,
+    // Em branco no formulário = sem dado, como a API grava.
+    banco: p.banco || null,
+    agencia: p.agencia || null,
+    conta: p.conta || null,
+    chave_pix: p.chave_pix || null,
     pecuarista_fazenda: fazendas.map((fazenda) => ({
       fazenda_id: fazenda.fazenda_id,
       pecuarista_id: pecuaristaId,

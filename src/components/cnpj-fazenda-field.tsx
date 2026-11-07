@@ -3,6 +3,7 @@
 import { Building2 } from "lucide-react";
 import type { Control, FieldErrors } from "react-hook-form";
 import { z } from "zod";
+import { ComCopiar } from "@/components/form/botao-copiar";
 import { IconField } from "@/components/form/icon-field";
 import { MaskedTextField } from "@/components/form/masked-text-field";
 import { cnpjValido, INSCRICAO_ESTADUAL, mascaraCnpj, mascaraInscricaoEstadual } from "@/lib/documentos";
@@ -28,11 +29,14 @@ export function DocumentosFazendaFields<T extends ComDocumentos>({
   control,
   errors,
   icone,
+  copiavel,
 }: {
   control: Control<T>;
   errors: FieldErrors<T>;
   /** Ícone do campo da inscrição estadual. */
   icone: React.ComponentProps<typeof IconField>["icon"];
+  /** Botão de copiar ao lado de cada campo (detalhe da fazenda). */
+  copiavel?: boolean;
 }) {
   // Os campos são iguais em todos os formulários de fazenda que usam este componente.
   const ctrl = control as unknown as Control<ComDocumentos>;
@@ -45,17 +49,21 @@ export function DocumentosFazendaFields<T extends ComDocumentos>({
         htmlFor="inscricao_estadual"
         error={erros.inscricao_estadual?.message}
       >
-        <MaskedTextField
-          control={ctrl}
-          name="inscricao_estadual"
-          mascara={mascaraInscricaoEstadual}
-          id="inscricao_estadual"
-          placeholder="00.000.000-0"
-        />
+        <ComCopiar alvo={copiavel ? "inscricao_estadual" : undefined} rotulo="inscrição estadual">
+          <MaskedTextField
+            control={ctrl}
+            name="inscricao_estadual"
+            mascara={mascaraInscricaoEstadual}
+            id="inscricao_estadual"
+            placeholder="00.000.000-0"
+          />
+        </ComCopiar>
       </IconField>
 
       <IconField icon={Building2} label="CNPJ (opcional)" htmlFor="cnpj" error={erros.cnpj?.message}>
-        <MaskedTextField control={ctrl} name="cnpj" mascara={mascaraCnpj} id="cnpj" placeholder="00.000.000/0000-00" />
+        <ComCopiar alvo={copiavel ? "cnpj" : undefined} rotulo="CNPJ">
+          <MaskedTextField control={ctrl} name="cnpj" mascara={mascaraCnpj} id="cnpj" placeholder="00.000.000/0000-00" />
+        </ComCopiar>
       </IconField>
     </>
   );

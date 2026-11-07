@@ -19,7 +19,7 @@ import { gerarRomaneios } from "@/lib/relatorio-romaneio";
 import { useEntregarRelatorio } from "@/components/previa-relatorio";
 import { negocioParaRomaneio, temPendenciaNoRomaneio } from "@/lib/flows/romaneio-local";
 import { useNegocioComPendencias } from "@/lib/flows/use-negocio-com-pendencias";
-import { useFazendasPendentes, usePecuaristasPendentes } from "@/lib/offline/pendentes";
+import { useCompradoresPendentes, useFazendasPendentes, usePecuaristasPendentes } from "@/lib/offline/pendentes";
 import { mensagemDeErro } from "@/lib/offline/rede";
 import { BotaoOlhoComissao, useExibicaoComissao } from "@/lib/permissoes";
 import styles from "./page.module.css";
@@ -34,6 +34,7 @@ export default function NegocioDetailPage() {
   // Cadastros ainda na fila: completam o romaneio de um negócio criado offline.
   const fazendasPendentes = useFazendasPendentes();
   const pecuaristasPendentes = usePecuaristasPendentes();
+  const compradoresPendentes = useCompradoresPendentes();
 
   // Comissão: "-" para Normal; para Admin começa escondida e o olho revela.
   const comissao = useExibicaoComissao();
@@ -57,6 +58,7 @@ export default function NegocioDetailPage() {
       const dados = await negocioParaRomaneio(negocio, {
         fazendas: fazendasPendentes,
         pecuaristas: pecuaristasPendentes,
+        compradores: compradoresPendentes,
       });
       const { avisos, ...relatorio } = await gerarRomaneios(
         [dados],

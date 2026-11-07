@@ -1,0 +1,37 @@
+.linha {
+  display: flex;
+  align-items: stretch;
+  gap: 0.5rem;
+}
+
+/* O campo ocupa o resto da linha. */
+.linha > :first-child {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Quadrado branco, da altura do campo (mínimo de 44px para o toque). */
+.botao {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  aspect-ratio: 1;
+  border: 1px solid color-mix(in oklch, var(--color-dark) 15%, transparent);
+  border-radius: var(--radius-box);
+  background: #fff;
+  color: var(--color-dark);
+  cursor: pointer;
+  transition: transform 0.1s ease;
+}
+
+.botao:active {
+  transform: scale(0.94);
+}
+
+.botao:focus-visible {
+  outline: 2px solid var(--color-olive);
+  outline-offset: 2px;
+}

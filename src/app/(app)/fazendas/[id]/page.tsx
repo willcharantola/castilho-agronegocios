@@ -16,10 +16,10 @@ import { AvatarUpload } from "@/components/form/avatar-upload";
 import { IconField } from "@/components/form/icon-field";
 import { TintedInput } from "@/components/form/tinted-input";
 import { Button } from "@/components/ui/button";
-import { fetchFazenda, updateFazenda, deleteFazenda } from "@/lib/api/fazendas";
+import { expandirLinkMapa, fetchFazenda, updateFazenda, deleteFazenda } from "@/lib/api/fazendas";
 import type { Pecuarista } from "@/lib/api/types";
 import { ApiError } from "@/lib/api-client";
-import { resolverLinkMapa, urlMapaEmbutido } from "@/lib/mapa";
+import { ehLinkCurto, resolverLinkMapa, urlMapaEmbutido } from "@/lib/mapa";
 import { useOnlineStatus } from "@/lib/offline/use-online-status";
 import { cn } from "@/lib/utils";
 import styles from "./page.module.css";
@@ -52,6 +52,23 @@ export default function EditarFazendaPage() {
     localizacao: null,
     endereco: null,
   });
+  // Link curto do app (maps.app.goo.gl) não traz o lugar: a API devolve o link completo.
+  const [linkExpandido, setLinkExpandido] = React.useState<{ curto: string; completo: string | null } | null>(null);
+  React.useEffect(() => {
+    const curto = salvo.localizacao;
+    if (!online || !curto || !ehLinkCurto(curto) || linkExpandido?.curto === curto) return;
+    let cancelado = false;
+    expandirLinkMapa(curto)
+      .catch(() => null)
+      .then((completo) => !cancelado && setLinkExpandido({ curto, completo }));
+    return () => {
+      cancelado = true;
+    };
+  }, [online, salvo.localizacao, linkExpandido?.curto]);
+  const mapaEmbutido = urlMapaEmbutido(
+    linkExpandido && linkExpandido.curto === salvo.localizacao ? linkExpandido.completo : salvo.localizacao
+  );
+
   const {
     register,
     handleSubmit,
@@ -156,17 +173,17 @@ export default function EditarFazendaPage() {
               <TintedInput id="municipio" tint="pink" {...register("municipio")} />
             </IconField>
 
-            <DocumentosFazendaFields control={control} errors={errors} icone={FileText} />
+            <DocumentosFazendaFields control={control} errors={errors} icone={FileText} copiavel />
 
 
             <IconField icon={Type} label="Marca escrita" htmlFor="marca_escrita" error={errors.marca_escrita?.message}>
               <TintedInput id="marca_escrita" tint="pink" maxLength={10} {...register("marca_escrita")} />
             </IconField>
 
-            <LocalizacaoFields register={register} setValue={setValue} errors={errors} />
+            <LocalizacaoFields register={register} setValue={setValue} errors={errors} copiavel />
 
-            {/* Pré-visualização só com coordenadas e com internet; clicar abre o Google Maps. */}
-            {urlMapaEmbutido(salvo.localizacao) && online ? (
+            {/* Pré-visualização (coordenadas ou link do Maps) só com internet; clicar abre o Google Maps. */}
+            {mapaEmbutido && online ? (
               <a
                 href={resolverLinkMapa(salvo.localizacao, salvo.endereco) ?? undefined}
                 target="_blank"
@@ -176,7 +193,7 @@ export default function EditarFazendaPage() {
               >
                 <iframe
                   title="Mapa da fazenda"
-                  src={urlMapaEmbutido(salvo.localizacao)!}
+                  src={mapaEmbutido}
                   loading="lazy"
                   referrerPolicy="no-referrer-when-downgrade"
                   tabIndex={-1}
