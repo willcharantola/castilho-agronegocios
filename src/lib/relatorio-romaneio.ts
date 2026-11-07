@@ -13,7 +13,6 @@ import {
 import type { Fazenda, Gado, Lote, NegocioDetail } from "@/lib/api/types";
 import { centavos, estimarImpostos } from "@/lib/calculo-gado";
 import { docxParaPdf } from "@/lib/docx-para-pdf";
-import { entregarArquivo } from "@/lib/entregar-arquivo";
 
 /**
  * Romaneio de pesagens em PDF: o modelo 1 (.docx) é preenchido e convertido em PDF no
@@ -47,16 +46,15 @@ const DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingm
 
 type DadosDocumento = Record<string, string | Record<string, string>[]>;
 
-type ArquivoGerado = { nome: string; blob: Blob };
+type ArquivoGerado = { nome: string; blob: Blob; folhas: string[] };
 
 export type ResultadoRomaneios = {
   /** Mensagens para exibir na tela (hoje nenhuma: era o aviso do modelo 2). */
   avisos: string[];
-  /**
-   * Arquivo que o celular não deixou compartilhar sem um novo toque (ver entregarArquivo):
-   * a tela oferece um botão "Compartilhar" que chama `compartilharArquivo` com ele.
-   */
-  aguardandoToque?: File;
+  /** O PDF (um negócio) ou o .zip (vários), entregue pela tela com useEntregarRelatorio. */
+  arquivo: File;
+  /** Imagens das folhas do PDF para a prévia; vazio no .zip. */
+  folhas: string[];
 };
 
 /** Campo calculado pela API → texto; null (sem gados / sem valor) sai em branco. */
@@ -219,10 +217,10 @@ function renderizar(template: ArrayBuffer, dados: DadosDocumento) {
 }
 
 /**
- * Gera o romaneio (PDF) de cada negócio. Um negócio: entrega o PDF (compartilhamento no
- * celular, download no computador; ver entregarArquivo); mais de um: junta tudo num .zip
- * (PizZip, o mesmo usado para ler o modelo). Com `loteId`, só aquele
- * lote entra no romaneio (ver negocioDoLote).
+ * Gera o romaneio (PDF) de cada negócio. Um negócio: o arquivo é o PDF; mais de um: junta
+ * tudo num .zip (PizZip, o mesmo usado para ler o modelo). Não baixa nem compartilha: a
+ * tela entrega o resultado (useEntregarRelatorio). Com `loteId`, só aquele lote entra no
+ * romaneio (ver negocioDoLote).
  */
 export async function gerarRomaneios(
   negocios: NegocioDetail[],
@@ -250,23 +248,20 @@ export async function gerarRomaneios(
     const lote = opcoes?.loteId !== undefined ? `-${sanitizarNomeArquivo(negocio.lotes[0].nome_lote)}` : "";
     const base = `${sanitizarNomeArquivo(nomeFazenda(negocio, fazenda))}${lote}-${negocio.data_negocio.slice(0, 10)}`;
 
-    arquivos.push({
-      nome: nomeUnico(`romaneio-${base}.pdf`),
-      blob: await docxParaPdf(renderizar(modelo1, montarDadosModelo1(negocio, fazenda))),
-    });
+    const { pdf, folhas } = await docxParaPdf(renderizar(modelo1, montarDadosModelo1(negocio, fazenda)));
+    arquivos.push({ nome: nomeUnico(`romaneio-${base}.pdf`), blob: pdf, folhas });
   }
 
-  let final: File;
   if (arquivos.length === 1) {
-    final = new File([arquivos[0].blob], arquivos[0].nome, { type: "application/pdf" });
-  } else {
-    const zip = new PizZip();
-    for (const arquivo of arquivos) zip.file(arquivo.nome, await arquivo.blob.arrayBuffer());
-    final = new File([zip.generate({ type: "blob", mimeType: "application/zip" })], `romaneios-${Date.now()}.zip`, {
-      type: "application/zip",
-    });
+    const [unico] = arquivos;
+    return { avisos, arquivo: new File([unico.blob], unico.nome, { type: "application/pdf" }), folhas: unico.folhas };
   }
-
-  const entrega = await entregarArquivo(final);
-  return entrega === "pedir-toque" ? { avisos, aguardandoToque: final } : { avisos };
+  const zip = new PizZip();
+  for (const arquivo of arquivos) zip.file(arquivo.nome, await arquivo.blob.arrayBuffer());
+  const conteudo = zip.generate({ type: "blob", mimeType: "application/zip" });
+  return {
+    avisos,
+    arquivo: new File([conteudo], `romaneios-${Date.now()}.zip`, { type: "application/zip" }),
+    folhas: [],
+  };
 }

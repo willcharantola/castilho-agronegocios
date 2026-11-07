@@ -147,9 +147,10 @@ function fatiar(pagina: HTMLElement, folha: number, margemTopo: number, margemBa
  * Converte um .docx em PDF no próprio navegador (funciona sem servidor): o documento é
  * desenhado como HTML (docx-preview), cada página vira imagem (html2canvas-pro) e as
  * imagens formam o PDF (jsPDF). O texto do PDF não é selecionável. As bibliotecas só são
- * baixadas quando a função é chamada.
+ * baixadas quando a função é chamada. Devolve também as imagens das folhas (JPEG em data
+ * URL), usadas na prévia do relatório.
  */
-export async function docxParaPdf(docx: Blob): Promise<Blob> {
+export async function docxParaPdf(docx: Blob): Promise<{ pdf: Blob; folhas: string[] }> {
   const [{ renderAsync }, { default: html2canvas }, { jsPDF }] = await Promise.all([
     import("docx-preview"),
     import("html2canvas-pro"),
@@ -180,6 +181,7 @@ export async function docxParaPdf(docx: Blob): Promise<Blob> {
     if (paginas.length === 0) throw new Error("Não foi possível converter o romaneio em PDF.");
 
     let pdf: InstanceType<typeof jsPDF> | null = null;
+    const folhas: string[] = [];
     for (const pagina of paginas) {
       deslocarImagensDoCabecalho(pagina, deslocamentosCabecalho);
       const largura = emPontos(pagina.style.width) ?? A4_PT.largura;
@@ -226,11 +228,13 @@ export async function docxParaPdf(docx: Blob): Promise<Blob> {
 
         if (!pdf) pdf = new jsPDF({ unit: "pt", format: [largura, altura], orientation: orientacao });
         else pdf.addPage([largura, altura], orientacao);
-        pdf.addImage(folha.toDataURL("image/jpeg", 0.92), "JPEG", 0, 0, largura, altura);
+        const imagem = folha.toDataURL("image/jpeg", 0.92);
+        folhas.push(imagem);
+        pdf.addImage(imagem, "JPEG", 0, 0, largura, altura);
       });
     }
 
-    return pdf!.output("blob");
+    return { pdf: pdf!.output("blob"), folhas };
   } finally {
     palco.remove();
   }
