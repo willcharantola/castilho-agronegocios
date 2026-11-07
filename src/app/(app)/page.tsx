@@ -165,7 +165,7 @@ export default function HomePage() {
       <div className={styles.shortcuts}>
         <NavShortcut icon={Warehouse} label="Fazendas" count={fazendasCount ?? 0} href="/fazendas" />
         <NavShortcut icon={Users} label="Pecuaristas" count={pecuaristasCount ?? 0} href="/pecuaristas" />
-        <NavShortcut icon={Building2} label="Compradores" count={compradoresCount ?? 0} href="/compradores" />
+        <NavShortcut icon={Building2} label="Frigoríficos" count={compradoresCount ?? 0} href="/compradores" />
         <NavShortcut icon={Handshake} label="Negócios" count={resumo?.negocios_realizados ?? 0} href="/negocios" />
       </div>
 
