@@ -20,7 +20,7 @@ import type {
   UpdateLoteInput,
 } from "@/lib/api/types";
 import type { RegistroPendente } from "./db";
-import { estimarGado } from "@/lib/calculo-gado";
+import { estimarGado, estimarImpostos } from "@/lib/calculo-gado";
 import { idTemporario, idTemporarioFazendaAninhada, usePendentes, type RegistroSalvo } from "./fila";
 
 /**
@@ -419,19 +419,3 @@ export function comPendencias(
   };
 }
 
-/**
- * Funrural, Senar e líquido estimados (mesma regra da API) a partir das alíquotas gravadas
- * no negócio. Negócio ainda só no aparelho não tem alíquotas: os três ficam null.
- */
-function estimarImpostos(
-  negocio: Pick<NegocioDetail, "tipo_negocio" | "aliquota_funrural" | "aliquota_senar">,
-  bruto: number
-): Pick<NegocioDetail, "funrural" | "senar" | "valor_total_liquido"> {
-  if (negocio.aliquota_funrural === null || negocio.aliquota_senar === null) {
-    return { funrural: null, senar: null, valor_total_liquido: null };
-  }
-  const centavos = (v: number) => Math.round(v * 100) / 100;
-  const funrural = negocio.tipo_negocio === "Funrural" ? centavos((bruto * negocio.aliquota_funrural) / 100) : 0;
-  const senar = negocio.tipo_negocio === "Desconto em folha" ? centavos((bruto * negocio.aliquota_senar) / 100) : 0;
-  return { funrural, senar, valor_total_liquido: centavos(bruto - funrural - senar) };
-}
