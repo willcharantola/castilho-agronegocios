@@ -58,7 +58,7 @@ export default function CompradoresPage() {
 
   return (
     <div className={cn("page-container page-wide", styles.page, "pt-safe")}>
-      <h1 className="page-title">Compradores Cadastrados</h1>
+      <h1 className="page-title">Frigoríficos Cadastrados</h1>
 
       <div className="search-box">
         <Search className="search-icon" size={18} />
