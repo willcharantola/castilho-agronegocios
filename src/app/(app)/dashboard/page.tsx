@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 import { fetchNegocio, fetchNegocios, fetchResumoNegocios } from "@/lib/api/negocios";
 import { fetchFazendas } from "@/lib/api/fazendas";
 import { gerarRomaneios } from "@/lib/relatorio-romaneio";
-import { oferecerCompartilhamento } from "@/lib/entregar-arquivo";
+import { useEntregarRelatorio } from "@/components/previa-relatorio";
 import type { Fazenda, Negocio, ResumoNegocios } from "@/lib/api/types";
 import { valorRestrito } from "@/lib/permissoes";
 import { ApiError } from "@/lib/api-client";
@@ -45,6 +45,7 @@ export default function DashboardPage() {
 
   const [gerandoRelatorio, setGerandoRelatorio] = React.useState(false);
   const avisar = useAviso();
+  const entregarRelatorio = useEntregarRelatorio();
 
   React.useEffect(() => {
     let cancelled = false;
@@ -93,9 +94,9 @@ export default function DashboardPage() {
     try {
       // Romaneio de cada negócio do período (o romaneio precisa do detalhe: gados e pecuarista).
       const detalhes = await Promise.all(negocios.map((n) => fetchNegocio(n.negocio_id)));
-      const { avisos, aguardandoToque } = await gerarRomaneios(detalhes, fazendasPorId);
+      const { avisos, ...relatorio } = await gerarRomaneios(detalhes, fazendasPorId);
+      entregarRelatorio(relatorio);
       for (const aviso of avisos) avisar(aviso, "aviso");
-      if (aguardandoToque) oferecerCompartilhamento(avisar, aguardandoToque);
     } catch (err) {
       avisar(
         err instanceof ApiError || err instanceof Error ? err.message : "Erro ao gerar relatório."
