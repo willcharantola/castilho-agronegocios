@@ -138,10 +138,16 @@ export default function NovoNegocioRevisaoPage() {
           onClick={concluir}
           disabled={concluindo || !negocio || semLote}
         >
-          {concluindo ? "Concluindo..." : "Concluir"}
+          {concluindo ? "Concluindo..." : "Concluir Pesagem"}
         </Button>
-        <Button type="button" variant="ghost" size="xl" className="w-full" onClick={() => router.push(voltar)}>
-          Voltar
+        <Button
+          type="button"
+          variant="ghost"
+          size="xl"
+          className={cn("w-full", styles.voltar)}
+          onClick={() => router.push(voltar)}
+        >
+          Voltar a Pesagem
         </Button>
       </div>
     </div>

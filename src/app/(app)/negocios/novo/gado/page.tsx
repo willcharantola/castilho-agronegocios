@@ -7,6 +7,7 @@ import { BackLink } from "@/components/back-link";
 import { Button } from "@/components/ui/button";
 import { GadoForm } from "@/components/gado-form";
 import { GadoEditDialog } from "@/components/gado-edit-dialog";
+import { arroba, ChipsLotes, chipId, Detalhes, kg } from "@/components/negocio-carrossel";
 import { PendenteBadge } from "@/components/offline/pendente-badge";
 import { formatCurrency, formatNumber, formatFazenda } from "@/lib/format";
 import { MODALIDADE_LABELS } from "@/lib/labels";
@@ -23,6 +24,9 @@ export default function NovoNegocioGadoPage() {
   const { data, update } = useNegocioFlow();
   const { negocio, erro, recarregar, idReal } = useNegocioComPendencias(data.negocioId);
   const [gadoEmEdicao, setGadoEmEdicao] = React.useState<Gado | null>(null);
+  // Filtro das cabeças cadastradas: 0 = "Geral", i = i-ésimo lote (como no detalhe do negócio).
+  const [filtro, setFiltro] = React.useState(0);
+  const idListaCabecas = `${React.useId()}-cabecas`;
 
   React.useEffect(() => {
     if (!data.negocioId) router.replace("/negocios/novo/informacoes");
@@ -52,6 +56,31 @@ export default function NovoNegocioGadoPage() {
         ),
     [negocio]
   );
+
+  const lotes = negocio?.lotes ?? [];
+  // Se o lote filtrado deixar de existir, volta ao último disponível.
+  const indiceFiltro = Math.min(filtro, lotes.length);
+  const loteFiltrado = indiceFiltro > 0 ? lotes[indiceFiltro - 1] : null;
+  const cabecasFiltradas = loteFiltrado
+    ? cabecas.filter(({ gado }) => loteFiltrado.gados.includes(gado))
+    : cabecas;
+  // Calculados das cabeças listadas, para incluir as ainda na fila offline.
+  const pesoTotal = cabecasFiltradas.reduce((soma, { gado }) => soma + gado.peso_total, 0);
+  const pesoTotalArroba = cabecasFiltradas.reduce((soma, { gado }) => soma + gado.peso_arroba, 0);
+  const resumoFiltro = [
+    { label: "Cabeças", valor: String(cabecasFiltradas.length) },
+    { label: "Peso total", valor: cabecasFiltradas.length > 0 ? kg(pesoTotal) : "—" },
+    { label: "Peso médio", valor: cabecasFiltradas.length > 0 ? kg(pesoTotal / cabecasFiltradas.length) : "—" },
+    // Na modalidade "kg" não há peso em arroba (a API grava 0).
+    ...(negocio?.modalidade === "arroba"
+      ? [
+          {
+            label: "Peso médio (@)",
+            valor: cabecasFiltradas.length > 0 ? arroba(pesoTotalArroba / cabecasFiltradas.length) : "—",
+          },
+        ]
+      : []),
+  ];
 
   if (!data.negocioId) return null;
 
@@ -120,8 +149,23 @@ export default function NovoNegocioGadoPage() {
           {cabecas.length > 0 ? (
             <>
               <p className="section-title">Cabeças cadastradas</p>
-              <div className={styles.sessionItems}>
-                {cabecas.map(({ gado, nomeLote }) => (
+              <ChipsLotes
+                lotes={lotes}
+                ativo={indiceFiltro}
+                onAtivoChange={setFiltro}
+                controlaId={idListaCabecas}
+              />
+              <Detalhes itens={resumoFiltro} />
+              <div
+                id={idListaCabecas}
+                role="tabpanel"
+                aria-labelledby={chipId(idListaCabecas, indiceFiltro)}
+                className={styles.sessionItems}
+              >
+                {cabecasFiltradas.length === 0 ? (
+                  <p className={styles.sessionEmpty}>Nenhuma cabeça cadastrada neste lote.</p>
+                ) : null}
+                {cabecasFiltradas.map(({ gado, nomeLote }) => (
                   <button
                     key={gado.gado_id}
                     type="button"

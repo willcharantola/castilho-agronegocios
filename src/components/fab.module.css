@@ -45,14 +45,16 @@
   .wrap {
     left: var(--sidebar-width);
     width: auto;
-    bottom: 6.5rem;
+    /* O botão (4.25rem) fica abaixo desta linha, não acima: o empilhado termina 1.75rem
+       acima da borda da tela e o principal, 0.75rem acima do empilhado. */
+    bottom: 11rem;
     max-width: var(--content-max-width);
     padding-left: 2rem;
     padding-right: 2rem;
   }
 
   .stacked {
-    bottom: 1.5rem;
+    bottom: 6rem;
   }
 
   /* Alinha à borda direita das listas, que ocupam 90% da coluna (5% de recuo de cada
