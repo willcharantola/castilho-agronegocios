@@ -19,12 +19,12 @@ import { formatarCriterioComissao, modoDoNegocio } from "@/lib/comissao";
 import { exibirComissao, type ExibicaoComissao } from "@/lib/permissoes";
 import { cn } from "@/lib/utils";
 
-type Item = { label: string; valor: string };
+export type Item = { label: string; valor: string };
 
 const ou = <T,>(valor: T | null | undefined, formatar: (v: T) => string) =>
   valor !== null && valor !== undefined ? formatar(valor) : "—";
-const kg = (v: number) => `${formatNumber(v)} kg`;
-const arroba = (v: number) => `${formatNumber(v)} @`;
+export const kg = (v: number) => `${formatNumber(v)} kg`;
+export const arroba = (v: number) => `${formatNumber(v)} @`;
 
 /** Pesos, médias, extremos e rendimento médio (não se aplicam à modalidade "cabeca"). */
 function itensPeso(a: AgregadosPeso): Item[] {
@@ -55,7 +55,7 @@ function Grade({ itens }: { itens: Item[] }) {
 }
 
 /** Demais dados, fora do quadro verde: um quadro branco com borda verde por item. */
-function Detalhes({ itens }: { itens: Item[] }) {
+export function Detalhes({ itens }: { itens: Item[] }) {
   return (
     <dl className="carrossel-detalhes">
       {itens.map((item) => (
@@ -272,11 +272,91 @@ function ListaCabecas({
   );
 }
 
+/** Id do i-ésimo chip, para o conteúdo controlado apontar de volta (aria-labelledby). */
+export function chipId(controlaId: string, indice: number) {
+  return `${controlaId}-chip-${indice}`;
+}
+
+/**
+ * Chips "Geral" + um por lote, que funcionam como filtro (0 = "Geral", i = i-ésimo lote).
+ * Setas esquerda/direita, Home e End navegam entre os chips. `controlaId` é o id do
+ * conteúdo trocado pelo filtro.
+ */
+export function ChipsLotes({
+  lotes,
+  ativo,
+  onAtivoChange,
+  controlaId,
+}: {
+  lotes: { nome_lote: string }[];
+  ativo: number;
+  onAtivoChange: (indice: number) => void;
+  controlaId: string;
+}) {
+  const chipsRef = React.useRef<(HTMLButtonElement | null)[]>([]);
+  const titulos = ["Geral", ...lotes.map((l) => l.nome_lote)];
+  const total = titulos.length;
+  const indiceAtivo = Math.min(ativo, total - 1);
+
+  // Mantém o chip ativo visível quando a faixa rola (muitos lotes).
+  React.useEffect(() => {
+    const chip = chipsRef.current[indiceAtivo];
+    const faixa = chip?.parentElement;
+    if (!chip || !faixa) return;
+    const fora = chip.offsetLeft < faixa.scrollLeft || chip.offsetLeft + chip.offsetWidth > faixa.scrollLeft + faixa.clientWidth;
+    if (fora) faixa.scrollTo({ left: chip.offsetLeft - 16, behavior: "smooth" });
+  }, [indiceAtivo]);
+
+  function irPara(indice: number) {
+    const alvo = Math.max(0, Math.min(total - 1, indice));
+    onAtivoChange(alvo);
+    chipsRef.current[alvo]?.focus();
+  }
+
+  function aoTeclar(e: React.KeyboardEvent) {
+    const destino =
+      e.key === "ArrowRight"
+        ? indiceAtivo + 1
+        : e.key === "ArrowLeft"
+          ? indiceAtivo - 1
+          : e.key === "Home"
+            ? 0
+            : e.key === "End"
+              ? total - 1
+              : null;
+    if (destino === null) return;
+    e.preventDefault();
+    irPara(destino);
+  }
+
+  return (
+    <div className="carrossel-chips" role="tablist" aria-label="Geral e lotes" onKeyDown={aoTeclar}>
+      {titulos.map((titulo, i) => (
+        <button
+          key={`${i}-${titulo}`}
+          ref={(el) => {
+            chipsRef.current[i] = el;
+          }}
+          type="button"
+          role="tab"
+          id={chipId(controlaId, i)}
+          aria-selected={i === indiceAtivo}
+          aria-controls={controlaId}
+          tabIndex={i === indiceAtivo ? 0 : -1}
+          className={cn("carrossel-chip", i === indiceAtivo && "carrossel-chip-ativo")}
+          onClick={() => onAtivoChange(i)}
+        >
+          {titulo}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 /**
  * Dados do negócio: um quadro verde com os destaques (e a lista de cabeças) e, abaixo, os
- * demais dados em quadros brancos. Os chips acima ("Geral" e um por lote) funcionam como
- * filtro e trocam o conteúdo. Setas
- * esquerda/direita, Home e End navegam entre os chips.
+ * demais dados em quadros brancos. Os chips acima ({@link ChipsLotes}) funcionam como
+ * filtro e trocam o conteúdo.
  *
  * Com `ativo`/`onAtivoChange` o filtro fica com a página (ex.: para listar as cabeças fora
  * do quadro, com `cabecasNoQuadro={false}`).
@@ -301,49 +381,15 @@ export function NegocioCarrossel({
   onAtivoChange?: (indice: number) => void;
   cabecasNoQuadro?: boolean;
 }) {
-  const idBase = React.useId();
+  const idCartao = `${React.useId()}-cartao`;
   const [ativoInterno, setAtivoInterno] = React.useState(0);
   const ativo = ativoControlado ?? ativoInterno;
   const setAtivo = (indice: number) => {
     setAtivoInterno(indice);
     onAtivoChange?.(indice);
   };
-  const chipsRef = React.useRef<(HTMLButtonElement | null)[]>([]);
-  const titulos = ["Geral", ...negocio.lotes.map((l) => l.nome_lote)];
-  const total = titulos.length;
   // Se o lote ativo for excluído, volta ao último disponível.
-  const indiceAtivo = Math.min(ativo, total - 1);
-
-  // Mantém o chip ativo visível quando a faixa rola (muitos lotes).
-  React.useEffect(() => {
-    const chip = chipsRef.current[indiceAtivo];
-    const faixa = chip?.parentElement;
-    if (!chip || !faixa) return;
-    const fora = chip.offsetLeft < faixa.scrollLeft || chip.offsetLeft + chip.offsetWidth > faixa.scrollLeft + faixa.clientWidth;
-    if (fora) faixa.scrollTo({ left: chip.offsetLeft - 16, behavior: "smooth" });
-  }, [indiceAtivo]);
-
-  function irPara(indice: number) {
-    const alvo = Math.max(0, Math.min(total - 1, indice));
-    setAtivo(alvo);
-    chipsRef.current[alvo]?.focus();
-  }
-
-  function aoTeclar(e: React.KeyboardEvent) {
-    const destino =
-      e.key === "ArrowRight"
-        ? indiceAtivo + 1
-        : e.key === "ArrowLeft"
-          ? indiceAtivo - 1
-          : e.key === "Home"
-            ? 0
-            : e.key === "End"
-              ? total - 1
-              : null;
-    if (destino === null) return;
-    e.preventDefault();
-    irPara(destino);
-  }
+  const indiceAtivo = Math.min(ativo, negocio.lotes.length);
 
   const estimado = Boolean(negocio.pendente) || negocio.lotes.some((l) => l.pendente);
   const loteAtivo = indiceAtivo > 0 ? negocio.lotes[indiceAtivo - 1] : null;
@@ -364,33 +410,14 @@ export function NegocioCarrossel({
 
   return (
     <section className="carrossel" aria-label="Dados do negócio">
-      <div className="carrossel-chips" role="tablist" aria-label="Geral e lotes" onKeyDown={aoTeclar}>
-        {titulos.map((titulo, i) => (
-          <button
-            key={`${i}-${titulo}`}
-            ref={(el) => {
-              chipsRef.current[i] = el;
-            }}
-            type="button"
-            role="tab"
-            id={`${idBase}-chip-${i}`}
-            aria-selected={i === indiceAtivo}
-            aria-controls={`${idBase}-cartao`}
-            tabIndex={i === indiceAtivo ? 0 : -1}
-            className={cn("carrossel-chip", i === indiceAtivo && "carrossel-chip-ativo")}
-            onClick={() => setAtivo(i)}
-          >
-            {titulo}
-          </button>
-        ))}
-      </div>
+      <ChipsLotes lotes={negocio.lotes} ativo={indiceAtivo} onAtivoChange={setAtivo} controlaId={idCartao} />
 
       {estimado ? <p className="carrossel-aviso">Há dados ainda não sincronizados: os totais são estimados.</p> : null}
 
       <article
         role="tabpanel"
-        id={`${idBase}-cartao`}
-        aria-labelledby={`${idBase}-chip-${indiceAtivo}`}
+        id={idCartao}
+        aria-labelledby={chipId(idCartao, indiceAtivo)}
         tabIndex={0}
         className="carrossel-painel"
       >

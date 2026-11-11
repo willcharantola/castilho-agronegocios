@@ -16,3 +16,16 @@
   flex-direction: column;
   gap: 0.75rem;
 }
+
+/* O botão base tem margin-bottom: 50%; aqui o "Voltar a Pesagem" vem logo abaixo do
+   "Concluir Pesagem". O último botão mantém a margem (espaço acima da barra inferior). */
+.acoes > button:not(:last-child) {
+  margin-bottom: 0;
+}
+
+/* Contorno verde, sem fundo. */
+.voltar {
+  border: 2px solid var(--color-dark);
+  background: transparent;
+  color: var(--color-dark);
+}
