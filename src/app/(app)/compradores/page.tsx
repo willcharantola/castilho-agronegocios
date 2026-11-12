@@ -20,7 +20,7 @@ export default function CompradoresPage() {
   const compradoresPendentes = useCompradoresPendentes();
   const compradores = React.useMemo(
     () => mesclarPendentes(compradoresServidor, compradoresPendentes),
-    [compradoresServidor, compradoresPendentes]
+    [compradoresServidor, compradoresPendentes],
   );
   const versaoSincronizacao = useVersaoSincronizacao();
   const [error, setError] = React.useState<string | null>(null);
@@ -53,7 +53,7 @@ export default function CompradoresPage() {
       buscaLower === "" ||
       c.nome_empresa.toLowerCase().includes(buscaLower) ||
       c.municipio.toLowerCase().includes(buscaLower) ||
-      (c.inscricao_estadual ?? "").toLowerCase().includes(buscaLower)
+      (c.inscricao_estadual ?? "").toLowerCase().includes(buscaLower),
   );
 
   return (
@@ -70,9 +70,7 @@ export default function CompradoresPage() {
         />
       </div>
 
-      {compradores === null && !error ? (
-        <div className="state-box glass-panel">Carregando compradores...</div>
-      ) : null}
+      {compradores === null && !error ? <div className="state-box glass-panel">Carregando compradores...</div> : null}
 
       {error && !compradores ? (
         <div className="state-box state-error glass-panel">

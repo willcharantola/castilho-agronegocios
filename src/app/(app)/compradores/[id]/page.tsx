@@ -10,9 +10,12 @@ import { CompradorFields, compradorSchema, type CompradorFormValues } from "@/co
 import { Button } from "@/components/ui/button";
 import { deleteComprador, fetchComprador, updateComprador } from "@/lib/api/compradores";
 import { ApiError } from "@/lib/api-client";
+import { useIsAdmin } from "@/lib/permissoes";
 
 export default function EditarCompradorPage() {
   const params = useParams<{ id: string }>();
+  // Normal: ficha só leitura (campos bloqueados, sem salvar nem excluir; a API recusa).
+  const admin = useIsAdmin();
   const router = useRouter();
   const [loadError, setLoadError] = React.useState<string | null>(null);
   const [submitError, setSubmitError] = React.useState<string | null>(null);
@@ -63,7 +66,7 @@ export default function EditarCompradorPage() {
     <div className="page-container page-narrow pt-safe">
       <div className="page-header-acoes">
         <BackLink href="/compradores" />
-        {loaded ? (
+        {loaded && admin ? (
           <BotaoExcluir
             descricao={`o comprador "${nome}"`}
             excluir={() => deleteComprador(params.id)}
@@ -71,21 +74,23 @@ export default function EditarCompradorPage() {
           />
         ) : null}
       </div>
-      <h1 className="page-title">Editar Comprador</h1>
+      <h1 className="page-title">{admin ? "Editar Comprador" : "Comprador"}</h1>
 
       {!loaded && !loadError ? <div className="state-box glass-panel">Carregando comprador...</div> : null}
       {loadError ? <div className="state-box state-error glass-panel">{loadError}</div> : null}
 
       {loaded ? (
         <form onSubmit={handleSubmit(onSubmit)} className="form-stack">
-          <div className="form-fields">
+          <fieldset className="form-fields ficha-campos" disabled={!admin}>
             {submitError ? <p className="form-error">{submitError}</p> : null}
             <CompradorFields register={register} control={control} errors={errors} copiavel />
-          </div>
+          </fieldset>
 
-          <Button type="submit" variant="brand" size="xl" className="w-full" disabled={isSubmitting}>
-            {isSubmitting ? "Salvando..." : "Salvar"}
-          </Button>
+          {admin ? (
+            <Button type="submit" variant="brand" size="xl" className="w-full" disabled={isSubmitting}>
+              {isSubmitting ? "Salvando..." : "Salvar"}
+            </Button>
+          ) : null}
         </form>
       ) : null}
     </div>

@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { useParams } from "next/navigation";
 import { Beef } from "lucide-react";
 import { useAviso } from "@/components/aviso";
 import { BackLink } from "@/components/back-link";
@@ -17,16 +16,14 @@ import { usePendentes, useVersaoSincronizacao } from "@/lib/offline/fila";
 import { gadoDePendente, type ExibicaoGado } from "@/lib/offline/pendentes";
 import { mensagemDeErro } from "@/lib/offline/rede";
 import { cn } from "@/lib/utils";
-import styles from "../pesagens.module.css";
+import styles from "./pesagens.module.css";
 
 /**
  * Pesagem de um negócio liberado para o usuário responsável: escolhe o lote e lança o peso.
  * Sem valores, comprador ou comissão (a API nem os envia). Sem conexão, as cabeças ficam
  * na fila e aparecem aqui como pendentes.
  */
-export default function PesagemPage() {
-  const params = useParams<{ id: string }>();
-  const negocioId = Number(params.id);
+export function PesagemNegocio({ negocioId }: { negocioId: number }) {
   const avisar = useAviso();
   const versaoSincronizacao = useVersaoSincronizacao();
   const [negocio, setNegocio] = React.useState<NegocioPesagem | null>(null);
@@ -92,7 +89,7 @@ export default function PesagemPage() {
 
   return (
     <div className={cn("page-container page-narrow", styles.page, "pt-safe")}>
-      <BackLink href="/pesagens" label="Minhas pesagens" />
+      <BackLink href="/negocios" />
       <div>
         <h1 className="page-title">Pesagem</h1>
         {negocio ? (

@@ -6,7 +6,7 @@ import { enviarOuEnfileirar } from "@/lib/offline/fila";
 import type { ExibicaoGado } from "@/lib/offline/pendentes";
 import { horaLocalAtual } from "@/lib/offline/rede";
 
-// Pesagem pelo usuário Normal responsável (telas /pesagens). Os lotes já existem no
+// Pesagem pelo usuário Normal responsável (telas /negocios do perfil Normal). Os lotes já existem no
 // servidor (só o Admin cria lotes), então as referências são sempre ids reais. Sem conexão,
 // a cabeça e a conclusão entram na fila; na sincronização a API confere de novo se o
 // negócio continua liberado para ele.

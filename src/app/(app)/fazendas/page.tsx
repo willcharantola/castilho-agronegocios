@@ -20,7 +20,7 @@ export default function FazendasPage() {
   const fazendasPendentes = useFazendasPendentes();
   const fazendas = React.useMemo(
     () => mesclarPendentes(fazendasServidor, fazendasPendentes),
-    [fazendasServidor, fazendasPendentes]
+    [fazendasServidor, fazendasPendentes],
   );
   const versaoSincronizacao = useVersaoSincronizacao();
   const [error, setError] = React.useState<string | null>(null);
@@ -52,7 +52,7 @@ export default function FazendasPage() {
     (f) =>
       buscaLower === "" ||
       f.nome_fazenda.toLowerCase().includes(buscaLower) ||
-      f.municipio.toLowerCase().includes(buscaLower)
+      f.municipio.toLowerCase().includes(buscaLower),
   );
 
   return (
@@ -69,19 +69,13 @@ export default function FazendasPage() {
         />
       </div>
 
-      {fazendas === null && !error ? (
-        <div className="state-box glass-panel">Carregando fazendas...</div>
-      ) : null}
+      {fazendas === null && !error ? <div className="state-box glass-panel">Carregando fazendas...</div> : null}
 
       {error && !fazendas ? (
         <div className="state-box state-error glass-panel">
           {error}
           <div>
-            <Button
-              className="retry-button"
-              variant="brand"
-              onClick={() => setReloadKey((k) => k + 1)}
-            >
+            <Button className="retry-button" variant="brand" onClick={() => setReloadKey((k) => k + 1)}>
               Tentar novamente
             </Button>
           </div>
@@ -108,24 +102,22 @@ export default function FazendasPage() {
               className="list-card glass-panel"
             >
               <span className="card-icon">
-                  {fazenda.marca_url ? (
-                  <img src={fazenda.marca_url} alt={fazenda.nome_fazenda} className={styles.cardImage}/>
-                  ) : (
+                {fazenda.marca_url ? (
+                  <img src={fazenda.marca_url} alt={fazenda.nome_fazenda} className={styles.cardImage} />
+                ) : (
                   <Warehouse size={18} />
-                  )}
+                )}
               </span>
               <div className="card-info">
                 <p className="card-name">{formatFazenda(fazenda.nome_fazenda)}</p>
                 <p className="card-meta"> Município: {fazenda.municipio} </p>
-                 <p className="card-meta">I.E.: {fazenda.inscricao_estadual}</p>
-                  {fazenda.pendente ? <PendenteBadge pendente={fazenda.pendente} /> : null}
+                <p className="card-meta">I.E.: {fazenda.inscricao_estadual}</p>
+                {fazenda.pendente ? <PendenteBadge pendente={fazenda.pendente} /> : null}
               </div>
             </Link>
           ))}
         </div>
       ) : null}
-
-     
     </div>
   );
 }

@@ -85,13 +85,13 @@ export default function NovoNegocioCompradorPage() {
     if (!frigorificos) return null;
     const pecuaristas = mesclarPendentes(pecuaristasServidor, pecuaristasPendentes) ?? [];
     return [...frigorificos.map(deFrigorifico), ...pecuaristas.map(dePecuarista)].sort((a, b) =>
-      a.nome.localeCompare(b.nome, "pt-BR")
+      a.nome.localeCompare(b.nome, "pt-BR"),
     );
   }, [compradoresServidor, compradoresPendentes, pecuaristasServidor, pecuaristasPendentes]);
 
   const termo = busca.trim().toLowerCase();
   const visiveis = opcoes?.filter(
-    (o) => !termo || o.nome.toLowerCase().includes(termo) || o.detalhe.toLowerCase().includes(termo)
+    (o) => !termo || o.nome.toLowerCase().includes(termo) || o.detalhe.toLowerCase().includes(termo),
   );
 
   if (!data.fazendaId) return null;

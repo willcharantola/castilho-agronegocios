@@ -26,7 +26,7 @@ export default function PecuaristasPage() {
   const pecuaristasPendentes = usePecuaristasPendentes();
   const pecuaristas = React.useMemo(
     () => mesclarPendentes(pecuaristasServidor, pecuaristasPendentes),
-    [pecuaristasServidor, pecuaristasPendentes]
+    [pecuaristasServidor, pecuaristasPendentes],
   );
   const versaoSincronizacao = useVersaoSincronizacao();
   const [error, setError] = React.useState<string | null>(null);
@@ -58,8 +58,7 @@ export default function PecuaristasPage() {
   const filtrados = pecuaristas?.filter((v) => {
     if (buscaLower === "") return true;
     return (
-      v.nome_pecuarista.toLowerCase().includes(buscaLower) ||
-      nomesDasFazendas(v).toLowerCase().includes(buscaLower)
+      v.nome_pecuarista.toLowerCase().includes(buscaLower) || nomesDasFazendas(v).toLowerCase().includes(buscaLower)
     );
   });
 
@@ -77,9 +76,7 @@ export default function PecuaristasPage() {
         />
       </div>
 
-      {pecuaristas === null && !error ? (
-        <div className="state-box glass-panel">Carregando pecuaristas...</div>
-      ) : null}
+      {pecuaristas === null && !error ? <div className="state-box glass-panel">Carregando pecuaristas...</div> : null}
 
       {error && !pecuaristas ? (
         <div className="state-box state-error glass-panel">
@@ -117,8 +114,11 @@ export default function PecuaristasPage() {
                 </span>
                 <div className="card-info">
                   <p className={styles.cardName}>{pecuarista.nome_pecuarista}</p>
-                  <p className="card-meta-on-dark"> Pessoa: {FISICO_JURIDICO_LABELS[pecuarista.fisico_juridico]} 
-                  <p className="card-meta-on-dark"></p>CPF/CNPJ: {pecuarista.cpf_cnpj}  </p>
+                  <p className="card-meta-on-dark">
+                    {" "}
+                    Pessoa: {FISICO_JURIDICO_LABELS[pecuarista.fisico_juridico]}
+                    <p className="card-meta-on-dark"></p>CPF/CNPJ: {pecuarista.cpf_cnpj}{" "}
+                  </p>
                   <p className="card-meta-on-dark"> Fazendas: {nomesDasFazendas(pecuarista) || "—"} </p>
                   {pecuarista.pendente ? <PendenteBadge pendente={pecuarista.pendente} /> : null}
                 </div>

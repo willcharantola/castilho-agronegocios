@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { FileText, Plus } from "lucide-react";
 import { AcessoNegocioForm } from "@/components/acesso-negocio-form";
 import { useAviso } from "@/components/aviso";
+import { PesagemNegocio } from "@/components/pesagem/pesagem-negocio";
 import { BackLink } from "@/components/back-link";
 import { BotaoExcluir } from "@/components/botao-excluir";
 import { Button } from "@/components/ui/button";
@@ -22,10 +23,21 @@ import { negocioParaRomaneio, temPendenciaNoRomaneio } from "@/lib/flows/romanei
 import { useNegocioComPendencias } from "@/lib/flows/use-negocio-com-pendencias";
 import { useCompradoresPendentes, useFazendasPendentes, usePecuaristasPendentes } from "@/lib/offline/pendentes";
 import { mensagemDeErro } from "@/lib/offline/rede";
-import { BotaoOlhoComissao, useExibicaoComissao } from "@/lib/permissoes";
+import { BotaoOlhoComissao, useExibicaoComissao, useUsuario } from "@/lib/permissoes";
 import styles from "./page.module.css";
 
+/**
+ * Admin: detalhe completo do negócio. Normal: a tela de pesagem (lotes e pesos, sem
+ * valores) — a API só lhe devolve os negócios liberados para ele; os demais, 404.
+ */
 export default function NegocioDetailPage() {
+  const params = useParams<{ id: string }>();
+  const usuario = useUsuario();
+  if (!usuario) return null;
+  return usuario.nivel_acesso === "Admin" ? <NegocioDetailAdmin /> : <PesagemNegocio negocioId={Number(params.id)} />;
+}
+
+function NegocioDetailAdmin() {
   const params = useParams<{ id: string }>();
   const { negocio, erro, recarregar } = useNegocioComPendencias(Number(params.id));
 

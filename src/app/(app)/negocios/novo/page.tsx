@@ -26,7 +26,7 @@ export default function NovoNegocioPecuaristaPage() {
   const pecuaristasPendentes = usePecuaristasPendentes();
   const pecuaristas = React.useMemo(
     () => mesclarPendentes(pecuaristasServidor, pecuaristasPendentes),
-    [pecuaristasServidor, pecuaristasPendentes]
+    [pecuaristasServidor, pecuaristasPendentes],
   );
   const [error, setError] = React.useState<string | null>(null);
   const [busca, setBusca] = React.useState("");
@@ -56,7 +56,7 @@ export default function NovoNegocioPecuaristaPage() {
 
   const buscaLower = busca.trim().toLowerCase();
   const filtrados = pecuaristas?.filter(
-    (p) => buscaLower === "" || p.nome_pecuarista.toLowerCase().includes(buscaLower)
+    (p) => buscaLower === "" || p.nome_pecuarista.toLowerCase().includes(buscaLower),
   );
 
   return (
@@ -75,9 +75,7 @@ export default function NovoNegocioPecuaristaPage() {
         />
       </div>
 
-      {pecuaristas === null && !error ? (
-        <div className="state-box glass-panel">Carregando pecuaristas...</div>
-      ) : null}
+      {pecuaristas === null && !error ? <div className="state-box glass-panel">Carregando pecuaristas...</div> : null}
 
       {error && !pecuaristas ? <div className="state-box state-error glass-panel">{error}</div> : null}
 

@@ -56,7 +56,7 @@ export function useIsAdmin(): boolean {
 export function valorRestrito<T>(
   valor: T | null | undefined,
   podeVer: boolean,
-  formatar: (v: T) => string = String
+  formatar: (v: T) => string = String,
 ): string {
   return podeVer && valor !== null && valor !== undefined ? formatar(valor) : SEM_PERMISSAO;
 }
@@ -83,7 +83,7 @@ export type ExibicaoComissao = "restrita" | "mascarada" | "visivel";
 export function exibirComissao<T>(
   valor: T | null | undefined,
   exibicao: ExibicaoComissao,
-  formatar: (v: T) => string
+  formatar: (v: T) => string,
 ): string {
   if (exibicao === "restrita") return SEM_PERMISSAO;
   if (exibicao === "mascarada") return COMISSAO_MASCARADA;

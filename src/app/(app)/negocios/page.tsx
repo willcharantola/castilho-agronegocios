@@ -5,6 +5,7 @@ import Link from "next/link";
 import { FileText, Search, Warehouse } from "lucide-react";
 import { SeloVisualizacao } from "@/components/acesso-negocio-form";
 import { useAviso } from "@/components/aviso";
+import { MinhasPesagens } from "@/components/pesagem/minhas-pesagens";
 import { VISUALIZACAO_LABELS, nomeDoUsuario, useResponsaveis } from "@/components/responsavel-fields";
 import { Button } from "@/components/ui/button";
 import { Fab } from "@/components/fab";
@@ -20,10 +21,21 @@ import { PendenteBadge } from "@/components/offline/pendente-badge";
 import { idTemporario, usePendentes, useVersaoSincronizacao } from "@/lib/offline/fila";
 import { mesclarPendentes, negocioDePendente, type ExibicaoNegocio } from "@/lib/offline/pendentes";
 import { formatarCriterioComissao, modoDoNegocio } from "@/lib/comissao";
-import { BotaoOlhoComissao, exibirComissao, useExibicaoComissao } from "@/lib/permissoes";
+import { BotaoOlhoComissao, exibirComissao, useExibicaoComissao, useUsuario } from "@/lib/permissoes";
 import styles from "./page.module.css";
 
+/**
+ * Admin: todos os negócios da empresa. Normal: só os liberados para ele (responsável e
+ * "Público"), na visão reduzida — a API não lhe devolve a listagem completa.
+ */
 export default function NegociosPage() {
+  const usuario = useUsuario();
+  // Perfil ainda não lido (primeira renderização): nada, para não buscar a lista errada.
+  if (!usuario) return null;
+  return usuario.nivel_acesso === "Admin" ? <NegociosAdmin /> : <MinhasPesagens />;
+}
+
+function NegociosAdmin() {
   const [negociosServidor, setNegocios] = React.useState<Negocio[] | null>(null);
   // Negócios criados offline aparecem no topo, marcados como pendentes de sincronização
   // (com os nomes de fazenda/comprador guardados no aparelho ao cadastrar).

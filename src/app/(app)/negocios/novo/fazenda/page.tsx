@@ -30,7 +30,7 @@ export default function NovoNegocioFazendaPage() {
   const pecuaristasPendentes = usePecuaristasPendentes();
   const pecuaristas = React.useMemo(
     () => mesclarPendentes(pecuaristasServidor, pecuaristasPendentes),
-    [pecuaristasServidor, pecuaristasPendentes]
+    [pecuaristasServidor, pecuaristasPendentes],
   );
   const [error, setError] = React.useState<string | null>(null);
 
@@ -86,7 +86,9 @@ export default function NovoNegocioFazendaPage() {
               <Button
                 className={styles.novaFazendaButton}
                 variant="brand"
-                render={<Link href={`/pecuaristas/${data.pecuaristaId}/fazendas/nova?returnTo=/negocios/novo/fazenda`} />}
+                render={
+                  <Link href={`/pecuaristas/${data.pecuaristaId}/fazendas/nova?returnTo=/negocios/novo/fazenda`} />
+                }
               >
                 Adicionar fazenda
               </Button>

@@ -14,10 +14,10 @@ import { cn } from "@/lib/utils";
 import styles from "./pesagens.module.css";
 
 /**
- * "Minhas pesagens": negócios liberados ("Público") para o usuário responsável. A API só
- * devolve a visão reduzida (sem comprador, valores nem comissão).
+ * Tela Negócios do usuário Normal: só os negócios liberados ("Público") para ele, como
+ * responsável. A API só devolve a visão reduzida (sem comprador, valores nem comissão).
  */
-export default function MinhasPesagensPage() {
+export function MinhasPesagens() {
   const [itens, setItens] = React.useState<ItemMinhasPesagens[] | null>(null);
   const [erro, setErro] = React.useState<string | null>(null);
   const [recarregar, setRecarregar] = React.useState(0);
@@ -32,7 +32,7 @@ export default function MinhasPesagensPage() {
         setErro(null);
       })
       .catch((err: unknown) => {
-        if (!cancelado) setErro(mensagemDeErro(err, "Erro ao carregar as pesagens."));
+        if (!cancelado) setErro(mensagemDeErro(err, "Erro ao carregar os negócios."));
       });
     return () => {
       cancelado = true;
@@ -41,9 +41,9 @@ export default function MinhasPesagensPage() {
 
   return (
     <div className={cn("page-container page-wide", styles.page, "pt-safe")}>
-      <h1 className="page-title">Minhas pesagens</h1>
+      <h1 className="page-title">Negócios Cadastrados</h1>
 
-      {itens === null && !erro ? <div className="state-box glass-panel">Carregando pesagens...</div> : null}
+      {itens === null && !erro ? <div className="state-box glass-panel">Carregando negócios...</div> : null}
 
       {erro && !itens ? (
         <div className="state-box state-error glass-panel">
@@ -63,7 +63,7 @@ export default function MinhasPesagensPage() {
       {itens && itens.length > 0 ? (
         <div className="card-list">
           {itens.map((item) => (
-            <Link key={item.negocio_id} href={`/pesagens/${item.negocio_id}`} className="list-card glass-panel">
+            <Link key={item.negocio_id} href={`/negocios/${item.negocio_id}`} className="list-card glass-panel">
               <span className="card-icon">
                 <Scale size={18} />
               </span>

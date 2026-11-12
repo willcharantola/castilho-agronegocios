@@ -23,6 +23,7 @@ import { ehLinkCurto, resolverLinkMapa, urlMapaEmbutido } from "@/lib/mapa";
 import { useOnlineStatus } from "@/lib/offline/use-online-status";
 import { cn } from "@/lib/utils";
 import styles from "./page.module.css";
+import { useIsAdmin } from "@/lib/permissoes";
 
 const schema = z.object({
   nome_fazenda: z.string().min(2, "Informe o nome da fazenda.").max(50),
@@ -37,6 +38,8 @@ type FormValues = z.infer<typeof schema>;
 
 export default function EditarFazendaPage() {
   const params = useParams<{ id: string }>();
+  // Normal: ficha só leitura (campos bloqueados, sem salvar nem excluir; a API recusa).
+  const admin = useIsAdmin();
   const router = useRouter();
   const [loadError, setLoadError] = React.useState<string | null>(null);
   const [submitError, setSubmitError] = React.useState<string | null>(null);
@@ -66,7 +69,7 @@ export default function EditarFazendaPage() {
     };
   }, [online, salvo.localizacao, linkExpandido?.curto]);
   const mapaEmbutido = urlMapaEmbutido(
-    linkExpandido && linkExpandido.curto === salvo.localizacao ? linkExpandido.completo : salvo.localizacao
+    linkExpandido && linkExpandido.curto === salvo.localizacao ? linkExpandido.completo : salvo.localizacao,
   );
 
   const {
@@ -133,7 +136,7 @@ export default function EditarFazendaPage() {
     <div className="page-container page-narrow pt-safe">
       <div className="page-header-acoes">
         <BackLink href="/fazendas" />
-        {loaded ? (
+        {loaded && admin ? (
           <BotaoExcluir
             descricao={`a ${formatFazenda(nome)}`}
             excluir={() => deleteFazenda(params.id)}
@@ -141,14 +144,14 @@ export default function EditarFazendaPage() {
           />
         ) : null}
       </div>
-      <h1 className="page-title">Editar Fazenda</h1>
+      <h1 className="page-title">{admin ? "Editar Fazenda" : "Fazenda"}</h1>
 
       {!loaded && !loadError ? <div className="state-box glass-panel">Carregando fazenda...</div> : null}
       {loadError ? <div className="state-box state-error glass-panel">{loadError}</div> : null}
 
       {loaded ? (
         <form onSubmit={handleSubmit(onSubmit)} className="form-stack">
-          <div className="form-fields">
+          <fieldset className="form-fields ficha-campos" disabled={!admin}>
             {submitError ? <p className="form-error">{submitError}</p> : null}
 
             <Controller
@@ -165,7 +168,12 @@ export default function EditarFazendaPage() {
               )}
             />
 
-            <IconField icon={Warehouse} label="Nome Fazenda" htmlFor="nome_fazenda" error={errors.nome_fazenda?.message}>
+            <IconField
+              icon={Warehouse}
+              label="Nome Fazenda"
+              htmlFor="nome_fazenda"
+              error={errors.nome_fazenda?.message}
+            >
               <TintedInput id="nome_fazenda" tint="pink" {...register("nome_fazenda")} />
             </IconField>
 
@@ -174,7 +182,6 @@ export default function EditarFazendaPage() {
             </IconField>
 
             <DocumentosFazendaFields control={control} errors={errors} icone={FileText} copiavel />
-
 
             <IconField icon={Type} label="Marca escrita" htmlFor="marca_escrita" error={errors.marca_escrita?.message}>
               <TintedInput id="marca_escrita" tint="pink" maxLength={10} {...register("marca_escrita")} />
@@ -201,7 +208,7 @@ export default function EditarFazendaPage() {
                 />
               </a>
             ) : null}
-          </div>
+          </fieldset>
 
           <section className={styles.pecuaristas}>
             <p className="section-title">Pecuaristas associados</p>
@@ -226,9 +233,11 @@ export default function EditarFazendaPage() {
             )}
           </section>
 
-          <Button type="submit" variant="brand" size="xl" className="w-full" disabled={isSubmitting || enviandoMarca}>
-            {isSubmitting ? "Salvando..." : enviandoMarca ? "Enviando imagem..." : "Salvar"}
-          </Button>
+          {admin ? (
+            <Button type="submit" variant="brand" size="xl" className="w-full" disabled={isSubmitting || enviandoMarca}>
+              {isSubmitting ? "Salvando..." : enviandoMarca ? "Enviando imagem..." : "Salvar"}
+            </Button>
+          ) : null}
         </form>
       ) : null}
     </div>
