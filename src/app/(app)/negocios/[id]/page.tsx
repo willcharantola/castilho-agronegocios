@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useParams } from "next/navigation";
 import { FileText, Plus } from "lucide-react";
+import { AcessoNegocioForm } from "@/components/acesso-negocio-form";
 import { useAviso } from "@/components/aviso";
 import { BackLink } from "@/components/back-link";
 import { BotaoExcluir } from "@/components/botao-excluir";
@@ -63,14 +64,14 @@ export default function NegocioDetailPage() {
       const { avisos, ...relatorio } = await gerarRomaneios(
         [dados],
         dados.fazenda ? { [dados.fazenda_id]: dados.fazenda } : {},
-        loteId !== undefined ? { loteId } : undefined
+        loteId !== undefined ? { loteId } : undefined,
       );
       entregarRelatorio(relatorio);
       for (const aviso of avisos) avisar(aviso, "aviso");
       if (temPendenciaNoRomaneio(negocio, loteId)) {
         avisar(
           "Relatório gerado com dados ainda não sincronizados: os valores são estimados e podem mudar na sincronização.",
-          "aviso"
+          "aviso",
         );
       }
     } catch (err) {
@@ -93,9 +94,7 @@ export default function NegocioDetailPage() {
                 descricao="este negócio, com todos os lotes e cabeças"
                 excluir={() => deleteNegocio(negocio.negocio_id)}
                 destino="/negocios"
-                bloqueio={
-                  !sincronizado || temPendencias ? "Disponível após a sincronização" : null
-                }
+                bloqueio={!sincronizado || temPendencias ? "Disponível após a sincronização" : null}
               />
             ) : null}
           </div>
@@ -131,6 +130,15 @@ export default function NegocioDetailPage() {
               key={negocio.tipo_negocio}
               negocioId={negocio.negocio_id}
               tipoNegocio={negocio.tipo_negocio}
+              onUpdated={() => recarregar()}
+            />
+          ) : null}
+
+          {/* Responsável e visualização (Público/Privado): só Admin, negócio já no servidor. */}
+          {sincronizado && comissao.admin ? (
+            <AcessoNegocioForm
+              key={`${negocio.responsavel_id}-${negocio.status_visualizacao}`}
+              negocio={negocio}
               onUpdated={() => recarregar()}
             />
           ) : null}

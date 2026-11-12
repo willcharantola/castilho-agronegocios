@@ -25,6 +25,11 @@ type GadoFormOutput = z.output<typeof schema>;
 
 export type GadoFormValues = { loteId: number; pesoTotal: number };
 
+/** Lote como o formulário usa. Sem `valor_unidade` (pesagem do usuário Normal), não há preço. */
+export type LoteDoGadoForm = Pick<Lote, "lote_id" | "nome_lote" | "tipo_lote" | "genero" | "rendimento_carcaca"> & {
+  valor_unidade?: number;
+};
+
 /** "Boi · Macho · Rend. 53,5%" — subtítulo do botão do lote. */
 export function resumoLote(lote: Pick<Lote, "tipo_lote" | "genero" | "rendimento_carcaca">, modalidade: Modalidade) {
   const partes = [TIPO_LOTE_LABELS[lote.tipo_lote], GENERO_LABELS[lote.genero]];
@@ -46,13 +51,14 @@ export function GadoForm({
   submittingLabel,
   resetAfterSubmit = false,
   idPrefix = "",
+  semValores = false,
   onSubmit,
 }: {
   modalidade: Modalidade;
   /** Tipo de gado do negócio: em "kg", define a arroba da prévia (÷ 15 ou ÷ 30). */
   tipoGado: TipoGado;
   /** Lotes do negócio, em grade, seleção única (a prévia usa o preço do lote escolhido). */
-  lotes: Lote[];
+  lotes: LoteDoGadoForm[];
   /** Cabeça em edição, ou o lote pré-selecionado (o último usado) no cadastro. */
   defaultValues?: { loteId?: number | null; pesoTotal?: number };
   submitLabel: string;
@@ -61,6 +67,8 @@ export function GadoForm({
   resetAfterSubmit?: boolean;
   /** Evita ids duplicados quando o formulário aparece duas vezes na tela (ex.: modal). */
   idPrefix?: string;
+  /** Pesagem do usuário Normal: nem preço do lote nem valor da cabeça vão para a tela. */
+  semValores?: boolean;
   /** Lança erro para exibi-lo no formulário. */
   onSubmit: (values: GadoFormValues) => Promise<void>;
 }) {
@@ -90,15 +98,18 @@ export function GadoForm({
         modalidade,
         pesoTotal,
         loteEscolhido.rendimento_carcaca,
-        loteEscolhido.valor_unidade,
-        tipoGado
+        loteEscolhido.valor_unidade ?? 0,
+        tipoGado,
       )
     : { pesoCalculo: 0, pesoArroba: 0, valorTotal: 0 };
 
   const opcoes: OpcaoBotao<string>[] = lotes.map((lote) => ({
     value: String(lote.lote_id),
     label: lote.nome_lote,
-    detalhe: `${resumoLote(lote, modalidade)} · ${formatCurrency(lote.valor_unidade)}`,
+    detalhe:
+      semValores || lote.valor_unidade === undefined
+        ? resumoLote(lote, modalidade)
+        : `${resumoLote(lote, modalidade)} · ${formatCurrency(lote.valor_unidade)}`,
   }));
 
   async function submit(values: GadoFormOutput) {
@@ -173,10 +184,12 @@ export function GadoForm({
         </Field>
       </div>
 
-      <div className={styles.totalRow}>
-        <span className={styles.totalLabel}>Valor</span>
-        <span className={styles.totalValue}>{formatCurrency(previa.valorTotal)}</span>
-      </div>
+      {semValores ? null : (
+        <div className={styles.totalRow}>
+          <span className={styles.totalLabel}>Valor</span>
+          <span className={styles.totalValue}>{formatCurrency(previa.valorTotal)}</span>
+        </div>
+      )}
 
       {submitError ? <p className="form-error">{submitError}</p> : null}
 

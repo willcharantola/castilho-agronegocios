@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Building2, Handshake, TrendingUp, Users, DollarSign, Warehouse, type LucideIcon } from "lucide-react";
+import { Building2, Handshake, Scale, TrendingUp, Users, DollarSign, Warehouse, type LucideIcon } from "lucide-react";
 import Logo from "@/assets/logo-castilho.svg";
 import { Button } from "@/components/ui/button";
 import { TintedInput } from "@/components/form/tinted-input";
@@ -13,7 +13,7 @@ import { fetchResumoNegocios } from "@/lib/api/negocios";
 import { fetchFazendas } from "@/lib/api/fazendas";
 import { fetchPecuaristas } from "@/lib/api/pecuaristas";
 import { fetchCompradores } from "@/lib/api/compradores";
-import { BotaoOlhoComissao, exibirComissao, useExibicaoComissao } from "@/lib/permissoes";
+import { BotaoOlhoComissao, exibirComissao, useExibicaoComissao, useUsuario } from "@/lib/permissoes";
 import type { ResumoNegocios } from "@/lib/api/types";
 import styles from "./page.module.css";
 
@@ -39,12 +39,39 @@ function StatTile({
   );
 }
 
-function NavShortcut({ icon: Icon, label, count, href }: { icon: LucideIcon; label: string; count: number; href: string }) {
-  return (
-    <Link href={href} className={cn(styles.shortcut, )}>
+function NavShortcut({
+  icon: Icon,
+  label,
+  href,
+  bloqueado = false,
+}: {
+  icon: LucideIcon;
+  label: string;
+  count?: number;
+  href: string;
+  /** Sem permissão: visível, mas desativado (não navega). */
+  bloqueado?: boolean;
+}) {
+  const conteudo = (
+    <>
       <Icon size={20} className={styles.shortcutIcon} />
       <p className={styles.shortcutLabel}>{label}</p>
-     
+    </>
+  );
+  if (bloqueado) {
+    return (
+      <span
+        aria-disabled="true"
+        title="Disponível apenas para administradores"
+        className={cn(styles.shortcut, "item-bloqueado")}
+      >
+        {conteudo}
+      </span>
+    );
+  }
+  return (
+    <Link href={href} className={styles.shortcut}>
+      {conteudo}
     </Link>
   );
 }
@@ -58,6 +85,7 @@ export default function HomePage() {
   const [resumo, setResumo] = React.useState<ResumoNegocios | null>(null);
   // Olho de privacidade (só Admin): os três números começam cobertos ("••••").
   const privacidade = useExibicaoComissao();
+  const usuario = useUsuario();
   const [fazendasCount, setFazendasCount] = React.useState<number | null>(null);
   const [pecuaristasCount, setPecuaristasCount] = React.useState<number | null>(null);
   const [compradoresCount, setCompradoresCount] = React.useState<number | null>(null);
@@ -74,6 +102,8 @@ export default function HomePage() {
   }, [dataInicio, dataFim]);
 
   React.useEffect(() => {
+    // Cadastros são só do Admin (a API responde 403 ao Normal).
+    if (!privacidade.admin) return;
     Promise.all([fetchFazendas(), fetchPecuaristas(), fetchCompradores()])
       .then(([fazendas, pecuaristas, compradores]) => {
         setFazendasCount(fazendas.length);
@@ -83,7 +113,7 @@ export default function HomePage() {
       .catch(() => {
         // Idem — falha silenciosa.
       });
-  }, []);
+  }, [privacidade.admin]);
 
   function resetarPeriodo() {
     setDataInicio(toDateInputValue(startOfMonth(hoje)));
@@ -92,10 +122,9 @@ export default function HomePage() {
 
   return (
     <div className={cn(styles.page, "pt-safe")}>
-
       <Image src={Logo} alt="Logo" className={styles.logo} />
 
- {/* 
+      {/* 
       <div className={styles.filterRow}>
         <div className={styles.filterField}>
           <label htmlFor="dataInicio" className={styles.filterLabel}>
@@ -148,7 +177,6 @@ export default function HomePage() {
           icon={TrendingUp}
           label="Negócios realizados"
           value={resumo ? exibirComissao(resumo.negocios_realizados, privacidade.exibicao, String) : "—"}
-
         />
         <StatTile
           icon={DollarSign}
@@ -162,23 +190,47 @@ export default function HomePage() {
         />
       </div>
 
+      {/* Normal: só "Minhas pesagens" ativo; os cadastros aparecem desativados. */}
       <div className={styles.shortcuts}>
-        <NavShortcut icon={Warehouse} label="Fazendas" count={fazendasCount ?? 0} href="/fazendas" />
-        <NavShortcut icon={Users} label="Pecuaristas" count={pecuaristasCount ?? 0} href="/pecuaristas" />
-        <NavShortcut icon={Building2} label="Frigoríficos" count={compradoresCount ?? 0} href="/compradores" />
-        <NavShortcut icon={Handshake} label="Negócios" count={resumo?.negocios_realizados ?? 0} href="/negocios" />
+        {usuario && !privacidade.admin ? <NavShortcut icon={Scale} label="Minhas pesagens" href="/pesagens" /> : null}
+        <NavShortcut
+          icon={Warehouse}
+          label="Fazendas"
+          count={fazendasCount ?? 0}
+          href="/fazendas"
+          bloqueado={!privacidade.admin}
+        />
+        <NavShortcut
+          icon={Users}
+          label="Pecuaristas"
+          count={pecuaristasCount ?? 0}
+          href="/pecuaristas"
+          bloqueado={!privacidade.admin}
+        />
+        <NavShortcut
+          icon={Building2}
+          label="Frigoríficos"
+          count={compradoresCount ?? 0}
+          href="/compradores"
+          bloqueado={!privacidade.admin}
+        />
+        <NavShortcut
+          icon={Handshake}
+          label="Negócios"
+          count={resumo?.negocios_realizados ?? 0}
+          href="/negocios"
+          bloqueado={!privacidade.admin}
+        />
       </div>
 
-      <div className={styles.actions}>
-      
-        <Button
-          className={styles.bottons}
-          render={<Link href="/negocios/novo" />}
-
-        >
-          Cadastrar Novo Negócio
-        </Button>
-      </div>
+      {/* Só o Admin cadastra negócios (a API recusa com 403). */}
+      {privacidade.admin ? (
+        <div className={styles.actions}>
+          <Button className={styles.bottons} render={<Link href="/negocios/novo" />}>
+            Cadastrar Novo Negócio
+          </Button>
+        </div>
+      ) : null}
     </div>
   );
 }

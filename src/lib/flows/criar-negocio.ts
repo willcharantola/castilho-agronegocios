@@ -40,6 +40,9 @@ export async function salvarNegocioDoFluxo(data: NegocioFlowData): Promise<numbe
     data_negocio: new Date(data.dataNegocio).toISOString(),
     porcentagem_comissao: data.porcentagemComissao ?? undefined,
     observacao: data.observacao || undefined,
+    // Fluxo salvo antes desta versão não tem os campos: a API usa o padrão (autor, "Privado").
+    responsavel_id: data.responsavelId ?? undefined,
+    status_visualizacao: data.statusVisualizacao || undefined,
   };
 
   if (data.negocioId) {
@@ -57,7 +60,7 @@ export async function salvarNegocioDoFluxo(data: NegocioFlowData): Promise<numbe
       await enviarOuEnfileirar(
         "negocio_atualizacao",
         { negocio_id: data.negocioId, ...comInformacoes },
-        ({ negocio_id, ...campos }) => updateNegocio(negocio_id as number, compradorParaApi(campos))
+        ({ negocio_id, ...campos }) => updateNegocio(negocio_id as number, compradorParaApi(campos)),
       );
     }
     return data.negocioId;
@@ -85,7 +88,7 @@ export async function salvarNegocioDoFluxo(data: NegocioFlowData): Promise<numbe
     },
     (payload, uuid) =>
       createNegocio({ ...(compradorParaApi(payload) as unknown as CreateNegocioInput), uuid_origem: uuid }),
-    { exibicao }
+    { exibicao },
   );
   return envio.sincronizado ? envio.resultado.negocio_id : idTemporario(envio.registro);
 }

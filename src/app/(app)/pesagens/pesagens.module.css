@@ -1,0 +1,72 @@
+.page {
+  /* Espaço para o conteúdo não ficar atrás da navegação inferior fixa. */
+  padding-bottom: 6rem;
+}
+
+.subtitle {
+  margin-top: 0.25rem;
+  font-size: var(--font-size-sm);
+  color: var(--color-ink-muted);
+}
+
+.secao {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.secaoTitulo {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-dark);
+}
+
+.lista {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: var(--radius-box);
+  background: rgb(255 255 255 / 60%);
+}
+
+.lista > * + * {
+  border-top: 1px solid color-mix(in oklch, var(--color-olive) 15%, transparent);
+}
+
+.linha {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+}
+
+.linhaInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.linhaTitulo {
+  font-weight: 700;
+  color: var(--color-dark);
+}
+
+.linhaMeta {
+  font-size: 0.9em;
+  color: var(--color-ink-muted);
+}
+
+.peso {
+  font-weight: 700;
+  color: var(--color-dark);
+  white-space: nowrap;
+}
+
+.concluir {
+  margin-bottom: 0;
+}
+
+.concluido {
+  font-size: var(--font-size-sm);
+  color: var(--color-ink-muted);
+  text-align: center;
+}

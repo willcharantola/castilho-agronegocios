@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Building2, ChevronRight, Percent, Tags, UserRound, Users, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { clearSession } from "@/lib/api-client";
-import { limparCacheDeLeitura } from "@/lib/offline/cache";
+import { contarPendentesNaFila, limparCacheDeLeitura } from "@/lib/offline/cache";
 import { useUsuario } from "@/lib/permissoes";
 import { cn } from "@/lib/utils";
 import { NIVEL_LABELS } from "./usuarios/usuario-form";
@@ -32,8 +32,9 @@ const ITENS: ItemConfiguracao[] = [
     href: "/configuracoes/tipos-de-gado",
     icon: Tags,
     titulo: "Tipos de gado",
-    // Normal abre a lista só para consulta; só Admin cadastra, renomeia e exclui.
     descricao: "Nomes sugeridos ao cadastrar lotes",
+    // Só serve ao cadastro de lotes, que é do Admin (a API recusa a lista para Normal).
+    somenteAdmin: true,
   },
   {
     href: "/configuracoes/usuarios",
@@ -51,6 +52,16 @@ export default function ConfiguracoesPage() {
   const admin = usuario?.nivel_acesso === "Admin";
 
   async function handleLogout() {
+    const naFila = await contarPendentesNaFila();
+    if (
+      naFila > 0 &&
+      !window.confirm(
+        `Há ${naFila} cadastro(s) salvo(s) neste aparelho ainda não enviado(s). Eles continuam aqui se ` +
+          "você entrar de novo com esta conta, mas serão apagados se outro usuário entrar. Sair mesmo assim?",
+      )
+    ) {
+      return;
+    }
     clearSession();
     // Os dados guardados para uso offline são do usuário que saiu (ex.: comissão de um Admin).
     await limparCacheDeLeitura();
