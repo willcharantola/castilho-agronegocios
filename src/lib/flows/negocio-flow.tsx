@@ -1,7 +1,7 @@
 "use client";
 
 import { createFlowContext } from "@/lib/create-flow-context";
-import type { Modalidade, TipoComprador, TipoGado, TipoNegocio } from "@/lib/api/types";
+import type { Modalidade, StatusVisualizacao, TipoComprador, TipoGado, TipoNegocio } from "@/lib/api/types";
 
 /**
  * Fluxo do novo negócio: pecuarista → fazenda → comprador → modalidade → informações →
@@ -25,14 +25,19 @@ export type NegocioFlowData = {
   /** yyyy-mm-dd vindo de um <input type="date">. */
   dataNegocio: string;
   observacao: string;
+  /** Usuário responsável; null = o Admin que cadastra (padrão da API). */
+  responsavelId: number | null;
+  /** "Privado" (padrão): só Admin enxerga; "Publico": o responsável enxerga e pesa. */
+  statusVisualizacao: StatusVisualizacao;
   /** Setado assim que POST /negocios é bem-sucedido (negativo se ficou na fila offline). */
   negocioId: number | null;
   /** Último lote usado na pesagem — fica pré-selecionado na próxima cabeça. */
   ultimoLoteId: number | null;
 };
 
-export const { Provider: NegocioFlowProvider, useFlow: useNegocioFlow } =
-  createFlowContext<NegocioFlowData>("castilho:negocio-novo", {
+export const { Provider: NegocioFlowProvider, useFlow: useNegocioFlow } = createFlowContext<NegocioFlowData>(
+  "castilho:negocio-novo",
+  {
     pecuaristaId: null,
     pecuaristaNome: "",
     fazendaId: null,
@@ -46,9 +51,12 @@ export const { Provider: NegocioFlowProvider, useFlow: useNegocioFlow } =
     porcentagemComissao: null,
     dataNegocio: "",
     observacao: "",
+    responsavelId: null,
+    statusVisualizacao: "Privado",
     negocioId: null,
     ultimoLoteId: null,
-  });
+  },
+);
 
 /** Total de passos da barra de progresso do novo negócio. */
 export const PASSOS_NOVO_NEGOCIO = 8;

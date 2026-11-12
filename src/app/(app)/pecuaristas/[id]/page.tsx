@@ -18,9 +18,12 @@ import { ApiError } from "@/lib/api-client";
 import { mensagemDeErro } from "@/lib/offline/rede";
 import { cn } from "@/lib/utils";
 import styles from "./page.module.css";
+import { useIsAdmin } from "@/lib/permissoes";
 
 export default function EditarPecuaristaPage() {
   const params = useParams<{ id: string }>();
+  // Normal: ficha só leitura (campos bloqueados, sem salvar nem excluir; a API recusa).
+  const admin = useIsAdmin();
   const router = useRouter();
   const [fazendas, setFazendas] = React.useState<Fazenda[]>([]);
   const [loadError, setLoadError] = React.useState<string | null>(null);
@@ -93,7 +96,7 @@ export default function EditarPecuaristaPage() {
     <div className="page-container page-narrow pt-safe">
       <div className="page-header-acoes">
         <BackLink href="/pecuaristas" />
-        {loaded ? (
+        {loaded && admin ? (
           <BotaoExcluir
             descricao={`o pecuarista "${nome}"`}
             excluir={() => deletePecuarista(params.id)}
@@ -101,7 +104,7 @@ export default function EditarPecuaristaPage() {
           />
         ) : null}
       </div>
-      <h1 className="page-title">Editar Pecuarista</h1>
+      <h1 className="page-title">{admin ? "Editar Pecuarista" : "Pecuarista"}</h1>
 
       {!loaded && !loadError ? <div className="state-box glass-panel">Carregando pecuarista...</div> : null}
       {loadError ? <div className="state-box state-error glass-panel">{loadError}</div> : null}
@@ -109,11 +112,11 @@ export default function EditarPecuaristaPage() {
       {loaded ? (
         <>
           <form onSubmit={handleSubmit(onSubmit)} className="form-stack">
-            <div className="form-fields">
+            <fieldset className="form-fields ficha-campos" disabled={!admin}>
               <p className="section-title">Dados do pecuarista</p>
               {submitError ? <p className="form-error">{submitError}</p> : null}
               <PecuaristaFields register={register} control={control} errors={errors} copiavel />
-            </div>
+            </fieldset>
 
             <section className={styles.fazendas}>
               <p className="section-title">Fazendas vinculadas</p>
@@ -144,8 +147,8 @@ export default function EditarPecuaristaPage() {
                           <p className="card-name">{formatFazenda(fazenda.nome_fazenda)}</p>
                         </Link>
                       </div>
-                      {/* Precisa de ao menos uma fazenda: a última não é desvinculada. */}
-                      {fazendas.length > 1 ? (
+                      {/* Precisa de ao menos uma fazenda: a última não é desvinculada. Só Admin. */}
+                      {admin && fazendas.length > 1 ? (
                         <button
                           type="button"
                           className={styles.desvincular}
@@ -162,11 +165,12 @@ export default function EditarPecuaristaPage() {
               )}
             </section>
 
-            <Button type="submit" variant="brand" size="xl" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? "Salvando..." : "Salvar Dados"}
-            </Button>
+            {admin ? (
+              <Button type="submit" variant="brand" size="xl" className="w-full" disabled={isSubmitting}>
+                {isSubmitting ? "Salvando..." : "Salvar Dados"}
+              </Button>
+            ) : null}
           </form>
-
         </>
       ) : null}
     </div>

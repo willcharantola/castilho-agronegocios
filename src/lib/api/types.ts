@@ -120,6 +120,15 @@ export type AgregadosPeso = {
   rendimento_medio: number | null;
 };
 
+/** Visualização do negócio: "Publico" = o responsável (Normal) enxerga e pesa; "Privado" = só Admin. */
+export type StatusVisualizacao = "Publico" | "Privado";
+
+/** Usuário responsável pelo negócio, como a API devolve (só para Admin). */
+export type ResponsavelNegocio = { usuario_id: number; nome: string };
+
+/** GET /usuarios/responsaveis (só Admin): opções do seletor "Usuário responsável". */
+export type OpcaoResponsavel = Pick<Usuario, "usuario_id" | "nome" | "sobrenome" | "nivel_acesso">;
+
 export type Negocio = {
   negocio_id: number;
   empresa_id: number;
@@ -172,6 +181,10 @@ export type Negocio = {
    */
   aliquota_funrural: number | null;
   aliquota_senar: number | null;
+  /** Ausentes em respostas antigas guardadas no aparelho e em negócios só no aparelho. */
+  responsavel_id?: number;
+  responsavel?: ResponsavelNegocio | null;
+  status_visualizacao?: StatusVisualizacao;
 } & AgregadosPeso;
 
 /**
@@ -226,6 +239,45 @@ export type NegocioDetail = Negocio & {
   lotes: LoteDetail[];
   pecuarista: Pecuarista;
   fazenda?: Fazenda;
+};
+
+// Visão reduzida do usuário Normal (pesagem): sem comprador, valores, comissão nem impostos.
+
+/** Cabeça lançada, sem valores. */
+export type GadoPesagem = {
+  gado_id: number;
+  lote_id: number;
+  peso_total: number;
+  data_pesagem: string;
+  horario_pesagem: string | null;
+};
+
+/** Item de GET /negocios/minhas-pesagens. */
+export type ItemMinhasPesagens = {
+  negocio_id: number;
+  data_negocio: string;
+  modalidade: Modalidade;
+  tipo_gado: TipoGado;
+  qtd_animais: number;
+  hora_inicio_pesagem: string | null;
+  hora_fim_pesagem: string | null;
+  nome_fazenda: string;
+  nome_pecuarista: string;
+  gados_pesados: number;
+};
+
+/** GET /negocios/:id/pesagem: lotes sem preço e as cabeças já lançadas. */
+export type NegocioPesagem = Omit<ItemMinhasPesagens, "gados_pesados"> & {
+  lotes: {
+    lote_id: number;
+    nome_lote: string;
+    tipo_lote: TipoLote;
+    genero: Genero;
+    rendimento_carcaca: number;
+    qtd_animais: number;
+    qtd_gados: number;
+    gados: GadoPesagem[];
+  }[];
 };
 
 /** Configurações > Dados da empresa: todos consultam, só Admin altera. */
@@ -314,6 +366,10 @@ export type CreateNegocioInput = {
   /** Percentual (0 a 100); a API calcula `comissao` em R$. */
   porcentagem_comissao?: number;
   observacao?: string;
+  /** Sem informar, a API usa o Admin que cadastra. */
+  responsavel_id?: number;
+  /** Padrão na API: "Privado". */
+  status_visualizacao?: StatusVisualizacao;
 };
 export type UpdateNegocioInput = Partial<CreateNegocioInput>;
 

@@ -3,7 +3,10 @@
 import * as React from "react";
 import Link from "next/link";
 import { FileText, Search, Warehouse } from "lucide-react";
+import { SeloVisualizacao } from "@/components/acesso-negocio-form";
 import { useAviso } from "@/components/aviso";
+import { MinhasPesagens } from "@/components/pesagem/minhas-pesagens";
+import { VISUALIZACAO_LABELS, nomeDoUsuario, useResponsaveis } from "@/components/responsavel-fields";
 import { Button } from "@/components/ui/button";
 import { Fab } from "@/components/fab";
 import { formatCurrency, formatDate, formatPercent, formatFazenda } from "@/lib/format";
@@ -12,16 +15,27 @@ import { fetchNegocio, fetchNegocios } from "@/lib/api/negocios";
 import { fetchFazendas } from "@/lib/api/fazendas";
 import { gerarRomaneios } from "@/lib/relatorio-romaneio";
 import { useEntregarRelatorio } from "@/components/previa-relatorio";
-import type { Fazenda, Negocio } from "@/lib/api/types";
+import type { Fazenda, Negocio, StatusVisualizacao } from "@/lib/api/types";
 import { ApiError } from "@/lib/api-client";
 import { PendenteBadge } from "@/components/offline/pendente-badge";
 import { idTemporario, usePendentes, useVersaoSincronizacao } from "@/lib/offline/fila";
 import { mesclarPendentes, negocioDePendente, type ExibicaoNegocio } from "@/lib/offline/pendentes";
 import { formatarCriterioComissao, modoDoNegocio } from "@/lib/comissao";
-import { BotaoOlhoComissao, exibirComissao, useExibicaoComissao } from "@/lib/permissoes";
+import { BotaoOlhoComissao, exibirComissao, useExibicaoComissao, useUsuario } from "@/lib/permissoes";
 import styles from "./page.module.css";
 
+/**
+ * Admin: todos os negócios da empresa. Normal: só os liberados para ele (responsável e
+ * "Público"), na visão reduzida — a API não lhe devolve a listagem completa.
+ */
 export default function NegociosPage() {
+  const usuario = useUsuario();
+  // Perfil ainda não lido (primeira renderização): nada, para não buscar a lista errada.
+  if (!usuario) return null;
+  return usuario.nivel_acesso === "Admin" ? <NegociosAdmin /> : <MinhasPesagens />;
+}
+
+function NegociosAdmin() {
   const [negociosServidor, setNegocios] = React.useState<Negocio[] | null>(null);
   // Negócios criados offline aparecem no topo, marcados como pendentes de sincronização
   // (com os nomes de fazenda/comprador guardados no aparelho ao cadastrar).
@@ -30,11 +44,11 @@ export default function NegociosPage() {
     // A fila offline vem na ordem de sincronização (mais antigo primeiro); na tela, o
     // mais recente fica no topo, como na lista do servidor.
     () => mesclarPendentes(negociosServidor, registrosPendentes.map(negocioDePendente).reverse()),
-    [negociosServidor, registrosPendentes]
+    [negociosServidor, registrosPendentes],
   );
   const nomesPendentes = React.useMemo(
     () => Object.fromEntries(registrosPendentes.map((r) => [idTemporario(r), r.exibicao as ExibicaoNegocio])),
-    [registrosPendentes]
+    [registrosPendentes],
   );
   const versaoSincronizacao = useVersaoSincronizacao();
   const [fazendas, setFazendas] = React.useState<Fazenda[]>([]);
@@ -45,6 +59,9 @@ export default function NegociosPage() {
   const [fazendaId, setFazendaId] = React.useState("");
   const [dataInicio, setDataInicio] = React.useState("");
   const [dataFim, setDataFim] = React.useState("");
+  const [responsavelId, setResponsavelId] = React.useState("");
+  const [visualizacao, setVisualizacao] = React.useState<StatusVisualizacao | "">("");
+  const { responsaveis } = useResponsaveis();
 
   // Comissão: "-" para Normal; para Admin começa escondida e o olho revela todas as linhas.
   const comissao = useExibicaoComissao();
@@ -55,7 +72,7 @@ export default function NegociosPage() {
 
   const fazendasPorId = React.useMemo(
     () => Object.fromEntries(fazendas.map((f) => [f.fazenda_id, f.nome_fazenda])),
-    [fazendas]
+    [fazendas],
   );
 
   React.useEffect(() => {
@@ -69,6 +86,8 @@ export default function NegociosPage() {
         fazenda_id: fazendaId ? Number(fazendaId) : undefined,
         data_inicio: dataInicio || undefined,
         data_fim: dataFim || undefined,
+        responsavel_id: responsavelId ? Number(responsavelId) : undefined,
+        status_visualizacao: visualizacao || undefined,
       }),
       fetchFazendas(),
     ])
@@ -85,7 +104,7 @@ export default function NegociosPage() {
     return () => {
       cancelled = true;
     };
-  }, [reloadKey, fazendaId, dataInicio, dataFim, versaoSincronizacao]);
+  }, [reloadKey, fazendaId, dataInicio, dataFim, responsavelId, visualizacao, versaoSincronizacao]);
 
   const buscaLower = busca.trim().toLowerCase();
   const filtrados = negocios?.filter((negocio) => {
@@ -93,10 +112,7 @@ export default function NegociosPage() {
     const fazendaNome = nomesPendentes[negocio.negocio_id]?.fazendaNome ?? fazendasPorId[negocio.fazenda_id] ?? "";
     // Frigorífico ou pecuarista: o nome vem no comprador unificado da API.
     const compradorNome = nomesPendentes[negocio.negocio_id]?.compradorNome ?? negocio.comprador?.nome ?? "";
-    return (
-      fazendaNome.toLowerCase().includes(buscaLower) ||
-      compradorNome.toLowerCase().includes(buscaLower)
-    );
+    return fazendaNome.toLowerCase().includes(buscaLower) || compradorNome.toLowerCase().includes(buscaLower);
   });
 
   async function handleGerarRelatorio() {
@@ -109,14 +125,12 @@ export default function NegociosPage() {
       const detalhes = await Promise.all(sincronizados.map((n) => fetchNegocio(n.negocio_id)));
       const { avisos, ...relatorio } = await gerarRomaneios(
         detalhes,
-        Object.fromEntries(fazendas.map((f) => [f.fazenda_id, f]))
+        Object.fromEntries(fazendas.map((f) => [f.fazenda_id, f])),
       );
       entregarRelatorio(relatorio);
       for (const aviso of avisos) avisar(aviso, "aviso");
     } catch (err) {
-      avisar(
-        err instanceof ApiError || err instanceof Error ? err.message : "Erro ao gerar relatório."
-      , "aviso");
+      avisar(err instanceof ApiError || err instanceof Error ? err.message : "Erro ao gerar relatório.", "aviso");
     } finally {
       setGerandoRelatorio(false);
     }
@@ -158,21 +172,48 @@ export default function NegociosPage() {
             onChange={(e) => setDataFim(e.target.value)}
           />
         </div>
+        <div className={styles.filterGroup}>
+          <label htmlFor="filtro-responsavel" className={styles.filterLabel}>
+            Responsável
+          </label>
+          <select
+            id="filtro-responsavel"
+            className={cn(styles.filterSelect, "glass-panel")}
+            value={responsavelId}
+            onChange={(e) => setResponsavelId(e.target.value)}
+          >
+            <option value="">Todos</option>
+            {(responsaveis ?? []).map((u) => (
+              <option key={u.usuario_id} value={u.usuario_id}>
+                {nomeDoUsuario(u)}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className={styles.filterGroup}>
+          <label htmlFor="filtro-visualizacao" className={styles.filterLabel}>
+            Visualização
+          </label>
+          <select
+            id="filtro-visualizacao"
+            className={cn(styles.filterSelect, "glass-panel")}
+            value={visualizacao}
+            onChange={(e) => setVisualizacao(e.target.value as StatusVisualizacao | "")}
+          >
+            <option value="">Todas</option>
+            <option value="Publico">{VISUALIZACAO_LABELS.Publico}</option>
+            <option value="Privado">{VISUALIZACAO_LABELS.Privado}</option>
+          </select>
+        </div>
       </div>
 
-      {negocios === null && !error ? (
-        <div className="state-box glass-panel">Carregando negócios...</div>
-      ) : null}
+      {negocios === null && !error ? <div className="state-box glass-panel">Carregando negócios...</div> : null}
 
       {error && !negocios ? (
         <div className="state-box state-error glass-panel">
           {error}
           <div>
-            <Button
-              className="retry-button"
-              variant="brand"
-              onClick={() => setReloadKey((k) => k + 1)}
-            >
+            <Button className="retry-button" variant="brand" onClick={() => setReloadKey((k) => k + 1)}>
               Tentar novamente
             </Button>
           </div>
@@ -202,42 +243,41 @@ export default function NegociosPage() {
                 <Warehouse size={18} />
               </span>
               <div className="card-info">
-
                 <p className="card-name">
                   {formatFazenda(
                     nomesPendentes[negocio.negocio_id]?.fazendaNome ??
                       fazendasPorId[negocio.fazenda_id] ??
-                      `#${negocio.fazenda_id}`
+                      `#${negocio.fazenda_id}`,
                   )}
                 </p>
 
                 <p className="card-meta">
-                  Comprador:{" "}
-                  {nomesPendentes[negocio.negocio_id]?.compradorNome ?? negocio.comprador?.nome ?? "—"}
+                  Comprador: {nomesPendentes[negocio.negocio_id]?.compradorNome ?? negocio.comprador?.nome ?? "—"}
                 </p>
                 <p className="card-meta">{formatDate(negocio.data_negocio)}</p>
 
-                 <p className="card-meta">
+                <p className="card-meta">
                   Comissão: {exibirComissao(negocio.comissao, comissao.exibicao, formatCurrency)}
                   {/* Critério (R$/@ ou %) só com o olho aberto: escondido fica só a máscara. */}
                   {comissao.exibicao === "visivel" && negocio.porcentagem_comissao !== null
                     ? ` (${formatarCriterioComissao(negocio.porcentagem_comissao, modoDoNegocio(negocio))})`
                     : null}
-                  
                 </p>
 
                 <p className="card-meta">Cabeças negociadas: {negocio.qtd_animais ?? "—"}</p>
+                {negocio.responsavel ? <p className="card-meta">Responsável: {negocio.responsavel.nome}</p> : null}
                 <p className="card-meta">
                   Valor líquido:{" "}
                   {negocio.valor_total_liquido !== null ? formatCurrency(negocio.valor_total_liquido) : "—"}
                 </p>
+                <SeloVisualizacao status={negocio.status_visualizacao} />
                 {negocio.pendente ? <PendenteBadge pendente={negocio.pendente} /> : null}
               </div>
               <div className={styles.cardAmount}>
-                 <p className={styles.cardCommission}>{negocio.valor_total_bruto !== null ? formatCurrency(negocio.valor_total_bruto) : "—"}</p>
+                <p className={styles.cardCommission}>
+                  {negocio.valor_total_bruto !== null ? formatCurrency(negocio.valor_total_bruto) : "—"}
+                </p>
                 <p className={styles.cardHeads}>Valor bruto</p>
-
-                
               </div>
             </Link>
           ))}

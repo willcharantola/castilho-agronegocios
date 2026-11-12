@@ -52,56 +52,69 @@ async function enviarPecuarista(p: Payload, uuid: string, registroId: number) {
         entidade: "fazenda",
         idReal: fazenda.fazenda_id,
       });
-    })
+    }),
   );
   return pecuarista.pecuarista_id;
 }
 
 /** Envia um registro já com as referências resolvidas; devolve o id real criado (se houver). */
-const ENVIAR: Record<
-  EntidadeOffline,
-  (payload: Payload, uuid: string, registroId: number) => Promise<number | null>
-> = {
-  fazenda: async (p, uuid) =>
-    (await createFazenda({ ...(p as CreateFazendaInput), uuid_origem: uuid })).fazenda_id,
-  pecuarista: enviarPecuarista,
-  comprador: async (p, uuid) =>
-    (await createComprador({ ...(p as CreateCompradorInput), uuid_origem: uuid })).comprador_id,
-  negocio: async (p, uuid) =>
-    (await createNegocio({ ...(compradorParaApi(p) as CreateNegocioInput), uuid_origem: uuid })).negocio_id,
-  // PATCH e conclusão regravam os mesmos valores — reenviar é inofensivo.
-  negocio_atualizacao: async (p) => {
-    const { negocio_id, ...campos } = p;
-    await updateNegocio(negocio_id as number, compradorParaApi(campos) as UpdateNegocioInput);
-    return null;
-  },
-  lote: async (p, uuid) => {
-    const { negocio_id, ...campos } = p;
-    return (await createLote(negocio_id as number, { ...(campos as CreateLoteInput), uuid_origem: uuid })).lote_id;
-  },
-  lote_atualizacao: async (p) => {
-    const { lote_id, ...campos } = p;
-    await updateLote(lote_id as number, campos as UpdateLoteInput);
-    return null;
-  },
-  // Excluir de novo um lote que já não existe (resposta perdida) não é erro.
-  lote_exclusao: async (p) => {
-    try {
-      await deleteLote(p.lote_id as number);
-    } catch (err) {
-      if (!(err instanceof ApiError && err.status === 404)) throw err;
-    }
-    return null;
-  },
-  gado: async (p, uuid) =>
-    (await createGado({ ...(p as CreateGadoOfflineInput), uuid_origem: uuid })).gado_id,
-  conclusao: async (p) => {
-    await concluirNegocio(p.negocio_id as number, p.hora_fim_pesagem as string);
-    return null;
-  },
-};
+const ENVIAR: Record<EntidadeOffline, (payload: Payload, uuid: string, registroId: number) => Promise<number | null>> =
+  {
+    fazenda: async (p, uuid) => (await createFazenda({ ...(p as CreateFazendaInput), uuid_origem: uuid })).fazenda_id,
+    pecuarista: enviarPecuarista,
+    comprador: async (p, uuid) =>
+      (await createComprador({ ...(p as CreateCompradorInput), uuid_origem: uuid })).comprador_id,
+    negocio: async (p, uuid) =>
+      (await createNegocio({ ...(compradorParaApi(p) as CreateNegocioInput), uuid_origem: uuid })).negocio_id,
+    // PATCH e conclusão regravam os mesmos valores — reenviar é inofensivo.
+    negocio_atualizacao: async (p) => {
+      const { negocio_id, ...campos } = p;
+      await updateNegocio(negocio_id as number, compradorParaApi(campos) as UpdateNegocioInput);
+      return null;
+    },
+    lote: async (p, uuid) => {
+      const { negocio_id, ...campos } = p;
+      return (await createLote(negocio_id as number, { ...(campos as CreateLoteInput), uuid_origem: uuid })).lote_id;
+    },
+    lote_atualizacao: async (p) => {
+      const { lote_id, ...campos } = p;
+      await updateLote(lote_id as number, campos as UpdateLoteInput);
+      return null;
+    },
+    // Excluir de novo um lote que já não existe (resposta perdida) não é erro.
+    lote_exclusao: async (p) => {
+      try {
+        await deleteLote(p.lote_id as number);
+      } catch (err) {
+        if (!(err instanceof ApiError && err.status === 404)) throw err;
+      }
+      return null;
+    },
+    gado: async (p, uuid) => (await createGado({ ...(p as CreateGadoOfflineInput), uuid_origem: uuid })).gado_id,
+    conclusao: async (p) => {
+      await concluirNegocio(p.negocio_id as number, p.hora_fim_pesagem as string);
+      return null;
+    },
+  };
 
 type ResultadoRegistro = "enviado" | "aguardando" | "erro" | "parar";
+
+export const MENSAGEM_SEM_PERMISSAO =
+  "Sem permissão: este negócio não está mais liberado para você. O dado continua salvo no " +
+  "aparelho; fale com o administrador ou descarte.";
+
+/**
+ * Pesagem (ou conclusão) recusada com 403/404: o Admin trocou o responsável ou passou o
+ * negócio para "Privado" depois que ela foi feita no aparelho.
+ */
+function mensagemDeRecusa(registro: RegistroSalvo, err: unknown) {
+  const semPermissao =
+    (registro.entidade === "gado" || registro.entidade === "conclusao") &&
+    err instanceof ApiError &&
+    (err.status === 403 || err.status === 404);
+  if (semPermissao) return MENSAGEM_SEM_PERMISSAO;
+  return err instanceof Error ? err.message : "Erro desconhecido";
+}
 
 async function enviarRegistro(registro: RegistroSalvo): Promise<ResultadoRegistro> {
   await offlineDb.pendentes.update(registro.id, { status: "sincronizando" });
@@ -136,18 +149,15 @@ async function enviarRegistro(registro: RegistroSalvo): Promise<ResultadoRegistr
   } catch (err) {
     // Sem rede ou sessão expirada (apiFetch já redireciona): o registro volta
     // para a fila intacto e a rodada para — tentar o resto agora só falharia igual.
-    if (
-      ehErroDeRede(err) ||
-      (err instanceof ApiError && err.status === 401)
-    ) {
+    if (ehErroDeRede(err) || (err instanceof ApiError && err.status === 401)) {
       await offlineDb.pendentes.update(registro.id, { status: "pendente" });
       return "parar";
     }
     // Rejeitado pelo servidor (ex.: dado inválido): fica com o motivo para o usuário
-    // corrigir ou descartar; não bloqueia os demais itens.
+    // corrigir ou descartar; não bloqueia os demais itens nem é reenviado sozinho.
     await offlineDb.pendentes.update(registro.id, {
       status: "erro",
-      erroMensagem: err instanceof Error ? err.message : "Erro desconhecido",
+      erroMensagem: mensagemDeRecusa(registro, err),
     });
     return "erro";
   }

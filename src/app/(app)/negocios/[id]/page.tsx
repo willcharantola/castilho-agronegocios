@@ -3,7 +3,9 @@
 import * as React from "react";
 import { useParams } from "next/navigation";
 import { FileText, Plus } from "lucide-react";
+import { AcessoNegocioForm } from "@/components/acesso-negocio-form";
 import { useAviso } from "@/components/aviso";
+import { PesagemNegocio } from "@/components/pesagem/pesagem-negocio";
 import { BackLink } from "@/components/back-link";
 import { BotaoExcluir } from "@/components/botao-excluir";
 import { Button } from "@/components/ui/button";
@@ -21,10 +23,21 @@ import { negocioParaRomaneio, temPendenciaNoRomaneio } from "@/lib/flows/romanei
 import { useNegocioComPendencias } from "@/lib/flows/use-negocio-com-pendencias";
 import { useCompradoresPendentes, useFazendasPendentes, usePecuaristasPendentes } from "@/lib/offline/pendentes";
 import { mensagemDeErro } from "@/lib/offline/rede";
-import { BotaoOlhoComissao, useExibicaoComissao } from "@/lib/permissoes";
+import { BotaoOlhoComissao, useExibicaoComissao, useUsuario } from "@/lib/permissoes";
 import styles from "./page.module.css";
 
+/**
+ * Admin: detalhe completo do negócio. Normal: a tela de pesagem (lotes e pesos, sem
+ * valores) — a API só lhe devolve os negócios liberados para ele; os demais, 404.
+ */
 export default function NegocioDetailPage() {
+  const params = useParams<{ id: string }>();
+  const usuario = useUsuario();
+  if (!usuario) return null;
+  return usuario.nivel_acesso === "Admin" ? <NegocioDetailAdmin /> : <PesagemNegocio negocioId={Number(params.id)} />;
+}
+
+function NegocioDetailAdmin() {
   const params = useParams<{ id: string }>();
   const { negocio, erro, recarregar } = useNegocioComPendencias(Number(params.id));
 
@@ -63,14 +76,14 @@ export default function NegocioDetailPage() {
       const { avisos, ...relatorio } = await gerarRomaneios(
         [dados],
         dados.fazenda ? { [dados.fazenda_id]: dados.fazenda } : {},
-        loteId !== undefined ? { loteId } : undefined
+        loteId !== undefined ? { loteId } : undefined,
       );
       entregarRelatorio(relatorio);
       for (const aviso of avisos) avisar(aviso, "aviso");
       if (temPendenciaNoRomaneio(negocio, loteId)) {
         avisar(
           "Relatório gerado com dados ainda não sincronizados: os valores são estimados e podem mudar na sincronização.",
-          "aviso"
+          "aviso",
         );
       }
     } catch (err) {
@@ -93,9 +106,7 @@ export default function NegocioDetailPage() {
                 descricao="este negócio, com todos os lotes e cabeças"
                 excluir={() => deleteNegocio(negocio.negocio_id)}
                 destino="/negocios"
-                bloqueio={
-                  !sincronizado || temPendencias ? "Disponível após a sincronização" : null
-                }
+                bloqueio={!sincronizado || temPendencias ? "Disponível após a sincronização" : null}
               />
             ) : null}
           </div>
@@ -131,6 +142,15 @@ export default function NegocioDetailPage() {
               key={negocio.tipo_negocio}
               negocioId={negocio.negocio_id}
               tipoNegocio={negocio.tipo_negocio}
+              onUpdated={() => recarregar()}
+            />
+          ) : null}
+
+          {/* Responsável e visualização (Público/Privado): só Admin, negócio já no servidor. */}
+          {sincronizado && comissao.admin ? (
+            <AcessoNegocioForm
+              key={`${negocio.responsavel_id}-${negocio.status_visualizacao}`}
+              negocio={negocio}
               onUpdated={() => recarregar()}
             />
           ) : null}

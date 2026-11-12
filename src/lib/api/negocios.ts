@@ -1,12 +1,16 @@
 import { apiFetch } from "@/lib/api-client";
 import { decimalOuNull, normalizeAgregadosPeso, normalizeLoteDetail } from "@/lib/api/lotes";
-import { comCache } from "@/lib/offline/cache";
+import { comCache, descartarPesagensForaDaLista } from "@/lib/offline/cache";
 import type {
   CreateNegocioInput,
+  GadoPesagem,
+  ItemMinhasPesagens,
   Negocio,
   NegocioDetail,
+  NegocioPesagem,
   OrigemOffline,
   ResumoNegocios,
+  StatusVisualizacao,
   UpdateNegocioInput,
 } from "@/lib/api/types";
 
@@ -44,18 +48,23 @@ export function compradorParaApi(payload: Record<string, unknown>): Record<strin
   return resto;
 }
 
-export async function fetchNegocios(params?: {
-  fazenda_id?: number;
-  data_inicio?: string;
-  data_fim?: string;
-}) {
+export async function fetchNegocios(params?: FiltrosNegocios) {
   const qs = filtrosNegocios(params);
   const negocios = await comCache(`negocios${qs}`, () => apiFetch<Negocio[]>(`/negocios${qs}`));
   return negocios.map(normalizeNegocio);
 }
 
+/** Filtros de GET /negocios (responsável e visualização só na listagem do Admin). */
+export type FiltrosNegocios = {
+  fazenda_id?: number;
+  data_inicio?: string;
+  data_fim?: string;
+  responsavel_id?: number;
+  status_visualizacao?: StatusVisualizacao;
+};
+
 /** Query string dos filtros da listagem (só os informados). */
-function filtrosNegocios(params?: { fazenda_id?: number; data_inicio?: string; data_fim?: string }) {
+function filtrosNegocios(params?: FiltrosNegocios) {
   const entries = Object.entries(params ?? {}).filter(([, v]) => v !== undefined);
   return entries.length > 0 ? `?${new URLSearchParams(entries.map(([k, v]) => [k, String(v)])).toString()}` : "";
 }
@@ -110,4 +119,33 @@ export async function updateNegocio(id: number | string, input: UpdateNegocioInp
 /** Só Admin (a API responde 403 para Normal). Lotes e cabeças saem junto. */
 export async function deleteNegocio(id: number | string) {
   await apiFetch<unknown>(`/negocios/${id}`, { method: "DELETE" });
+}
+
+// Pesagem (usuário Normal responsável). Visão reduzida: a API não envia comprador, valores
+// nem comissão. As leituras ficam no aparelho para pesar sem internet.
+
+function normalizePesagemGado(g: GadoPesagem): GadoPesagem {
+  return { ...g, peso_total: Number(g.peso_total) };
+}
+
+/**
+ * Negócios "Publico" sob a responsabilidade do usuário. Online, também apaga do aparelho a
+ * leitura dos negócios que deixaram de ser dele (outro responsável ou "Privado").
+ */
+export async function fetchMinhasPesagens(): Promise<ItemMinhasPesagens[]> {
+  const itens = await comCache("minhas-pesagens", () => apiFetch<ItemMinhasPesagens[]>("/negocios/minhas-pesagens"));
+  if (navigator.onLine) await descartarPesagensForaDaLista(itens.map((i) => i.negocio_id));
+  return itens;
+}
+
+export async function fetchNegocioPesagem(id: number | string): Promise<NegocioPesagem> {
+  const negocio = await comCache(`pesagem:${id}`, () => apiFetch<NegocioPesagem>(`/negocios/${id}/pesagem`));
+  return {
+    ...negocio,
+    lotes: negocio.lotes.map((l) => ({
+      ...l,
+      rendimento_carcaca: Number(l.rendimento_carcaca),
+      gados: l.gados.map(normalizePesagemGado),
+    })),
+  };
 }

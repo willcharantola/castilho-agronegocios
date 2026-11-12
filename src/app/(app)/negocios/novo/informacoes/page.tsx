@@ -12,6 +12,9 @@ import { Field } from "@/components/form/field";
 import { TintedInput } from "@/components/form/tinted-input";
 import { OpcoesBotoes, opcoesDeLabels } from "@/components/form/opcoes-botoes";
 import { Button } from "@/components/ui/button";
+import { CampoResponsavel, CampoVisualizacao } from "@/components/responsavel-fields";
+import { getUsuario } from "@/lib/api-client";
+import { useIsAdmin } from "@/lib/permissoes";
 import { toDateInputValue, formatFazenda } from "@/lib/format";
 import { MODALIDADE_LABELS, TIPO_GADO_LABELS, TIPO_NEGOCIO_LABELS } from "@/lib/labels";
 import { PASSOS_NOVO_NEGOCIO, useNegocioFlow } from "@/lib/flows/negocio-flow";
@@ -29,6 +32,8 @@ const schema = z.object({
   // Sem valor padrão: o usuário precisa escolher (define Funrural e Senar).
   tipo_negocio: z.enum(["Desconto em folha", "Livre", "Funrural"], { error: "Selecione o tipo de negócio." }),
   observacao: z.string().max(100).optional(),
+  responsavel_id: z.number({ error: "Escolha o usuário responsável." }).int(),
+  status_visualizacao: z.enum(["Publico", "Privado"], { error: "Escolha a visualização." }),
 });
 type FormInput = z.input<typeof schema>;
 type FormValues = z.output<typeof schema>;
@@ -39,6 +44,8 @@ const OPCOES_TIPO_NEGOCIO = opcoesDeLabels(TIPO_NEGOCIO_LABELS);
 export default function NovoNegocioInformacoesPage() {
   const router = useRouter();
   const { data, update } = useNegocioFlow();
+  // Responsável e visualização: só o Admin escolhe.
+  const admin = useIsAdmin();
   const [submitError, setSubmitError] = React.useState<string | null>(null);
   const {
     register,
@@ -51,6 +58,10 @@ export default function NovoNegocioInformacoesPage() {
       tipo_gado: data.tipoGado || undefined,
       tipo_negocio: data.tipoNegocio || undefined,
       observacao: data.observacao,
+      // Padrão: quem cadastra, e "Privado". O Normal não escolhe: a API grava ele mesmo como
+      // responsável e "Publico".
+      responsavel_id: data.responsavelId ?? getUsuario()?.usuario_id,
+      status_visualizacao: getUsuario()?.nivel_acesso === "Admin" ? data.statusVisualizacao || "Privado" : "Publico",
     },
   });
 
@@ -70,6 +81,8 @@ export default function NovoNegocioInformacoesPage() {
       dataNegocio: data.dataNegocio || toDateInputValue(new Date()),
       porcentagemComissao: null,
       observacao: values.observacao ?? "",
+      responsavelId: values.responsavel_id,
+      statusVisualizacao: values.status_visualizacao,
     };
     try {
       // Cria o negócio (ou atualiza, se o usuário voltou a esta tela). Id negativo = na fila offline.
@@ -139,6 +152,35 @@ export default function NovoNegocioInformacoesPage() {
             />
           </Field>
 
+          {admin ? (
+            <>
+              <Controller
+                control={control}
+                name="responsavel_id"
+                render={({ field }) => (
+                  <CampoResponsavel
+                    id="responsavel_id"
+                    value={field.value}
+                    onChange={field.onChange}
+                    error={errors.responsavel_id?.message}
+                  />
+                )}
+              />
+
+              <Controller
+                control={control}
+                name="status_visualizacao"
+                render={({ field }) => (
+                  <CampoVisualizacao
+                    id="status_visualizacao"
+                    value={field.value}
+                    onChange={field.onChange}
+                    error={errors.status_visualizacao?.message}
+                  />
+                )}
+              />
+            </>
+          ) : null}
 
           <Field label="Observação (opcional)" htmlFor="observacao" error={errors.observacao?.message}>
             <TintedInput id="observacao" tint="pink" {...register("observacao")} />

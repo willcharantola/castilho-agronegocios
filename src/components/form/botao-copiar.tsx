@@ -43,23 +43,30 @@ export function BotaoCopiar({ alvo, rotulo }: { alvo: string; rotulo: string }) 
     }
   }
 
+  // Não é um <button>: nas fichas só leitura os campos ficam num <fieldset disabled>, que
+  // desativaria um botão de verdade — e copiar precisa continuar funcionando.
   return (
-    <button type="button" className={styles.botao} onClick={copiar} aria-label={`Copiar ${rotulo}`} title="Copiar">
+    <span
+      role="button"
+      tabIndex={0}
+      className={styles.botao}
+      onClick={copiar}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          void copiar();
+        }
+      }}
+      aria-label={`Copiar ${rotulo}`}
+      title="Copiar"
+    >
       <Copy size={18} />
-    </button>
+    </span>
   );
 }
 
 /** Campo + botão de copiar na mesma linha; sem `alvo`, só o campo. */
-export function ComCopiar({
-  alvo,
-  rotulo,
-  children,
-}: {
-  alvo?: string;
-  rotulo: string;
-  children: React.ReactNode;
-}) {
+export function ComCopiar({ alvo, rotulo, children }: { alvo?: string; rotulo: string; children: React.ReactNode }) {
   if (!alvo) return <>{children}</>;
   return (
     <div className={styles.linha}>

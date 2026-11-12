@@ -3,9 +3,31 @@ import PizZip from "pizzip";
 const PT_POR_EMU = 1 / 12700;
 
 /** Marca d'água do Word (imagem VML no cabeçalho), tirada do documento para ser desenhada no PDF. */
-type MarcaDagua = { dataUrl: string; larguraPt: number; alturaPt: number };
+type MarcaDagua = {
+  dataUrl: string;
+  larguraPt: number;
+  alturaPt: number;
+  /**
+   * Opacidade de 0 a 1. O "desbotar" do Word (`<v:imagedata gain="19661f">`, 19661/65536 ≈ 30%
+   * de contraste) clareia a imagem; sobre o fundo branco, desenhá-la com essa opacidade dá
+   * o mesmo tom claro.
+   */
+  opacidade: number;
+};
 
-const TIPOS_IMAGEM: Record<string, string> = { png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", gif: "image/gif" };
+/** "19661f" (fração de 65536) ou "0.3" → número; ausente/inválido → null. */
+function fracaoVml(valor: string | undefined) {
+  if (!valor) return null;
+  const n = valor.endsWith("f") ? Number(valor.slice(0, -1)) / 65536 : Number(valor);
+  return Number.isFinite(n) ? n : null;
+}
+
+const TIPOS_IMAGEM: Record<string, string> = {
+  png: "image/png",
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  gif: "image/gif",
+};
 
 /**
  * O docx-preview desenha a marca d'água (`<v:shape id="WordPictureWatermark…">`) onde está o
@@ -29,7 +51,13 @@ function extrairMarcaDagua(zip: PizZip): MarcaDagua | null {
 
     zip.file(arquivo.name, xml.replace(pict[0], ""));
     const base64 = btoa(Array.from(imagem.asUint8Array(), (byte) => String.fromCharCode(byte)).join(""));
-    return { dataUrl: `data:${tipo};base64,${base64}`, larguraPt: Number(largura[1]), alturaPt: Number(altura[1]) };
+    const ganho = fracaoVml(/<v:imagedata\b[^>]*\bgain="([^"]+)"/.exec(pict[0])?.[1]);
+    return {
+      dataUrl: `data:${tipo};base64,${base64}`,
+      larguraPt: Number(largura[1]),
+      alturaPt: Number(altura[1]),
+      opacidade: ganho !== null && ganho > 0 && ganho < 1 ? ganho : 1,
+    };
   }
   return null;
 }
@@ -48,9 +76,10 @@ function carregarImagem(src: string) {
  * ignora e que nos modelos do romaneio levam conteúdo para fora da página (cortado):
  * - recuo de tabela (`<w:tblInd w:w="-825">`: ele só lê `left`/`start`) — as tabelas são
  *   puxadas para a margem esquerda com recuo negativo; o valor é repetido em `w:start`;
- * - deslocamento horizontal das imagens ancoradas no cabeçalho (`<wp:posOffset>`), que
- *   alinha a faixa do logotipo à borda da página. Ele só o aplica sem quebra de texto, então
- *   os deslocamentos (em pt, na ordem do cabeçalho) voltam para serem aplicados no HTML.
+ * - posição das imagens ancoradas no cabeçalho (`<wp:positionH>`/`<wp:positionV>`), que
+ *   alinha a faixa do logotipo à borda da página. Ele só a aplica sem quebra de texto, e
+ *   sempre a partir de onde o cabeçalho começa (dentro da margem); as posições (em pt, com a
+ *   referência de cada uma, na ordem do cabeçalho) voltam para serem aplicadas no HTML.
  */
 function prepararParaConversao(docx: ArrayBuffer) {
   const zip = new PizZip(docx);
@@ -59,32 +88,130 @@ function prepararParaConversao(docx: ArrayBuffer) {
     zip.file(
       "word/document.xml",
       documento.replace(/<w:tblInd\b([^>]*?)\bw:w="([^"]+)"([^>]*?)\/>/g, (tag, antes, valor, depois) =>
-        /\bw:(start|left)=/.test(tag) ? tag : `<w:tblInd${antes}w:w="${valor}" w:start="${valor}"${depois}/>`
-      )
+        /\bw:(start|left)=/.test(tag) ? tag : `<w:tblInd${antes}w:w="${valor}" w:start="${valor}"${depois}/>`,
+      ),
     );
   }
 
   const marcaDagua = extrairMarcaDagua(zip);
 
-  const deslocamentosCabecalho = zip
+  const ancorasCabecalho = zip
     .file(/^word\/header\d*\.xml$/)
     .sort((a, b) => a.name.localeCompare(b.name))
     .flatMap((arquivo) =>
-      Array.from(arquivo.asText().matchAll(/<wp:anchor\b[\s\S]*?<\/wp:anchor>/g), ([ancora]) => {
-        const offset = /<wp:positionH\b[^>]*>\s*<wp:posOffset>(-?\d+)<\/wp:posOffset>/.exec(ancora);
-        return offset ? Number(offset[1]) * PT_POR_EMU : 0;
-      })
+      Array.from(arquivo.asText().matchAll(/<wp:anchor\b[\s\S]*?<\/wp:anchor>/g), ([ancora]) => ({
+        horizontal: posicaoDaAncora(ancora, "H"),
+        vertical: posicaoDaAncora(ancora, "V"),
+        // Com quebra de texto (quadrado, comprimido, acima e abaixo…), o texto do corpo não
+        // entra na área da imagem, nem na distância pedida abaixo dela (distB).
+        afastaTexto: !/<wp:wrapNone\b/.test(ancora) && !/<wp:anchor\b[^>]*\bbehindDoc="1"/.test(ancora),
+        distanciaAbaixoPt: Number(/<wp:anchor\b[^>]*\bdistB="(\d+)"/.exec(ancora)?.[1] ?? 0) * PT_POR_EMU,
+      })),
     );
 
-  return { arquivo: zip.generate({ type: "arraybuffer" }), deslocamentosCabecalho, marcaDagua };
+  return { arquivo: zip.generate({ type: "arraybuffer" }), ancorasCabecalho, marcaDagua };
 }
 
-/** Aplica os deslocamentos das imagens do cabeçalho (ver prepararParaConversao) a cada página. */
-function deslocarImagensDoCabecalho(pagina: HTMLElement, deslocamentos: number[]) {
-  const ancoras = pagina.querySelectorAll<HTMLElement>(':scope > header [style*="position: relative"]');
-  ancoras.forEach((ancora, i) => {
-    if (deslocamentos[i]) ancora.style.left = `${deslocamentos[i]}pt`;
+/** Posição de uma imagem ancorada: deslocamento (pt) e a referência ("page", "column"…). */
+type PosicaoAncora = { referencia: string; pt: number } | null;
+type AncoraCabecalho = {
+  horizontal: PosicaoAncora;
+  vertical: PosicaoAncora;
+  afastaTexto: boolean;
+  distanciaAbaixoPt: number;
+};
+
+const POSICAO_ANCORA = {
+  H: /<wp:positionH\b[^>]*\brelativeFrom="([^"]+)"[^>]*>\s*<wp:posOffset>(-?\d+)<\/wp:posOffset>/,
+  V: /<wp:positionV\b[^>]*\brelativeFrom="([^"]+)"[^>]*>\s*<wp:posOffset>(-?\d+)<\/wp:posOffset>/,
+};
+
+function posicaoDaAncora(ancora: string, eixo: "H" | "V"): PosicaoAncora {
+  const m = POSICAO_ANCORA[eixo].exec(ancora);
+  return m ? { referencia: m[1], pt: Number(m[2]) * PT_POR_EMU } : null;
+}
+
+/**
+ * Aplica a posição das imagens do cabeçalho (ver prepararParaConversao) a uma página.
+ * - Ancorada verticalmente na página ou na margem (o Google Docs exporta assim): sai do
+ *   fluxo e vai para a posição exata na folha. Como no Word, com quebra de texto o corpo
+ *   começa abaixo dela (mais a distância `distB`), se ela passar da margem de cima.
+ * - Ancorada no parágrafo (modelos feitos no Word): só o deslocamento horizontal, a partir
+ *   de onde o docx-preview a desenhou.
+ */
+function posicionarImagensDoCabecalho(pagina: HTMLElement, ancoras: AncoraCabecalho[], ptPorPx: number) {
+  const elementos = Array.from(pagina.querySelectorAll<HTMLElement>(':scope > header [style*="position: relative"]'));
+  const base = pagina.getBoundingClientRect();
+  const estilo = getComputedStyle(pagina);
+  const margemEsquerda = parseFloat(estilo.paddingLeft) || 0;
+  const margemTopo = parseFloat(estilo.paddingTop) || 0;
+  // Mede tudo antes de mexer: tirar uma imagem do fluxo move as seguintes.
+  const atuais = elementos.map((el) => el.getBoundingClientRect());
+  const px = (pos: NonNullable<PosicaoAncora>) => pos.pt / ptPorPx;
+  // Até onde (px a partir do topo da página) as imagens fora do fluxo afastam o texto.
+  let fimDasImagens = 0;
+
+  elementos.forEach((el, i) => {
+    const ancora = ancoras[i];
+    const horizontal = ancora?.horizontal ?? null;
+    const vertical = ancora?.vertical ?? null;
+    const x = atuais[i].left - base.left;
+    // Esquerda (px a partir da borda da página) conforme a referência horizontal.
+    const esquerda = !horizontal
+      ? x
+      : horizontal.referencia === "page"
+        ? px(horizontal)
+        : horizontal.referencia === "margin" || horizontal.referencia === "column"
+          ? margemEsquerda + px(horizontal)
+          : x + px(horizontal);
+
+    if (vertical && (vertical.referencia === "page" || vertical.referencia === "margin")) {
+      const topo = (vertical.referencia === "margin" ? margemTopo : 0) + px(vertical);
+      pagina.style.position = "relative";
+      Object.assign(el.style, {
+        position: "absolute",
+        float: "none",
+        margin: "0",
+        left: `${esquerda}px`,
+        top: `${topo}px`,
+      });
+      if (ancora.afastaTexto) {
+        fimDasImagens = Math.max(fimDasImagens, topo + atuais[i].height + ancora.distanciaAbaixoPt / ptPorPx);
+      }
+      return;
+    }
+    // Continua no fluxo (position: relative): desloca só na horizontal.
+    if (horizontal) el.style.left = `${esquerda - x}px`;
   });
+
+  // O corpo começa onde o cabeçalho termina: se a imagem desce mais que isso, empurra.
+  const cabecalho = pagina.querySelector<HTMLElement>(":scope > header");
+  if (cabecalho && fimDasImagens > 0) {
+    const fimCabecalho = cabecalho.getBoundingClientRect().bottom - base.top;
+    if (fimDasImagens > fimCabecalho) cabecalho.style.marginBottom = `${fimDasImagens - fimCabecalho}px`;
+  }
+}
+
+/**
+ * Parágrafo vazio: o docx-preview dá a todo parágrafo no mínimo 1em de altura (16 px num
+ * texto de 12pt), mas no Word um parágrafo vazio ocupa uma linha do próprio espaçamento —
+ * nos modelos, os parágrafos de "0,3 linha" entre as tabelas têm uns 5 px. A altura passa a
+ * ser a linha dele: altura da fonte × multiplicador (a linha simples do Word é ~1,15 × a
+ * fonte, a do Arial/Calibri).
+ */
+const LINHA_SIMPLES_WORD = 1.15;
+
+function ajustarParagrafosVazios(pagina: HTMLElement) {
+  for (const p of pagina.querySelectorAll<HTMLElement>("p")) {
+    // Dentro de células a altura vem da linha da tabela: não mexe.
+    if (p.closest("td") || p.textContent?.trim() || p.querySelector("img, svg, canvas, table")) continue;
+    // line-height do docx-preview = multiplicador × tamanho da fonte ("normal" fica de fora).
+    const linha = parseFloat(getComputedStyle(p).lineHeight);
+    if (!Number.isFinite(linha)) continue;
+    const altura = linha * LINHA_SIMPLES_WORD;
+    p.style.minHeight = `${altura}px`;
+    p.style.height = `${altura}px`;
+  }
 }
 
 /** A4 em pontos, para quando o documento não informa o tamanho da página. */
@@ -104,8 +231,8 @@ function esperarImagens(raiz: HTMLElement) {
         : new Promise((resolve) => {
             img.onload = resolve;
             img.onerror = resolve;
-          })
-    )
+          }),
+    ),
   );
 }
 
@@ -116,7 +243,9 @@ function esperarImagens(raiz: HTMLElement) {
 function pontosDeCorte(pagina: HTMLElement) {
   const topo = pagina.getBoundingClientRect().top;
   // Parágrafos dentro de células não contam: a célula vizinha pode ter mais linhas.
-  const elementos = Array.from(pagina.querySelectorAll("tr, p")).filter((el) => el.tagName === "TR" || !el.closest("td"));
+  const elementos = Array.from(pagina.querySelectorAll("tr, p")).filter(
+    (el) => el.tagName === "TR" || !el.closest("td"),
+  );
   const fins = elementos.map((el) => Math.ceil(el.getBoundingClientRect().bottom - topo));
   return [...new Set(fins)].sort((a, b) => a - b);
 }
@@ -164,7 +293,7 @@ export async function docxParaPdf(docx: Blob): Promise<{ pdf: Blob; folhas: stri
   document.body.appendChild(palco);
 
   try {
-    const { arquivo, deslocamentosCabecalho, marcaDagua } = prepararParaConversao(await docx.arrayBuffer());
+    const { arquivo, ancorasCabecalho, marcaDagua } = prepararParaConversao(await docx.arrayBuffer());
     const imagemMarca = marcaDagua ? await carregarImagem(marcaDagua.dataUrl) : null;
     await renderAsync(arquivo, palco, undefined, {
       inWrapper: false,
@@ -183,13 +312,14 @@ export async function docxParaPdf(docx: Blob): Promise<{ pdf: Blob; folhas: stri
     let pdf: InstanceType<typeof jsPDF> | null = null;
     const folhas: string[] = [];
     for (const pagina of paginas) {
-      deslocarImagensDoCabecalho(pagina, deslocamentosCabecalho);
       const largura = emPontos(pagina.style.width) ?? A4_PT.largura;
       const altura = emPontos(pagina.style.minHeight) ?? A4_PT.altura;
       const orientacao = largura > altura ? "landscape" : "portrait";
 
       // px do HTML → pt do PDF e → px do canvas.
       const ptPorPx = largura / pagina.offsetWidth;
+      ajustarParagrafosVazios(pagina);
+      posicionarImagensDoCabecalho(pagina, ancorasCabecalho, ptPorPx);
       const estilo = getComputedStyle(pagina);
       const margemTopo = parseFloat(estilo.paddingTop) || 0;
       const margemBase = parseFloat(estilo.paddingBottom) || 0;
@@ -218,13 +348,25 @@ export async function docxParaPdf(docx: Blob): Promise<{ pdf: Blob; folhas: stri
           const centroY = (margemTopo + (altura / ptPorPx - margemTopo - margemBase) / 2) * escala;
           const w = marcaDagua.larguraPt * pxPorPt;
           const h = marcaDagua.alturaPt * pxPorPt;
+          ctx.globalAlpha = marcaDagua.opacidade;
           ctx.drawImage(imagemMarca, centroX - w / 2, centroY - h / 2, w, h);
+          ctx.globalAlpha = 1;
         }
 
         // A continuação de uma página começa abaixo da margem de cima, como no Word.
         const y = i === 0 ? 0 : Math.round(margemTopo * escala);
         const alturaTrecho = Math.max(1, Math.round((fim - inicio) * escala));
-        ctx.drawImage(canvas, 0, Math.round(inicio * escala), canvas.width, alturaTrecho, 0, y, canvas.width, alturaTrecho);
+        ctx.drawImage(
+          canvas,
+          0,
+          Math.round(inicio * escala),
+          canvas.width,
+          alturaTrecho,
+          0,
+          y,
+          canvas.width,
+          alturaTrecho,
+        );
 
         if (!pdf) pdf = new jsPDF({ unit: "pt", format: [largura, altura], orientation: orientacao });
         else pdf.addPage([largura, altura], orientacao);

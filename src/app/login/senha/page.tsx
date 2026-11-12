@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { useLoginFlow } from "@/lib/flows/login-flow";
 import { login } from "@/lib/api/auth";
 import { setSession } from "@/lib/api-client";
-import { limparCacheDeLeitura } from "@/lib/offline/cache";
+import { prepararAparelhoParaUsuario } from "@/lib/offline/cache";
 import styles from "./page.module.css";
 
 const schema = z.object({
@@ -43,8 +43,9 @@ export default function LoginSenhaPage() {
     setLoading(true);
     try {
       const { access_token, usuario } = await login(data.email, values.senha);
-      // Leituras offline de outra sessão (ex.: comissão vista por um Admin) não ficam no aparelho.
-      await limparCacheDeLeitura();
+      // Leituras offline de outra sessão (ex.: comissão vista por um Admin) não ficam no
+      // aparelho; a fila de envio só é mantida se for do mesmo usuário.
+      await prepararAparelhoParaUsuario(usuario.usuario_id);
       setSession(access_token, usuario);
       router.push("/");
     } catch (err) {
@@ -77,12 +78,11 @@ export default function LoginSenhaPage() {
                 autoFocus
                 {...register("senha")}
               />
-            
             </Field>
           </>
         }
         footer={
-          <Button type="submit"  className={styles.button} disabled={loading}>
+          <Button type="submit" className={styles.button} disabled={loading}>
             {loading ? "Entrando..." : "Próximo"}
           </Button>
         }

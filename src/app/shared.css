@@ -79,6 +79,22 @@
   gap: 1.25rem;
 }
 
+/* Ficha só leitura (usuário Normal): os campos ficam num <fieldset disabled>, sem a moldura
+   padrão do fieldset e com o texto legível (sem o esmaecido de campo desativado). */
+.ficha-campos {
+  min-width: 0;
+  margin: 0;
+  border: 0;
+  padding: 0;
+}
+
+.ficha-campos:disabled :disabled {
+  opacity: 1;
+  color: var(--color-ink);
+  -webkit-text-fill-color: var(--color-ink);
+  cursor: default;
+}
+
 .form-row {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
