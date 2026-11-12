@@ -18,7 +18,10 @@
   bottom: calc(9.5rem + env(safe-area-inset-bottom));
 }
 
-.button {
+/* `.wrap .button` (e não só `.button`): mais específico que as classes do Button base
+   (button.module.css), que definem outro raio, altura e margem com a mesma prioridade; sem
+   isso o formato dependeria da ordem em que o CSS das telas é carregado. */
+.wrap .button {
   pointer-events: auto;
   position: absolute;
   right: 1.5rem;
@@ -34,7 +37,7 @@
   box-shadow: 0 10px 24px -6px var(--shadow-color);
 }
 
-.button:hover:not(:disabled) {
+.wrap .button:hover:not(:disabled) {
   background: color-mix(in oklch, var(--color-dark) 90%, white);
 }
 
@@ -60,7 +63,7 @@
   /* Alinha à borda direita das listas, que ocupam 90% da coluna (5% de recuo de cada
      lado). `right` em % é relativo à caixa do .wrap incluindo o padding, então:
      2rem (padding) + 5% da largura útil (100% - 4rem) = 5% + 1.8rem. */
-  .button {
+  .wrap .button {
     right: calc(5% + 1.8rem);
   }
 }
