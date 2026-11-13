@@ -18,7 +18,8 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: max(env(safe-area-inset-top), 0.75rem) 1rem 0.75rem;
+  /* Mais afastado do topo da tela (e do notch/barra de status). */
+  padding: calc(max(env(safe-area-inset-top), 0.75rem) + 1rem) 1rem 1rem;
   color: #fff;
 }
 
@@ -82,9 +83,13 @@
   padding: 0.75rem 1rem max(env(safe-area-inset-bottom), 1rem);
 }
 
-/* O botão base tem margin-bottom: 50%. */
-.compartilhar {
+/* O botão base tem margin-bottom: 50%. Fundo branco com texto e ícone verdes, sobre o
+   fundo verde da tela. O seletor com :hover cobre o hover escuro da variante "brand". */
+.compartilhar,
+.compartilhar:hover:not(:disabled) {
   width: 100%;
   margin-bottom: 0;
   gap: 0.5rem;
+  background: var(--color-white);
+  color: var(--color-dark);
 }

@@ -62,6 +62,7 @@ export function PreviaRelatorioProvider({ children }: { children: React.ReactNod
               <Button
                 type="button"
                 variant="brand"
+                size="xl"
                 className={styles.compartilhar}
                 onClick={() => exibido && compartilhar(exibido.arquivo)}
               >
