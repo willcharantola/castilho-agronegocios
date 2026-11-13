@@ -26,7 +26,10 @@ const ou = <T,>(valor: T | null | undefined, formatar: (v: T) => string) =>
 export const kg = (v: number) => `${formatNumber(v)} kg`;
 export const arroba = (v: number) => `${formatNumber(v)} @`;
 
-/** Pesos, médias, extremos e rendimento médio (não se aplicam à modalidade "cabeca"). */
+/**
+ * Pesos, médias e extremos (não se aplicam à modalidade "cabeca"). O rendimento médio saiu
+ * da tela a pedido do cliente, embora a API ainda o envie.
+ */
 function itensPeso(a: AgregadosPeso): Item[] {
   return [
     { label: "Peso total", valor: ou(a.peso_total_quilos, kg) },
@@ -37,7 +40,6 @@ function itensPeso(a: AgregadosPeso): Item[] {
     { label: "Mais pesado (@)", valor: ou(a.mais_pesado_arroba, arroba) },
     { label: "Mais leve", valor: ou(a.mais_leve_quilos, kg) },
     { label: "Mais leve (@)", valor: ou(a.mais_leve_arroba, arroba) },
-    { label: "Rendimento médio", valor: ou(a.rendimento_medio, formatPercent) },
   ];
 }
 
@@ -113,10 +115,10 @@ function CartaoGeral({
   // Bruto, o imposto descontado conforme o tipo de negócio (nenhum em "Livre") e o líquido.
   const detalhes: Item[] = [
     { label: "Cabeças", valor: ou(negocio.qtd_animais, String) },
-    { label: "Valor bruto", valor: ou(negocio.valor_total_bruto, formatCurrency) },
+    { label: "Valor médio por cabeça", valor: ou(negocio.valor_medio, formatCurrency) },
     ...itensDesconto(negocio, negocio),
     { label: "Valor líquido", valor: ou(negocio.valor_total_liquido, formatCurrency) },
-    { label: "Valor médio por cabeça", valor: ou(negocio.valor_medio, formatCurrency) },
+    { label: "Valor bruto", valor: ou(negocio.valor_total_bruto, formatCurrency) },
     ...(porCabeca
       ? []
       : [
@@ -181,10 +183,10 @@ function CartaoLote({
     { label: VALOR_UNIDADE_LABELS[modalidade], valor: formatCurrency(lote.valor_unidade) },
     ...(modalidade === "arroba" ? [{ label: "Rendimento de carcaça", valor: formatPercent(lote.rendimento_carcaca) }] : []),
     { label: "Cabeças", valor: String(lote.qtd_animais) },
-    { label: "Valor total do lote", valor: formatCurrency(lote.valor_total_lote) },
+    { label: "Valor médio por cabeça", valor: ou(lote.valor_medio_cabeca_lote, formatCurrency) },
     ...itensDesconto(negocio, impostos),
     { label: "Valor líquido do lote", valor: ou(impostos.valor_total_liquido, formatCurrency) },
-    { label: "Valor médio por cabeça", valor: ou(lote.valor_medio_cabeca_lote, formatCurrency) },
+    { label: "Valor total do lote", valor: formatCurrency(lote.valor_total_lote) },
     ...(porCabeca ? [] : itensPeso(lote)),
   ];
   return (
