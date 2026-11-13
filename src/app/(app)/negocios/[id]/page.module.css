@@ -14,3 +14,15 @@
     margin-right: auto;
   }
 }
+
+/* Pop-up do "Gerar relatório" na aba Geral. O botão base tem margin-bottom: 50%. */
+.escolhaRelatorio {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.escolhaRelatorio > button {
+  width: 100%;
+  margin-bottom: 0;
+}

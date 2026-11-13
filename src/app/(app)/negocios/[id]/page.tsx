@@ -9,6 +9,7 @@ import { PesagemNegocio } from "@/components/pesagem/pesagem-negocio";
 import { BackLink } from "@/components/back-link";
 import { BotaoExcluir } from "@/components/botao-excluir";
 import { Button } from "@/components/ui/button";
+import { Dialog } from "@/components/ui/dialog";
 import { Fab } from "@/components/fab";
 import { ComissaoForm } from "@/components/comissao-form";
 import { ListaGados } from "@/components/lista-gados";
@@ -17,7 +18,7 @@ import { TipoNegocioForm } from "@/components/tipo-negocio-form";
 import { cn } from "@/lib/utils";
 import { modoDoNegocio } from "@/lib/comissao";
 import { deleteNegocio } from "@/lib/api/negocios";
-import { gerarRomaneios } from "@/lib/relatorio-romaneio";
+import { gerarRomaneios, type TipoRelatorio } from "@/lib/relatorio-romaneio";
 import { useEntregarRelatorio } from "@/components/previa-relatorio";
 import { negocioParaRomaneio, temPendenciaNoRomaneio } from "@/lib/flows/romaneio-local";
 import { useNegocioComPendencias } from "@/lib/flows/use-negocio-com-pendencias";
@@ -61,8 +62,17 @@ function NegocioDetailAdmin() {
   // Lotes ou cabeças ainda na fila offline seriam enviados a um negócio que não existe mais.
   const temPendencias = lotes.some((lote) => lote.pendente || lote.gados.some((gado) => gado.pendente));
 
-  async function handleGerarRelatorio() {
+  // Na aba "Geral" o botão pergunta qual documento gerar; num lote, gera direto o romaneio dele.
+  const [escolhaRelatorioAberta, setEscolhaRelatorioAberta] = React.useState(false);
+
+  function handleBotaoRelatorio() {
+    if (loteFiltrado) void handleGerarRelatorio("romaneio");
+    else setEscolhaRelatorioAberta(true);
+  }
+
+  async function handleGerarRelatorio(tipo: TipoRelatorio) {
     if (!negocio) return;
+    setEscolhaRelatorioAberta(false);
     setGerandoRelatorio(true);
     try {
       // O que está na tela, inclusive o que ainda está na fila offline (valores estimados).
@@ -76,7 +86,7 @@ function NegocioDetailAdmin() {
       const { avisos, ...relatorio } = await gerarRomaneios(
         [dados],
         dados.fazenda ? { [dados.fazenda_id]: dados.fazenda } : {},
-        loteId !== undefined ? { loteId } : undefined,
+        { loteId, tipo },
       );
       entregarRelatorio(relatorio);
       for (const aviso of avisos) avisar(aviso, "aviso");
@@ -185,10 +195,21 @@ function NegocioDetailAdmin() {
       <Fab
         icon={FileText}
         label="Gerar relatório"
-        onClick={handleGerarRelatorio}
+        onClick={handleBotaoRelatorio}
         disabled={gerandoRelatorio || !negocio}
         disabledTitle={gerandoRelatorio ? "Gerando relatório..." : "Carregando negócio..."}
       />
+
+      <Dialog open={escolhaRelatorioAberta} onOpenChange={setEscolhaRelatorioAberta} title="Gerar relatório">
+        <div className={styles.escolhaRelatorio}>
+          <Button type="button" variant="brand" size="xl" onClick={() => handleGerarRelatorio("romaneio")}>
+            Gerar Romaneio Geral
+          </Button>
+          <Button type="button" variant="brand" size="xl" onClick={() => handleGerarRelatorio("fechamento")}>
+            Gerar Fechamento de Negociação
+          </Button>
+        </div>
+      </Dialog>
 
       {/* Negócios "cabeca" não têm pesagem; sem lote não há onde registrar a cabeça. */}
       {negocio && !porCabeca && negocio.lotes.length > 0 ? (

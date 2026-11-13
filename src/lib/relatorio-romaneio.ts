@@ -45,6 +45,14 @@ import { docxParaPdf } from "@/lib/docx-para-pdf";
  */
 
 const TEMPLATE_URL_MODELO1 = "/templates/modelo-romaneio1.docx";
+/**
+ * Fechamento de negociação: o mesmo cabeçalho, totais e dados bancários do romaneio, mas
+ * no lugar das cabeças uma tabela de lotes: {{#lotes}}{{nome-lote}} … {{quantidade-lote}}{{/lotes}}.
+ */
+const TEMPLATE_URL_FECHAMENTO = "/templates/fechamento-negociacao.docx";
+
+/** Documento gerado pelo botão "Gerar relatório". */
+export type TipoRelatorio = "romaneio" | "fechamento";
 
 const DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 
@@ -195,6 +203,15 @@ export function montarDadosModelo1(negocio: NegocioDetail, fazenda: Fazenda | un
   };
 }
 
+export function montarDadosFechamento(negocio: NegocioDetail, fazenda: Fazenda | undefined): DadosDocumento {
+  return {
+    ...montarDadosCabecalho(negocio, fazenda),
+    lotes: [...negocio.lotes]
+      .sort((a, b) => ordemDeCadastro(a.lote_id) - ordemDeCadastro(b.lote_id))
+      .map((lote) => ({ "nome-lote": lote.nome_lote, "quantidade-lote": String(lote.qtd_animais) })),
+  };
+}
+
 /** "Fazenda São João" → "fazenda-sao-joao", seguro para nome de arquivo. */
 function sanitizarNomeArquivo(texto: string) {
   return (
@@ -210,7 +227,7 @@ function sanitizarNomeArquivo(texto: string) {
 async function baixarTemplate(url: string) {
   const response = await fetch(url);
   if (!response.ok) {
-    throw new Error("Não foi possível carregar o modelo do romaneio.");
+    throw new Error("Não foi possível carregar o modelo do relatório.");
   }
   return response.arrayBuffer();
 }
@@ -231,14 +248,18 @@ function renderizar(template: ArrayBuffer, dados: DadosDocumento) {
  * Gera o romaneio (PDF) de cada negócio. Um negócio: o arquivo é o PDF; mais de um: junta
  * tudo num .zip (PizZip, o mesmo usado para ler o modelo). Não baixa nem compartilha: a
  * tela entrega o resultado (useEntregarRelatorio). Com `loteId`, só aquele lote entra no
- * romaneio (ver negocioDoLote).
+ * romaneio (ver negocioDoLote). Com `tipo: "fechamento"`, gera o fechamento de negociação
+ * (lotes e quantidades em vez das cabeças) no lugar do romaneio.
  */
 export async function gerarRomaneios(
   negocios: NegocioDetail[],
   fazendasPorId: Record<number, Fazenda>,
-  opcoes?: { loteId?: number }
+  opcoes?: { loteId?: number; tipo?: TipoRelatorio }
 ): Promise<ResultadoRomaneios> {
-  const modelo1 = await baixarTemplate(TEMPLATE_URL_MODELO1);
+  const fechamento = opcoes?.tipo === "fechamento";
+  const modelo = await baixarTemplate(fechamento ? TEMPLATE_URL_FECHAMENTO : TEMPLATE_URL_MODELO1);
+  const montarDados = fechamento ? montarDadosFechamento : montarDadosModelo1;
+  const prefixo = fechamento ? "fechamento" : "romaneio";
 
   const arquivos: ArquivoGerado[] = [];
   const avisos: string[] = [];
@@ -259,8 +280,8 @@ export async function gerarRomaneios(
     const lote = opcoes?.loteId !== undefined ? `-${sanitizarNomeArquivo(negocio.lotes[0].nome_lote)}` : "";
     const base = `${sanitizarNomeArquivo(nomeFazenda(negocio, fazenda))}${lote}-${negocio.data_negocio.slice(0, 10)}`;
 
-    const { pdf, folhas } = await docxParaPdf(renderizar(modelo1, montarDadosModelo1(negocio, fazenda)));
-    arquivos.push({ nome: nomeUnico(`romaneio-${base}.pdf`), blob: pdf, folhas });
+    const { pdf, folhas } = await docxParaPdf(renderizar(modelo, montarDados(negocio, fazenda)));
+    arquivos.push({ nome: nomeUnico(`${prefixo}-${base}.pdf`), blob: pdf, folhas });
   }
 
   if (arquivos.length === 1) {
@@ -272,7 +293,7 @@ export async function gerarRomaneios(
   const conteudo = zip.generate({ type: "blob", mimeType: "application/zip" });
   return {
     avisos,
-    arquivo: new File([conteudo], `romaneios-${Date.now()}.zip`, { type: "application/zip" }),
+    arquivo: new File([conteudo], `${prefixo}s-${Date.now()}.zip`, { type: "application/zip" }),
     folhas: [],
   };
 }
