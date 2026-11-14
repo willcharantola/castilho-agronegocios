@@ -20,6 +20,7 @@ import { ApiError } from "@/lib/api-client";
 import { PendenteBadge } from "@/components/offline/pendente-badge";
 import { idTemporario, usePendentes, useVersaoSincronizacao } from "@/lib/offline/fila";
 import { mesclarPendentes, negocioDePendente, type ExibicaoNegocio } from "@/lib/offline/pendentes";
+import { hrefNegocio } from "@/lib/offline/rede";
 import { formatarCriterioComissao, modoDoNegocio } from "@/lib/comissao";
 import { BotaoOlhoComissao, exibirComissao, useExibicaoComissao, useUsuario } from "@/lib/permissoes";
 import styles from "./page.module.css";
@@ -233,10 +234,8 @@ function NegociosAdmin() {
           {filtrados.map((negocio) => (
             <Link
               key={negocio.negocio_id}
-              href={`/negocios/${negocio.negocio_id}`}
-              // Pendente: ainda não existe no servidor, então não há tela de detalhe para abrir.
-              aria-disabled={negocio.pendente ? true : undefined}
-              onClick={negocio.pendente ? (e) => e.preventDefault() : undefined}
+              // Pendente (id temporário): abre pela rota que funciona offline.
+              href={hrefNegocio(negocio.negocio_id)}
               className="list-card glass-panel"
             >
               <span className="card-icon">

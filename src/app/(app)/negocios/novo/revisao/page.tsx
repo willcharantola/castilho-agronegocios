@@ -74,9 +74,9 @@ export default function NovoNegocioRevisaoPage() {
       return;
     }
     reset();
-    // Offline, o detalhe pode não estar salvo no aparelho: volta para a listagem, que mostra
-    // o negócio como pendente de sincronização.
-    router.push(sincronizado ? `/negocios/${negocioId}` : "/negocios");
+    // Offline, /negocios/[id] pode não estar salvo no aparelho: abre a mesma tela pela rota
+    // fixa /negocios/detalhe, que funciona sem internet (inclusive com o id temporário).
+    router.push(sincronizado ? `/negocios/${negocioId}` : `/negocios/detalhe?id=${negocioId}`);
   }
 
   if (!data.negocioId) return null;
