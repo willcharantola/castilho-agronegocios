@@ -12,6 +12,12 @@ declare const self: ServiceWorkerGlobalScope;
 
 const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
+  precacheOptions: {
+    // Telas pré-cacheadas que recebem dados pela query (/negocios/detalhe?id=…,
+    // /compradores/novo?returnTo=…): sem ignorar esses parâmetros, o endereço com a query
+    // não casa com o salvo e, offline, cai na tela "sem conexão". utm_/fbclid: os padrões.
+    ignoreURLParametersMatching: [/^utm_/, /^fbclid$/, /^id$/, /^returnTo$/],
+  },
   skipWaiting: true,
   clientsClaim: true,
   navigationPreload: true,
