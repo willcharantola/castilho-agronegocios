@@ -27,3 +27,12 @@ export function mensagemDeErro(err: unknown, padrao = "Erro ao salvar."): string
   if (ehErroDeRede(err)) return "Sem conexão com a internet. Tente novamente quando estiver online.";
   return err instanceof Error ? err.message : padrao;
 }
+
+/**
+ * Endereço da tela do negócio. Um negócio ainda não sincronizado (id temporário, negativo)
+ * usa a rota fixa /negocios/detalhe?id=…: ela fica salva no aparelho desde a instalação e
+ * abre offline, enquanto /negocios/[id] só abre offline para ids já visitados.
+ */
+export function hrefNegocio(negocioId: number) {
+  return negocioId > 0 ? `/negocios/${negocioId}` : `/negocios/detalhe?id=${negocioId}`;
+}

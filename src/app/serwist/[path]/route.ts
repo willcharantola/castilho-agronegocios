@@ -23,6 +23,8 @@ const PAGINAS_OFFLINE = [
   "/negocios/novo/lote-unico",
   "/negocios/novo/gado",
   "/negocios/novo/revisao",
+  // Detalhe de negócio pelo id na query: abre offline também os criados sem internet.
+  "/negocios/detalhe",
   "/fazendas",
   "/pecuaristas",
   "/pecuaristas/novo",
