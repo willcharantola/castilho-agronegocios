@@ -6,15 +6,6 @@ import type { Comprador, Fazenda, NegocioDetail, Pecuarista } from "@/lib/api/ty
 import { centavos, estimarImpostos } from "@/lib/calculo-gado";
 import type { NegocioComPendencias } from "@/lib/offline/pendentes";
 
-/** Algo do negócio (ou só do lote, quando `loteId` vem) ainda está na fila offline. */
-export function temPendenciaNoRomaneio(negocio: NegocioComPendencias, loteId?: number) {
-  const lotes = loteId === undefined ? negocio.lotes : negocio.lotes.filter((l) => l.lote_id === loteId);
-  return (
-    Boolean(negocio.pendente && loteId === undefined) ||
-    lotes.some((lote) => lote.pendente || lote.gados.some((gado) => gado.pendente))
-  );
-}
-
 /** Leitura que pode falhar sem rede e sem cópia no aparelho: o campo sai em branco. */
 async function talvez<T>(buscar: () => Promise<T>): Promise<T | null> {
   try {
