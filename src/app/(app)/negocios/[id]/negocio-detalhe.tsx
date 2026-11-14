@@ -20,7 +20,7 @@ import { modoDoNegocio } from "@/lib/comissao";
 import { deleteNegocio } from "@/lib/api/negocios";
 import { gerarRomaneios, type TipoRelatorio } from "@/lib/relatorio-romaneio";
 import { useEntregarRelatorio } from "@/components/previa-relatorio";
-import { negocioParaRomaneio, temPendenciaNoRomaneio } from "@/lib/flows/romaneio-local";
+import { negocioParaRomaneio } from "@/lib/flows/romaneio-local";
 import { useNegocioComPendencias } from "@/lib/flows/use-negocio-com-pendencias";
 import { useCompradoresPendentes, useFazendasPendentes, usePecuaristasPendentes } from "@/lib/offline/pendentes";
 import { mensagemDeErro } from "@/lib/offline/rede";
@@ -99,12 +99,6 @@ function NegocioDetailAdmin({ negocioId }: { negocioId: number }) {
       );
       entregarRelatorio(relatorio);
       for (const aviso of avisos) avisar(aviso, "aviso");
-      if (temPendenciaNoRomaneio(negocio, loteId)) {
-        avisar(
-          "Relatório gerado com dados ainda não sincronizados: os valores são estimados e podem mudar na sincronização.",
-          "aviso",
-        );
-      }
     } catch (err) {
       avisar(mensagemDeErro(err, "Erro ao gerar relatório."), "aviso");
     } finally {
