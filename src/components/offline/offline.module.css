@@ -43,54 +43,6 @@
   }
 }
 
-.erroToggle {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  border: 0;
-  background: transparent;
-  padding: 0;
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: #fecaca;
-  text-align: left;
-  cursor: pointer;
-}
-
-.erroLista {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.erroItem {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-  border-radius: var(--radius-box);
-  padding: 0.6rem;
-  background: rgb(255 255 255 / 10%);
-}
-
-.erroTitulo {
-  font-size: 0.8rem;
-  font-weight: 700;
-}
-
-.erroMotivo {
-  font-size: var(--font-size-xs);
-  color: #fecaca;
-}
-
-.erroAcoes {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.erroAcoes .barButton:last-child {
-  color: var(--color-white);
-}
-
 .badge {
   display: inline-flex;
   align-items: center;

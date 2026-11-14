@@ -1,42 +1,12 @@
 "use client";
 
 import * as React from "react";
-import { CloudOff, RefreshCw, TriangleAlert, WifiOff } from "lucide-react";
+import { CloudOff, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { EntidadeOffline } from "@/lib/offline/db";
-import { usePendentes, type RegistroSalvo } from "@/lib/offline/fila";
-import { contarDependentes, descartar, sincronizar, tentarNovamente } from "@/lib/offline/sync";
+import { usePendentes } from "@/lib/offline/fila";
+import { sincronizar } from "@/lib/offline/sync";
 import { useOnlineStatus } from "@/lib/offline/use-online-status";
-import { formatDate, formatFazenda } from "@/lib/format";
 import styles from "./offline.module.css";
-
-const NOME_ENTIDADE: Record<EntidadeOffline, string> = {
-  fazenda: "Fazenda",
-  pecuarista: "Pecuarista",
-  comprador: "Comprador",
-  negocio: "Negócio",
-  negocio_atualizacao: "Alteração de negócio",
-  lote: "Lote",
-  lote_atualizacao: "Alteração de lote",
-  gado: "Gado",
-  lote_exclusao: "Exclusão de lote",
-  conclusao: "Conclusão de negócio",
-};
-
-function descrever(r: RegistroSalvo): string {
-  const p = r.payload;
-  const e = r.exibicao ?? {};
-  const detalhe =
-    (typeof p.nome_fazenda === "string" ? formatFazenda(p.nome_fazenda) : undefined) ??
-    (p.nome_pecuarista as string | undefined) ??
-    (p.nome_empresa as string | undefined) ??
-    (p.nome_lote as string | undefined) ??
-    (r.entidade === "gado" && typeof p.peso_total === "number" ? `${p.peso_total} kg` : undefined) ??
-    (r.entidade === "negocio"
-      ? `${formatFazenda(e.fazendaNome as string)} · ${formatDate(p.data_negocio as string)}`
-      : undefined);
-  return detalhe ? `${NOME_ENTIDADE[r.entidade]}: ${detalhe}` : NOME_ENTIDADE[r.entidade];
-}
 
 /**
  * Dispara a sincronização ao abrir o app, ao voltar a conexão e ao voltar o app para
@@ -61,19 +31,22 @@ function useSincronizacaoAutomatica() {
   }, []);
 }
 
-/** Barra fixa no topo: conexão, itens na fila, "Sincronizar agora" e itens com erro. */
+/**
+ * Barra fixa no topo, só com internet e cadastros na fila: quantos aguardam e "Sincronizar
+ * agora". Offline ela não aparece (os registros já trazem o selo "Pendente de
+ * sincronização"), e os cadastros recusados pela API ficam no sino de notificações da home
+ * (ver Notificacoes), não aqui.
+ */
 export function SyncStatus() {
   useSincronizacaoAutomatica();
   const online = useOnlineStatus();
   const registros = usePendentes();
   const [sincronizando, setSincronizando] = React.useState(false);
-  const [verErros, setVerErros] = React.useState(false);
 
-  // "revisao": item antigo que ficou incompleto após a mudança do modelo de dados.
-  const comErro = registros.filter((r) => r.status === "erro" || r.status === "revisao");
-  const aguardando = registros.length - comErro.length;
+  // Os com erro ou para revisar não saem da fila sozinhos: ficam nas notificações.
+  const aguardando = registros.filter((r) => r.status !== "erro" && r.status !== "revisao").length;
 
-  if (online && registros.length === 0) return null;
+  if (!online || aguardando === 0) return null;
 
   async function sincronizarAgora() {
     setSincronizando(true);
@@ -84,84 +57,22 @@ export function SyncStatus() {
     }
   }
 
-  async function confirmarDescarte(r: RegistroSalvo) {
-    const dependentes = await contarDependentes(r.id);
-    const aviso = dependentes
-      ? `\n\n${dependentes} outro(s) cadastro(s) que dependem dele (ex.: gados do negócio) também serão descartados.`
-      : "";
-    if (window.confirm(`Descartar "${descrever(r)}"? Ele não será enviado ao servidor.${aviso}`)) {
-      await descartar(r.id);
-    }
-  }
-
-  let texto: string;
-  if (aguardando > 0) {
-    texto = `${online ? "" : "Sem conexão. "}${aguardando} cadastro(s) salvo(s) no aparelho aguardando sincronização.`;
-  } else if (!online) {
-    texto = "Sem conexão. Cadastros feitos agora ficam salvos no aparelho.";
-  } else {
-    texto = "Há cadastros que não puderam ser enviados.";
-  }
-
   return (
     <div className={styles.bar} role="status">
       <div className={styles.barRow}>
-        {online ? <CloudOff size={16} aria-hidden /> : <WifiOff size={16} aria-hidden />}
-        <p className={styles.barText}>{texto}</p>
-        {online && aguardando > 0 ? (
-          <Button
-            type="button"
-            variant="brand"
-            className={styles.barButton}
-            onClick={sincronizarAgora}
-            disabled={sincronizando}
-          >
-            <RefreshCw size={14} aria-hidden className={sincronizando ? styles.girando : undefined} />
-            {sincronizando ? "Sincronizando..." : "Sincronizar agora"}
-          </Button>
-        ) : null}
+        <CloudOff size={16} aria-hidden />
+        <p className={styles.barText}>{aguardando} cadastro(s) salvo(s) no aparelho aguardando sincronização.</p>
+        <Button
+          type="button"
+          variant="brand"
+          className={styles.barButton}
+          onClick={sincronizarAgora}
+          disabled={sincronizando}
+        >
+          <RefreshCw size={14} aria-hidden className={sincronizando ? styles.girando : undefined} />
+          {sincronizando ? "Sincronizando..." : "Sincronizar agora"}
+        </Button>
       </div>
-
-      {comErro.length > 0 ? (
-        <>
-          <button type="button" className={styles.erroToggle} onClick={() => setVerErros((v) => !v)}>
-            <TriangleAlert size={14} aria-hidden />
-            {comErro.length} cadastro(s) recusado(s) ou para revisar — {verErros ? "ocultar" : "ver motivo"}
-          </button>
-          {verErros ? (
-            <ul className={styles.erroLista}>
-              {comErro.map((r) => (
-                <li key={r.id} className={styles.erroItem}>
-                  <p className={styles.erroTitulo}>{descrever(r)}</p>
-                  <p className={styles.erroMotivo}>{r.erroMensagem}</p>
-                  <div className={styles.erroAcoes}>
-                    {/* Incompleto: reenviar daria o mesmo erro — só corrigir ou descartar. */}
-                    {r.status === "erro" ? (
-                      <Button
-                        type="button"
-                        variant="brand"
-                        className={styles.barButton}
-                        disabled={!online}
-                        onClick={() => void tentarNovamente(r.id)}
-                      >
-                        Tentar de novo
-                      </Button>
-                    ) : null}
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      className={styles.barButton}
-                      onClick={() => void confirmarDescarte(r)}
-                    >
-                      Descartar
-                    </Button>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          ) : null}
-        </>
-      ) : null}
     </div>
   );
 }
