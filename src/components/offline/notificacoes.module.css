@@ -1,0 +1,100 @@
+.sino {
+  position: relative;
+  display: flex;
+  height: 2.75rem;
+  width: 2.75rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 999px;
+  background: color-mix(in oklch, var(--color-dark) 8%, transparent);
+  color: var(--color-dark);
+  cursor: pointer;
+}
+
+.sino:hover {
+  background: color-mix(in oklch, var(--color-dark) 14%, transparent);
+}
+
+.sino:focus-visible {
+  outline: 2px solid var(--color-teal);
+  outline-offset: 2px;
+}
+
+.contador {
+  position: absolute;
+  top: -0.15rem;
+  right: -0.15rem;
+  display: flex;
+  min-width: 1.15rem;
+  height: 1.15rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 0 0.25rem;
+  background: var(--color-danger);
+  color: var(--color-white);
+  font-size: 0.65rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.vazio,
+.resumo {
+  font-size: var(--font-size-md);
+  color: var(--color-ink-muted);
+}
+
+.vazio {
+  padding: 1rem 0;
+  text-align: center;
+}
+
+.lista {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  border: 1px solid var(--color-dark-2);
+  border-radius: var(--radius-box);
+  padding: 0.75rem;
+  background: var(--color-white);
+}
+
+.titulo {
+  font-size: var(--font-size-md);
+  font-weight: 700;
+  color: var(--color-dark);
+}
+
+.motivo {
+  font-size: var(--font-size-sm);
+  color: var(--color-danger);
+}
+
+.acoes {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+/* O botão base tem margin-bottom: 50%. */
+.botao {
+  height: 2.25rem;
+  margin-bottom: 0;
+  padding: 0 0.85rem;
+  font-size: var(--font-size-sm);
+}
+
+.botaoDescartar {
+  border: 1px solid var(--color-dark);
+}

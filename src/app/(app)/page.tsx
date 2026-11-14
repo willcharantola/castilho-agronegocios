@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Building2, Handshake, TrendingUp, Users, DollarSign, Warehouse, type LucideIcon } from "lucide-react";
 import Logo from "@/assets/logo-castilho.svg";
+import { Notificacoes } from "@/components/offline/notificacoes";
 import { Button } from "@/components/ui/button";
 import { TintedInput } from "@/components/form/tinted-input";
 import { formatCurrency, startOfMonth, toDateInputValue } from "@/lib/format";
@@ -124,7 +125,11 @@ export default function HomePage() {
 
   return (
     <div className={cn(styles.page, "pt-safe")}>
-      <Image src={Logo} alt="Logo" className={styles.logo} />
+      {/* Logo no centro e sino à direita; a primeira coluna, vazia, mantém o logo centralizado. */}
+      <div className={styles.topo}>
+        <Image src={Logo} alt="Logo" className={styles.logo} />
+        <Notificacoes className={styles.sino} />
+      </div>
 
       {/* 
       <div className={styles.filterRow}>
