@@ -238,10 +238,11 @@ function NegociosAdmin() {
               href={hrefNegocio(negocio.negocio_id)}
               className="list-card glass-panel"
             >
-              <span className="card-icon">
+             
+              <div className="card-info">
+                 <span className="card-icon">
                 <Warehouse size={18} />
               </span>
-              <div className="card-info">
                 <p className="card-name">
                   {formatFazenda(
                     nomesPendentes[negocio.negocio_id]?.fazendaNome ??

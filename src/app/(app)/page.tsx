@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Building2, Handshake, TrendingUp, Users, DollarSign, Warehouse, type LucideIcon } from "lucide-react";
+import { Building2, Handshake, Plus, TrendingUp, Users, DollarSign, Warehouse, type LucideIcon } from "lucide-react";
 import Logo from "@/assets/logo-castilho.svg";
 import { Notificacoes } from "@/components/offline/notificacoes";
 import { Button } from "@/components/ui/button";
@@ -107,6 +107,7 @@ export default function HomePage() {
   }, [dataInicio, dataFim, normal]);
 
   React.useEffect(() => {
+    if (normal) return;
     Promise.all([fetchFazendas(), fetchPecuaristas(), fetchCompradores()])
       .then(([fazendas, pecuaristas, compradores]) => {
         setFazendasCount(fazendas.length);
@@ -116,7 +117,7 @@ export default function HomePage() {
       .catch(() => {
         // Idem — falha silenciosa.
       });
-  }, []);
+  }, [normal]);
 
   function resetarPeriodo() {
     setDataInicio(toDateInputValue(startOfMonth(hoje)));
@@ -200,21 +201,34 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* Mesmos atalhos para todos. Em Negócios o Normal vê só os liberados para ele; nos
-          cadastros ele consulta a lista e cadastra, mas não edita. */}
-      <div className={styles.shortcuts}>
-        <NavShortcut icon={Warehouse} label="Fazendas" count={fazendasCount ?? 0} href="/fazendas" />
-        <NavShortcut icon={Users} label="Pecuaristas" count={pecuaristasCount ?? 0} href="/pecuaristas" />
-        <NavShortcut icon={Building2} label="Frigoríficos" count={compradoresCount ?? 0} href="/compradores" />
-        <NavShortcut icon={Handshake} label="Negócios" count={resumo?.negocios_realizados ?? 0} href="/negocios" />
-      </div>
+      {normal ? (
+        // Normal: só a lista de negócios e o cadastro, dois botões iguais no pé da tela.
+        <div className={styles.acoesNormal}>
+          <Link href="/negocios" className={styles.botaoNormal}>
+            <Handshake size={22} />
+            Negócios
+          </Link>
+          <Link href="/negocios/novo" className={styles.botaoNormal}>
+            <Plus size={22} />
+            Cadastrar Novo Negócio
+          </Link>
+        </div>
+      ) : (
+        <>
+          <div className={styles.shortcuts}>
+            <NavShortcut icon={Warehouse} label="Fazendas" count={fazendasCount ?? 0} href="/fazendas" />
+            <NavShortcut icon={Users} label="Pecuaristas" count={pecuaristasCount ?? 0} href="/pecuaristas" />
+            <NavShortcut icon={Building2} label="Frigoríficos" count={compradoresCount ?? 0} href="/compradores" />
+            <NavShortcut icon={Handshake} label="Negócios" count={resumo?.negocios_realizados ?? 0} href="/negocios" />
+          </div>
 
-      {/* Admin e Normal cadastram negócios (o do Normal nasce com ele como responsável). */}
-      <div className={styles.actions}>
-        <Button className={styles.bottons} render={<Link href="/negocios/novo" />}>
-          Cadastrar Novo Negócio
-        </Button>
-      </div>
+          <div className={styles.actions}>
+            <Button className={styles.bottons} render={<Link href="/negocios/novo" />}>
+              Cadastrar Novo Negócio
+            </Button>
+          </div>
+        </>
+      )}
     </div>
   );
 }
