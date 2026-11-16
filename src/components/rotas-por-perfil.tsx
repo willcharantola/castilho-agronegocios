@@ -23,7 +23,7 @@ const SOMENTE_ADMIN = [
  * Rotas de /negocios abertas ao Normal: a lista e o negócio (que para ele é a pesagem), e o
  * fluxo de cadastro de negócio (/negocios/novo/...).
  */
-const NEGOCIOS_DO_NORMAL = /^\/negocios(\/\d+|\/novo(\/.*)?)?\/?$/;
+const NEGOCIOS_DO_NORMAL = /^\/negocios(\/\d+|\/detalhe|\/novo(\/.*)?)?\/?$/;
 
 /**
  * Pecuaristas, fazendas e frigoríficos: o Normal abre as listas, as fichas (só leitura) e as
