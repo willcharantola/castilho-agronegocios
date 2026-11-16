@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { FileText, Plus } from "lucide-react";
 import { AcessoNegocioForm } from "@/components/acesso-negocio-form";
 import { useAviso } from "@/components/aviso";
-import { PesagemNegocio } from "@/components/pesagem/pesagem-negocio";
 import { BackLink } from "@/components/back-link";
 import { BotaoExcluir } from "@/components/botao-excluir";
 import { Button } from "@/components/ui/button";
@@ -28,21 +27,19 @@ import { BotaoOlhoComissao, useExibicaoComissao, useUsuario } from "@/lib/permis
 import styles from "./page.module.css";
 
 /**
- * Admin: detalhe completo do negócio. Normal: a tela de pesagem (lotes e pesos, sem
- * valores) — a API só lhe devolve os negócios liberados para ele; os demais, 404.
+ * Detalhe do negócio, a mesma tela para Admin e Normal. O Normal não gera relatórios, não
+ * vê nem altera a comissão, não exclui e não muda responsável/visualização; a API só lhe
+ * devolve os negócios liberados para ele (os demais, 404).
  * Usado por /negocios/[id] e por /negocios/detalhe?id=… (negócio criado offline).
  */
 export function NegocioDetalhe({ negocioId }: { negocioId: number }) {
+  // Perfil ainda não lido: nada, para não mostrar ao Normal, por um instante, o que é do Admin.
   const usuario = useUsuario();
   if (!usuario) return null;
-  return usuario.nivel_acesso === "Admin" ? (
-    <NegocioDetailAdmin negocioId={negocioId} />
-  ) : (
-    <PesagemNegocio negocioId={negocioId} />
-  );
+  return <NegocioDetalheCompleto negocioId={negocioId} />;
 }
 
-function NegocioDetailAdmin({ negocioId }: { negocioId: number }) {
+function NegocioDetalheCompleto({ negocioId }: { negocioId: number }) {
   const router = useRouter();
   const { negocio, erro, recarregar, idReal } = useNegocioComPendencias(negocioId);
 
@@ -195,15 +192,18 @@ function NegocioDetailAdmin({ negocioId }: { negocioId: number }) {
         </>
       ) : null}
 
-      <Fab
-        icon={FileText}
-        label="Gerar relatório"
-        onClick={handleBotaoRelatorio}
-        disabled={gerandoRelatorio || !negocio}
-        disabledTitle={gerandoRelatorio ? "Gerando relatório..." : "Carregando negócio..."}
-      />
+      {/* Relatórios: só Admin. */}
+      {comissao.admin ? (
+        <Fab
+          icon={FileText}
+          label="Gerar relatório"
+          onClick={handleBotaoRelatorio}
+          disabled={gerandoRelatorio || !negocio}
+          disabledTitle={gerandoRelatorio ? "Gerando relatório..." : "Carregando negócio..."}
+        />
+      ) : null}
 
-      <Dialog open={escolhaRelatorioAberta} onOpenChange={setEscolhaRelatorioAberta} title="Gerar relatório">
+      <Dialog open={comissao.admin && escolhaRelatorioAberta} onOpenChange={setEscolhaRelatorioAberta} title="Gerar relatório">
         <div className={styles.escolhaRelatorio}>
           <Button type="button" variant="brand" size="xl" onClick={() => handleGerarRelatorio("romaneio")}>
             Gerar Romaneio Geral
@@ -217,7 +217,13 @@ function NegocioDetailAdmin({ negocioId }: { negocioId: number }) {
       {/* Negócios "cabeca" não têm pesagem; sem lote não há onde registrar a cabeça. Ainda não
           sincronizado: a tela de adicionar gado é uma rota por id, que não abre offline. */}
       {negocio && sincronizado && !porCabeca && negocio.lotes.length > 0 ? (
-        <Fab icon={Plus} label="Adicionar gado" href={`/negocios/${negocio.negocio_id}/gado/novo`} stacked />
+        <Fab
+          icon={Plus}
+          label="Adicionar gado"
+          href={`/negocios/${negocio.negocio_id}/gado/novo`}
+          // Sem o botão de relatório (Normal), fica na posição dele.
+          stacked={comissao.admin}
+        />
       ) : null}
     </div>
   );

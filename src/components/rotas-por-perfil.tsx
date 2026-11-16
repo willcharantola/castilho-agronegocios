@@ -20,10 +20,11 @@ const SOMENTE_ADMIN = [
 ];
 
 /**
- * Rotas de /negocios abertas ao Normal: a lista e o negócio (que para ele é a pesagem), e o
- * fluxo de cadastro de negócio (/negocios/novo/...).
+ * Rotas de /negocios abertas ao Normal: a lista, o negócio (a mesma tela do Admin, sem
+ * relatórios), adicionar e editar cabeça, e o fluxo de cadastro (/negocios/novo/...).
  */
-const NEGOCIOS_DO_NORMAL = /^\/negocios(\/\d+|\/detalhe|\/novo(\/.*)?)?\/?$/;
+const NEGOCIOS_DO_NORMAL =
+  /^\/negocios(\/\d+(\/gado\/(novo|\d+\/editar))?|\/detalhe|\/novo(\/.*)?)?\/?$/;
 
 /**
  * Pecuaristas, fazendas e frigoríficos: o Normal abre as listas, as fichas (só leitura) e as
