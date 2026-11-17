@@ -3,13 +3,11 @@
 import * as React from "react";
 import { useParams, useRouter } from "next/navigation";
 import { BackLink } from "@/components/back-link";
-import { Button } from "@/components/ui/button";
-import { Dialog } from "@/components/ui/dialog";
+import { BotaoExcluir } from "@/components/botao-excluir";
 import { getUsuario, updateUsuarioLocal } from "@/lib/api-client";
 import { deleteUsuario, fetchUsuario, updateUsuario } from "@/lib/api/usuarios";
 import type { Usuario } from "@/lib/api/types";
 import { mensagemDeErro } from "@/lib/offline/rede";
-import { useOnlineStatus } from "@/lib/offline/use-online-status";
 import { cn } from "@/lib/utils";
 import { UsuarioForm, type UsuarioFormValues } from "../usuario-form";
 import { useSomenteAdmin } from "../use-somente-admin";
@@ -19,12 +17,8 @@ export default function EditarUsuarioPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const admin = useSomenteAdmin();
-  const online = useOnlineStatus();
   const [usuario, setUsuario] = React.useState<Usuario | null>(null);
   const [loadError, setLoadError] = React.useState<string | null>(null);
-  const [confirmandoExclusao, setConfirmandoExclusao] = React.useState(false);
-  const [excluindo, setExcluindo] = React.useState(false);
-  const [excluirError, setExcluirError] = React.useState<string | null>(null);
 
   const proprioUsuario = getUsuario()?.usuario_id === Number(params.id);
 
@@ -52,77 +46,28 @@ export default function EditarUsuarioPage() {
     router.push("/configuracoes/usuarios");
   }
 
-  async function excluir() {
-    setExcluirError(null);
-    setExcluindo(true);
-    try {
-      await deleteUsuario(params.id);
-      router.push("/configuracoes/usuarios");
-    } catch (err) {
-      // Ex.: "A empresa precisa ter pelo menos um administrador."
-      setExcluirError(mensagemDeErro(err, "Erro ao excluir."));
-      setExcluindo(false);
-    }
-  }
-
   if (!admin) return null;
 
   return (
     <div className={cn("page-container page-narrow", styles.page, "pt-safe")}>
-      <BackLink href="/configuracoes/usuarios" />
+      <div className="page-header-acoes">
+        <BackLink href="/configuracoes/usuarios" />
+        {/* A própria conta não pode ser excluída (a API também recusa). Se a API recusar
+            (ex.: "A empresa precisa ter pelo menos um administrador."), o motivo aparece num aviso. */}
+        {usuario && !proprioUsuario ? (
+          <BotaoExcluir
+            descricao={`o usuário ${usuario.nome} ${usuario.sobrenome}`}
+            excluir={() => deleteUsuario(params.id)}
+            destino="/configuracoes/usuarios"
+          />
+        ) : null}
+      </div>
       <h1 className="page-title">Editar Usuário</h1>
 
       {!usuario && !loadError ? <div className="state-box glass-panel">Carregando usuário...</div> : null}
       {loadError ? <div className="state-box state-error glass-panel">{loadError}</div> : null}
 
-      {usuario ? (
-        <UsuarioForm
-          usuario={usuario}
-          onSubmit={salvar}
-          acoesExtras={
-            // A própria conta não pode ser excluída (a API também recusa).
-            proprioUsuario ? null : (
-              <>
-                {excluirError ? <p className="form-error">{excluirError}</p> : null}
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="xl"
-                  className={styles.deleteButton}
-                  disabled={!online || excluindo}
-                  onClick={() => setConfirmandoExclusao(true)}
-                >
-                  Excluir usuário
-                </Button>
-              </>
-            )
-          }
-        />
-      ) : null}
-
-      <Dialog open={confirmandoExclusao} onOpenChange={setConfirmandoExclusao} title="Excluir usuário?">
-        <p className={styles.dialogText}>
-          {usuario ? `${usuario.nome} ${usuario.sobrenome} (${usuario.email}) perderá o acesso ao sistema. ` : ""}
-          Esta ação não pode ser desfeita.
-        </p>
-        <div className={styles.dialogActions}>
-          <Button
-            type="button"
-            size="xl"
-            className={styles.dangerButton}
-            disabled={excluindo}
-            onClick={() => {
-              setConfirmandoExclusao(false);
-              void excluir();
-            }}
-          >
-            Excluir definitivamente
-          </Button>
-          <Button type="button" variant="ghost" size="xl" className="w-full" onClick={() => setConfirmandoExclusao(false)}>
-            Cancelar
-          </Button>
-        </div>
-      </Dialog>
+      {usuario ? <UsuarioForm usuario={usuario} onSubmit={salvar} /> : null}
     </div>
   );
 }

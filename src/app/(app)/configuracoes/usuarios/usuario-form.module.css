@@ -6,25 +6,3 @@
   font-size: var(--font-size-xs);
   color: var(--color-ink-muted);
 }
-
-.deleteButton {
-  width: 100%;
-  color: var(--color-danger);
-}
-
-.dialogText {
-  font-size: var(--font-size-md);
-  color: var(--color-ink);
-}
-
-.dialogActions {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.dangerButton {
-  width: 100%;
-  background: var(--color-danger);
-  color: var(--color-white);
-}
