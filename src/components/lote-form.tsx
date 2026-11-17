@@ -9,12 +9,10 @@ import { MaskedNumberInput } from "@/components/form/masked-number-input";
 import { OpcoesBotoes, opcoesDeLabels } from "@/components/form/opcoes-botoes";
 import { TintedInput } from "@/components/form/tinted-input";
 import { Button } from "@/components/ui/button";
-import { fetchTiposGado } from "@/lib/api/tipos-gado";
 import { formatCurrency } from "@/lib/format";
 import { GENERO_LABELS, TIPO_LOTE_LABELS, VALOR_UNIDADE_LABELS } from "@/lib/labels";
 import { mensagemDeErro } from "@/lib/offline/rede";
-import type { CreateLoteInput, Genero, Lote, Modalidade, TipoGadoCatalogo, TipoLote } from "@/lib/api/types";
-import styles from "./lote-form.module.css";
+import type { CreateLoteInput, Genero, Lote, Modalidade, TipoLote } from "@/lib/api/types";
 
 const OPCOES_TIPO_LOTE = opcoesDeLabels(TIPO_LOTE_LABELS);
 const OPCOES_GENERO = opcoesDeLabels(GENERO_LABELS);
@@ -82,8 +80,6 @@ type FormSchema = ReturnType<typeof criarSchema>;
  * Formulário do lote. Em "arroba"/"kg" é usado no modal "Adicionar lote" e na edição (com
  * "Excluir lote"); em "cabeca" é o formulário único do "Lote único" (sem nome nem
  * rendimento, com a quantidade de animais). O preço por unidade é de cada lote.
- * O nome do lote tem sugestões (Configurações → Tipos de gado): tocar em uma preenche o
- * campo, que continua livre.
  */
 export function LoteForm({
   modalidade,
@@ -116,7 +112,6 @@ export function LoteForm({
     register,
     handleSubmit,
     control,
-    setValue,
     formState: { errors, isSubmitting },
   } = useForm<z.input<FormSchema>, unknown, z.output<FormSchema>>({
     resolver: zodResolver(schema),
@@ -137,21 +132,7 @@ export function LoteForm({
   const porCabeca = modalidade === "cabeca";
   const qtd = Number(useWatch({ control, name: "qtd_animais" })) || 0;
   const valorUnidade = Number(useWatch({ control, name: "valor_unidade" })) || 0;
-  const nomeAtual = (useWatch({ control, name: "nome_lote" }) ?? "").trim().toLowerCase();
 
-  // Sugestões de nome: lista da empresa (guardada no aparelho para uso offline).
-  const [sugestoes, setSugestoes] = React.useState<TipoGadoCatalogo[]>([]);
-  React.useEffect(() => {
-    if (porCabeca) return;
-    let cancelado = false;
-    fetchTiposGado()
-      .then((tipos) => !cancelado && setSugestoes(tipos))
-      // Sem a lista, o nome continua sendo digitado à mão.
-      .catch(() => undefined);
-    return () => {
-      cancelado = true;
-    };
-  }, [porCabeca]);
   const id = (nome: string) => `${idPrefix}${nome}`;
 
   async function submit(v: z.output<FormSchema>) {
@@ -196,21 +177,6 @@ export function LoteForm({
               placeholder="Ex: Bois Nelore"
               {...register("nome_lote")}
             />
-            {sugestoes.length > 0 ? (
-              <div className={styles.sugestoes} role="group" aria-label="Sugestões de nome">
-                {sugestoes.map((tipo) => (
-                  <button
-                    key={tipo.tipo_gado_id}
-                    type="button"
-                    className={styles.sugestao}
-                    aria-pressed={nomeAtual === tipo.nome_gado.toLowerCase()}
-                    onClick={() => setValue("nome_lote", tipo.nome_gado, { shouldValidate: true, shouldDirty: true })}
-                  >
-                    {tipo.nome_gado}
-                  </button>
-                ))}
-              </div>
-            ) : null}
           </Field>
         )}
 

@@ -9,7 +9,6 @@ import { z } from "zod";
 import { BackLink } from "@/components/back-link";
 import { ProgressSteps } from "@/components/progress-steps";
 import { Field } from "@/components/form/field";
-import { TintedInput } from "@/components/form/tinted-input";
 import { OpcoesBotoes, opcoesDeLabels } from "@/components/form/opcoes-botoes";
 import { Button } from "@/components/ui/button";
 import { CampoResponsavel, CampoVisualizacao } from "@/components/responsavel-fields";
@@ -48,7 +47,6 @@ export default function NovoNegocioInformacoesPage() {
   const admin = useIsAdmin();
   const [submitError, setSubmitError] = React.useState<string | null>(null);
   const {
-    register,
     handleSubmit,
     control,
     formState: { errors, isSubmitting },
@@ -181,10 +179,6 @@ export default function NovoNegocioInformacoesPage() {
               />
             </>
           ) : null}
-
-          <Field label="Observação (opcional)" htmlFor="observacao" error={errors.observacao?.message}>
-            <TintedInput id="observacao" tint="pink" {...register("observacao")} />
-          </Field>
         </div>
 
         <Button type="submit" disabled={isSubmitting}>

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Building2, ChevronRight, Percent, Tags, UserRound, Users, type LucideIcon } from "lucide-react";
+import { Building2, ChevronRight, Percent, UserRound, Users, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { clearSession } from "@/lib/api-client";
 import { contarPendentesNaFila, limparCacheDeLeitura } from "@/lib/offline/cache";
@@ -19,22 +19,15 @@ const ITENS: ItemConfiguracao[] = [
     href: "/configuracoes/dados-da-empresa",
     icon: Building2,
     titulo: "Dados da empresa",
-    // Normal abre só para consulta; só Admin altera.
     descricao: "Nome, CNPJ, CRECI e dados bancários",
+    // Para Normal o item aparece desativado (sem bloqueio na API por enquanto).
+    somenteAdmin: true,
   },
   {
     href: "/configuracoes/impostos-e-taxas",
     icon: Percent,
     titulo: "Impostos e taxas",
     descricao: "Alíquotas de Funrural e Senar dos negócios",
-  },
-  {
-    href: "/configuracoes/tipos-de-gado",
-    icon: Tags,
-    titulo: "Tipos de gado",
-    descricao: "Nomes sugeridos ao cadastrar lotes",
-    // Só serve ao cadastro de lotes, que é do Admin (a API recusa a lista para Normal).
-    somenteAdmin: true,
   },
   {
     href: "/configuracoes/usuarios",

@@ -90,13 +90,6 @@ export type CompradorDoNegocio = {
   inscricao_estadual: string | null;
 };
 
-/** Nome sugerido para os lotes (Configurações → Tipos de gado). Não é o `tipo_gado` do negócio. */
-export type TipoGadoCatalogo = {
-  tipo_gado_id: number;
-  empresa_id: number;
-  nome_gado: string;
-};
-
 export type Modalidade = "arroba" | "kg" | "cabeca";
 export type TipoGado = "Gordo" | "Reposicao";
 /** Grafias exatas do CHECK no banco. Define o cálculo de Funrural e Senar. */

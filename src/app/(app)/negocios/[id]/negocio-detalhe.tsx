@@ -27,8 +27,8 @@ import { BotaoOlhoComissao, useExibicaoComissao, useUsuario } from "@/lib/permis
 import styles from "./page.module.css";
 
 /**
- * Detalhe do negócio, a mesma tela para Admin e Normal. O Normal não gera relatórios, não
- * vê nem altera a comissão, não exclui e não muda responsável/visualização; a API só lhe
+ * Detalhe do negócio, a mesma tela para Admin e Normal (ambos geram relatórios). O Normal
+ * não vê nem altera a comissão, não exclui e não muda responsável/visualização; a API só lhe
  * devolve os negócios liberados para ele (os demais, 404).
  * Usado por /negocios/[id] e por /negocios/detalhe?id=… (negócio criado offline).
  */
@@ -192,18 +192,15 @@ function NegocioDetalheCompleto({ negocioId }: { negocioId: number }) {
         </>
       ) : null}
 
-      {/* Relatórios: só Admin. */}
-      {comissao.admin ? (
-        <Fab
-          icon={FileText}
-          label="Gerar relatório"
-          onClick={handleBotaoRelatorio}
-          disabled={gerandoRelatorio || !negocio}
-          disabledTitle={gerandoRelatorio ? "Gerando relatório..." : "Carregando negócio..."}
-        />
-      ) : null}
+      <Fab
+        icon={FileText}
+        label="Gerar relatório"
+        onClick={handleBotaoRelatorio}
+        disabled={gerandoRelatorio || !negocio}
+        disabledTitle={gerandoRelatorio ? "Gerando relatório..." : "Carregando negócio..."}
+      />
 
-      <Dialog open={comissao.admin && escolhaRelatorioAberta} onOpenChange={setEscolhaRelatorioAberta} title="Gerar relatório">
+      <Dialog open={escolhaRelatorioAberta} onOpenChange={setEscolhaRelatorioAberta} title="Gerar relatório">
         <div className={styles.escolhaRelatorio}>
           <Button type="button" variant="brand" size="xl" onClick={() => handleGerarRelatorio("romaneio")}>
             Gerar Romaneio Geral
@@ -217,13 +214,7 @@ function NegocioDetalheCompleto({ negocioId }: { negocioId: number }) {
       {/* Negócios "cabeca" não têm pesagem; sem lote não há onde registrar a cabeça. Ainda não
           sincronizado: a tela de adicionar gado é uma rota por id, que não abre offline. */}
       {negocio && sincronizado && !porCabeca && negocio.lotes.length > 0 ? (
-        <Fab
-          icon={Plus}
-          label="Adicionar gado"
-          href={`/negocios/${negocio.negocio_id}/gado/novo`}
-          // Sem o botão de relatório (Normal), fica na posição dele.
-          stacked={comissao.admin}
-        />
+        <Fab icon={Plus} label="Adicionar gado" href={`/negocios/${negocio.negocio_id}/gado/novo`} stacked />
       ) : null}
     </div>
   );

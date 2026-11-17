@@ -133,7 +133,6 @@ function CartaoGeral({
       ),
     },
     { label: "Comissão", valor: exibirComissao(negocio.comissao, comissao, formatCurrency) },
-    { label: "Observação", valor: negocio.observacao || "—" },
   ];
   const nomeFazenda = formatFazenda(fazenda?.nome_fazenda ?? negocio.fazenda?.nome_fazenda ?? `#${negocio.fazenda_id}`);
   return (

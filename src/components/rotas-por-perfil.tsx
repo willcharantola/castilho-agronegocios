@@ -15,12 +15,12 @@ const SOMENTE_ADMIN = [
   "/pecuaristas",
   "/compradores",
   "/fazendas",
+  "/configuracoes/dados-da-empresa",
   "/configuracoes/usuarios",
-  "/configuracoes/tipos-de-gado",
 ];
 
 /**
- * Rotas de /negocios abertas ao Normal: a lista, o negócio (a mesma tela do Admin, sem
+ * Rotas de /negocios abertas ao Normal: a lista, o negócio (a mesma tela do Admin, com
  * relatórios), adicionar e editar cabeça, e o fluxo de cadastro (/negocios/novo/...).
  */
 const NEGOCIOS_DO_NORMAL =
