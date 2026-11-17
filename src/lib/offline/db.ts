@@ -149,7 +149,7 @@ class OfflineDB extends Dexie {
     // v5: bd-12 (atualizacao-bd12.md). O preço volta do lote para o negócio, o comprador
     // pode ser um pecuarista e o frigorífico perde o telefone. Converte a fila; as leituras
     // guardadas (cache) estão no formato antigo e são descartadas — a próxima busca online
-    // as regrava. Os tipos de gado (sugestões de nome de lote) ficam no cache, chave "tipos-gado".
+    // as regrava.
     this.version(5)
       .stores({
         pendentes: "++id, uuid, entidade, status, [entidade+status]",
