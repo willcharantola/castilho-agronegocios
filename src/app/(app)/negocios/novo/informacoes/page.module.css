@@ -16,9 +16,10 @@
   align-items: center;
   justify-content: flex-start;
   gap: 0.75rem;
- 
 }
 
 .fazendaNome {
   font-weight: 800;
+  /* Nomes vão até 100 caracteres: quebram de linha em vez de estourar a largura. */
+  overflow-wrap: anywhere;
 }
