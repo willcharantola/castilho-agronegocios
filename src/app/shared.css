@@ -221,11 +221,14 @@
 .card-info {
   flex: 1;
   min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .card-name {
   font-weight: 800;
   color: var(--color-dark);
+  /* Nomes vão até 100 caracteres: quebram de linha em vez de estourar a largura. */
+  overflow-wrap: anywhere;
 }
 
 .card-meta {

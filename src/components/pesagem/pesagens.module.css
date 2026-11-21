@@ -4,6 +4,7 @@
 }
 
 .subtitle {
+  overflow-wrap: anywhere;
   margin-top: 0.25rem;
   font-size: var(--font-size-sm);
   color: var(--color-ink-muted);

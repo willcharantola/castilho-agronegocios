@@ -17,7 +17,10 @@ import fieldBox from "@/components/form/field-box.module.css";
 /** Dados do pecuarista — limites das colunas de `vendedor`. */
 export const pecuaristaSchema = z
   .object({
-    nome_pecuarista: z.string().min(2, "Informe o nome do pecuarista.").max(50),
+    nome_pecuarista: z
+      .string()
+      .min(2, "Informe o nome do pecuarista.")
+      .max(100, "O nome do pecuarista pode ter no máximo 100 caracteres."),
     fisico_juridico: z.enum(["fisico", "juridico"], {
       error: "Selecione o tipo de pessoa.",
     }),

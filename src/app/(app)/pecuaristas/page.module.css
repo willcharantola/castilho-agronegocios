@@ -12,6 +12,8 @@
 
 .cardName {
   font-weight: 800;
+  /* Nomes vão até 100 caracteres: quebram de linha em vez de estourar a largura. */
+  overflow-wrap: anywhere;
 }
 
 .cardFooter {
@@ -21,5 +23,5 @@
   border-top: 1px solid var(--color-on-dark-surface);
   padding-top: 0.75rem;
   font-size: var(--font-size-xs);
- color: #fff;
+  color: #fff;
 }
