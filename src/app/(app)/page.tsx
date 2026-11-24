@@ -8,7 +8,8 @@ import Logo from "@/assets/logo-castilho.svg";
 import { Notificacoes } from "@/components/offline/notificacoes";
 import { Button } from "@/components/ui/button";
 import { TintedInput } from "@/components/form/tinted-input";
-import { formatCurrency, startOfMonth, toDateInputValue } from "@/lib/format";
+import { formatCurrency } from "@/lib/format";
+import { hojeEmCuiaba, inicioDoMesEmCuiaba } from "@/lib/datas";
 import { cn } from "@/lib/utils";
 import { fetchResumoNegocios } from "@/lib/api/negocios";
 import { fetchFazendas } from "@/lib/api/fazendas";
@@ -78,9 +79,9 @@ function NavShortcut({
 }
 
 export default function HomePage() {
-  const hoje = React.useMemo(() => new Date(), []);
-  const [dataInicio, setDataInicio] = React.useState(() => toDateInputValue(startOfMonth(hoje)));
-  const [dataFim, setDataFim] = React.useState(() => toDateInputValue(hoje));
+  // "Hoje" e o início do mês no fuso da empresa (não no do aparelho), calculados agora.
+  const [dataInicio, setDataInicio] = React.useState(() => inicioDoMesEmCuiaba());
+  const [dataFim, setDataFim] = React.useState(() => hojeEmCuiaba());
 
   // Para usuário Normal a API devolve as três métricas null (tiles com "-").
   const [resumo, setResumo] = React.useState<ResumoNegocios | null>(null);
@@ -120,8 +121,8 @@ export default function HomePage() {
   }, [normal]);
 
   function resetarPeriodo() {
-    setDataInicio(toDateInputValue(startOfMonth(hoje)));
-    setDataFim(toDateInputValue(hoje));
+    setDataInicio(inicioDoMesEmCuiaba());
+    setDataFim(hojeEmCuiaba());
   }
 
   return (
@@ -158,7 +159,7 @@ export default function HomePage() {
             type="date"
             value={dataFim}
             min={dataInicio}
-            max={toDateInputValue(hoje)}
+            max={hojeEmCuiaba()}
             onChange={(e) => setDataFim(e.target.value)}
             className={styles.filterInput}
           />

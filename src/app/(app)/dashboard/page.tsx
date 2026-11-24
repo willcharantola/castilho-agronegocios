@@ -4,7 +4,8 @@ import * as React from "react";
 import { DollarSign, FileText, TrendingUp, Users, type LucideIcon } from "lucide-react";
 import { useAviso } from "@/components/aviso";
 import { TintedInput } from "@/components/form/tinted-input";
-import { formatCurrency, startOfMonth, toDateInputValue } from "@/lib/format";
+import { formatCurrency } from "@/lib/format";
+import { hojeEmCuiaba, inicioDoMesEmCuiaba } from "@/lib/datas";
 import { cn } from "@/lib/utils";
 import { fetchNegocio, fetchNegocios, fetchResumoNegocios } from "@/lib/api/negocios";
 import { fetchFazendas } from "@/lib/api/fazendas";
@@ -33,9 +34,9 @@ function StatRow({ icon: Icon, label, value }: { icon: LucideIcon; label: string
  * mais limpa.
  */
 export default function DashboardPage() {
-  const hoje = React.useMemo(() => new Date(), []);
-  const [dataInicio, setDataInicio] = React.useState(() => toDateInputValue(startOfMonth(hoje)));
-  const [dataFim, setDataFim] = React.useState(() => toDateInputValue(hoje));
+  // "Hoje" e o início do mês no fuso da empresa (não no do aparelho), calculados agora.
+  const [dataInicio, setDataInicio] = React.useState(() => inicioDoMesEmCuiaba());
+  const [dataFim, setDataFim] = React.useState(() => hojeEmCuiaba());
 
   const [negocios, setNegocios] = React.useState<Negocio[] | null>(null);
   // Métricas do período; para usuário Normal a API devolve as três null ("-").
@@ -75,17 +76,16 @@ export default function DashboardPage() {
   React.useEffect(() => {
     // Só serve para dar nome às fazendas no relatório — falha silenciosa,
     // o relatório cai no fallback "Fazenda #id".
-    fetchFazendas().then(setFazendas).catch(() => {});
+    fetchFazendas()
+      .then(setFazendas)
+      .catch(() => {});
   }, []);
 
-  const fazendasPorId = React.useMemo(
-    () => Object.fromEntries(fazendas.map((f) => [f.fazenda_id, f])),
-    [fazendas]
-  );
+  const fazendasPorId = React.useMemo(() => Object.fromEntries(fazendas.map((f) => [f.fazenda_id, f])), [fazendas]);
 
   function resetarPeriodo() {
-    setDataInicio(toDateInputValue(startOfMonth(hoje)));
-    setDataFim(toDateInputValue(hoje));
+    setDataInicio(inicioDoMesEmCuiaba());
+    setDataFim(hojeEmCuiaba());
   }
 
   async function handleGerarRelatorio() {
@@ -98,9 +98,7 @@ export default function DashboardPage() {
       entregarRelatorio(relatorio);
       for (const aviso of avisos) avisar(aviso, "aviso");
     } catch (err) {
-      avisar(
-        err instanceof ApiError || err instanceof Error ? err.message : "Erro ao gerar relatório."
-      , "aviso");
+      avisar(err instanceof ApiError || err instanceof Error ? err.message : "Erro ao gerar relatório.", "aviso");
     } finally {
       setGerandoRelatorio(false);
     }
@@ -120,7 +118,7 @@ export default function DashboardPage() {
             tint="none"
             type="date"
             value={dataInicio}
-            max={dataFim || toDateInputValue(hoje)}
+            max={dataFim || hojeEmCuiaba()}
             onChange={(e) => setDataInicio(e.target.value)}
           />
         </div>
@@ -134,7 +132,7 @@ export default function DashboardPage() {
             type="date"
             value={dataFim}
             min={dataInicio || undefined}
-            max={toDateInputValue(hoje)}
+            max={hojeEmCuiaba()}
             onChange={(e) => setDataFim(e.target.value)}
           />
         </div>
@@ -162,8 +160,6 @@ export default function DashboardPage() {
           value={resumo ? valorRestrito(resumo.total_cabecas, true) : "—"}
         />
       </div>
-
-    
     </div>
   );
 }

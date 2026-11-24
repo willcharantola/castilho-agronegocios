@@ -4,6 +4,7 @@ import type { CreateNegocioInput, TipoComprador } from "@/lib/api/types";
 import { atualizarPendente, ehIdTemporario, enviarOuEnfileirar, idTemporario, referencia } from "@/lib/offline/fila";
 import type { ExibicaoNegocio } from "@/lib/offline/pendentes";
 import type { NegocioFlowData } from "./negocio-flow";
+import { diaDoNegocio, hojeEmCuiaba } from "@/lib/datas";
 
 /**
  * Comprador no payload da fila: a coluna do tipo escolhido (id real ou referência local) e
@@ -37,7 +38,9 @@ export async function salvarNegocioDoFluxo(data: NegocioFlowData): Promise<numbe
     modalidade,
     tipo_gado: tipoGado,
     tipo_negocio: tipoNegocio,
-    data_negocio: new Date(data.dataNegocio).toISOString(),
+    // Data de calendário escolhida, "YYYY-MM-DD": a API grava a meia-noite UTC desse dia.
+    // (new Date("YYYY-MM-DD").toISOString() dependeria de como o texto é interpretado.)
+    data_negocio: diaDoNegocio(data.dataNegocio) ?? hojeEmCuiaba(),
     porcentagem_comissao: data.porcentagemComissao ?? undefined,
     observacao: data.observacao || undefined,
     // Fluxo salvo antes desta versão não tem os campos: a API usa o padrão (autor, "Privado").

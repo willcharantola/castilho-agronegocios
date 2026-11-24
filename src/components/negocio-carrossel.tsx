@@ -3,7 +3,7 @@
 import * as React from "react";
 import { BotaoMapa } from "@/components/botao-mapa";
 import { PendenteBadge } from "@/components/offline/pendente-badge";
-import { formatCurrency, formatDate, formatHora, formatNumber, formatPercent, formatFazenda } from "@/lib/format";
+import { formatCurrency, formatHora, formatNumber, formatPercent, formatFazenda } from "@/lib/format";
 import {
   GENERO_LABELS,
   MODALIDADE_LABELS,
@@ -18,6 +18,7 @@ import type { ComPendencia, LoteComPendencia, NegocioComPendencias } from "@/lib
 import { formatarCriterioComissao, modoDoNegocio } from "@/lib/comissao";
 import { exibirComissao, type ExibicaoComissao } from "@/lib/permissoes";
 import { cn } from "@/lib/utils";
+import { formatarDataNegocio } from "@/lib/datas";
 
 export type Item = { label: string; valor: string };
 
@@ -77,10 +78,12 @@ function rotuloAliquota(nome: string, aliquota: number | null) {
 /** O imposto descontado conforme o tipo de negócio: Funrural, Senar ou nenhum ("Livre"). */
 function itensDesconto(
   negocio: NegocioComPendencias,
-  valores: { funrural: number | null; senar: number | null }
+  valores: { funrural: number | null; senar: number | null },
 ): Item[] {
   if (negocio.tipo_negocio === "Funrural") {
-    return [{ label: rotuloAliquota("Funrural", negocio.aliquota_funrural), valor: ou(valores.funrural, formatCurrency) }];
+    return [
+      { label: rotuloAliquota("Funrural", negocio.aliquota_funrural), valor: ou(valores.funrural, formatCurrency) },
+    ];
   }
   if (negocio.tipo_negocio === "Desconto em folha") {
     return [{ label: rotuloAliquota("Senar", negocio.aliquota_senar), valor: ou(valores.senar, formatCurrency) }];
@@ -107,7 +110,7 @@ function CartaoGeral({
   const destaques: Item[] = [
     { label: "Pecuarista", valor: negocio.pecuarista?.nome_pecuarista ?? "—" },
     { label: "Comprador", valor: negocio.comprador?.nome ?? "—" },
-    { label: "Data", valor: formatDate(negocio.data_negocio) },
+    { label: "Data", valor: formatarDataNegocio(negocio.data_negocio) },
     { label: "Modalidade", valor: MODALIDADE_LABELS[negocio.modalidade] },
     { label: "Tipo de gado", valor: TIPO_GADO_LABELS[negocio.tipo_gado] ?? negocio.tipo_gado },
     { label: "Tipo de negócio", valor: TIPO_NEGOCIO_LABELS[negocio.tipo_negocio] ?? "—" },
@@ -123,13 +126,16 @@ function CartaoGeral({
       ? []
       : [
           ...itensPeso(negocio),
-          { label: "Início da pesagem", valor: negocio.hora_inicio_pesagem ? formatHora(negocio.hora_inicio_pesagem) : "—" },
+          {
+            label: "Início da pesagem",
+            valor: negocio.hora_inicio_pesagem ? formatHora(negocio.hora_inicio_pesagem) : "—",
+          },
           { label: "Fim da pesagem", valor: negocio.hora_fim_pesagem ? formatHora(negocio.hora_fim_pesagem) : "—" },
         ]),
     {
       label: "Critério da comissão",
       valor: exibirComissao(negocio.porcentagem_comissao, comissao, (v) =>
-        formatarCriterioComissao(v, modoDoNegocio(negocio))
+        formatarCriterioComissao(v, modoDoNegocio(negocio)),
       ),
     },
     { label: "Comissão", valor: exibirComissao(negocio.comissao, comissao, formatCurrency) },
@@ -180,7 +186,9 @@ function CartaoLote({
   const impostos = estimarImpostos(negocio, lote.valor_total_lote);
   const detalhes: Item[] = [
     { label: VALOR_UNIDADE_LABELS[modalidade], valor: formatCurrency(lote.valor_unidade) },
-    ...(modalidade === "arroba" ? [{ label: "Rendimento de carcaça", valor: formatPercent(lote.rendimento_carcaca) }] : []),
+    ...(modalidade === "arroba"
+      ? [{ label: "Rendimento de carcaça", valor: formatPercent(lote.rendimento_carcaca) }]
+      : []),
     { label: "Cabeças", valor: String(lote.qtd_animais) },
     { label: "Valor médio por cabeça", valor: ou(lote.valor_medio_cabeca_lote, formatCurrency) },
     ...itensDesconto(negocio, impostos),
@@ -304,7 +312,8 @@ export function ChipsLotes({
     const chip = chipsRef.current[indiceAtivo];
     const faixa = chip?.parentElement;
     if (!chip || !faixa) return;
-    const fora = chip.offsetLeft < faixa.scrollLeft || chip.offsetLeft + chip.offsetWidth > faixa.scrollLeft + faixa.clientWidth;
+    const fora =
+      chip.offsetLeft < faixa.scrollLeft || chip.offsetLeft + chip.offsetWidth > faixa.scrollLeft + faixa.clientWidth;
     if (fora) faixa.scrollTo({ left: chip.offsetLeft - 16, behavior: "smooth" });
   }, [indiceAtivo]);
 
@@ -395,7 +404,7 @@ export function NegocioCarrossel({
   const estimado = Boolean(negocio.pendente) || negocio.lotes.some((l) => l.pendente);
   const loteAtivo = indiceAtivo > 0 ? negocio.lotes[indiceAtivo - 1] : null;
   const cabecas: CabecaListada[] = (loteAtivo ? [loteAtivo] : negocio.lotes).flatMap((lote) =>
-    lote.gados.map((gado) => ({ gado, lote }))
+    lote.gados.map((gado) => ({ gado, lote })),
   );
 
   // Negócios "cabeca" não têm pesagem individual. A lista continua dentro do quadro verde.

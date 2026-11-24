@@ -14,7 +14,8 @@ import { Button } from "@/components/ui/button";
 import { CampoResponsavel, CampoVisualizacao } from "@/components/responsavel-fields";
 import { getUsuario } from "@/lib/api-client";
 import { useIsAdmin } from "@/lib/permissoes";
-import { toDateInputValue, formatFazenda } from "@/lib/format";
+import { formatFazenda } from "@/lib/format";
+import { hojeEmCuiaba } from "@/lib/datas";
 import { MODALIDADE_LABELS, TIPO_GADO_LABELS, TIPO_NEGOCIO_LABELS } from "@/lib/labels";
 import { PASSOS_NOVO_NEGOCIO, useNegocioFlow } from "@/lib/flows/negocio-flow";
 import { salvarNegocioDoFluxo } from "@/lib/flows/criar-negocio";
@@ -76,7 +77,7 @@ export default function NovoNegocioInformacoesPage() {
     const informacoes = {
       tipoGado: values.tipo_gado,
       tipoNegocio: values.tipo_negocio,
-      dataNegocio: data.dataNegocio || toDateInputValue(new Date()),
+      dataNegocio: data.dataNegocio || hojeEmCuiaba(),
       porcentagemComissao: null,
       observacao: values.observacao ?? "",
       responsavelId: values.responsavel_id,

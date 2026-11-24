@@ -6,12 +6,13 @@ import { Scale } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { fetchMinhasPesagens } from "@/lib/api/negocios";
 import type { ItemMinhasPesagens } from "@/lib/api/types";
-import { formatDate, formatFazenda } from "@/lib/format";
+import { formatFazenda } from "@/lib/format";
 import { MODALIDADE_LABELS, TIPO_GADO_LABELS } from "@/lib/labels";
 import { useVersaoSincronizacao } from "@/lib/offline/fila";
 import { mensagemDeErro } from "@/lib/offline/rede";
 import { cn } from "@/lib/utils";
 import styles from "./pesagens.module.css";
+import { formatarDataNegocio } from "@/lib/datas";
 
 /**
  * Tela Negócios do usuário Normal: só os negócios liberados ("Público") para ele, como
@@ -70,7 +71,7 @@ export function MinhasPesagens() {
               <div className="card-info">
                 <p className="card-name">{formatFazenda(item.nome_fazenda)}</p>
                 <p className="card-meta">Pecuarista: {item.nome_pecuarista}</p>
-                <p className="card-meta">Data: {formatDate(item.data_negocio)}</p>
+                <p className="card-meta">Data: {formatarDataNegocio(item.data_negocio)}</p>
                 <p className="card-meta">
                   {MODALIDADE_LABELS[item.modalidade]} · {TIPO_GADO_LABELS[item.tipo_gado]}
                 </p>

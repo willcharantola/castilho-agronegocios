@@ -8,9 +8,10 @@ import type { EntidadeOffline } from "@/lib/offline/db";
 import { usePendentes, type RegistroSalvo } from "@/lib/offline/fila";
 import { contarDependentes, descartar, tentarNovamente } from "@/lib/offline/sync";
 import { useOnlineStatus } from "@/lib/offline/use-online-status";
-import { formatDate, formatFazenda } from "@/lib/format";
+import { formatFazenda } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import styles from "./notificacoes.module.css";
+import { formatarDataNegocio } from "@/lib/datas";
 
 const NOME_ENTIDADE: Record<EntidadeOffline, string> = {
   fazenda: "Fazenda",
@@ -35,7 +36,7 @@ function descrever(r: RegistroSalvo): string {
     (p.nome_lote as string | undefined) ??
     (r.entidade === "gado" && typeof p.peso_total === "number" ? `${p.peso_total} kg` : undefined) ??
     (r.entidade === "negocio"
-      ? `${formatFazenda(e.fazendaNome as string)} · ${formatDate(p.data_negocio as string)}`
+      ? `${formatFazenda(e.fazendaNome as string)} · ${formatarDataNegocio(p.data_negocio as string)}`
       : undefined);
   return detalhe ? `${NOME_ENTIDADE[r.entidade]}: ${detalhe}` : NOME_ENTIDADE[r.entidade];
 }
@@ -87,8 +88,7 @@ export function Notificacoes({ className }: { className?: string }) {
         ) : (
           <>
             <p className={styles.resumo}>
-              {comErro.length} cadastro(s) não puderam ser sincronizados. Veja o motivo e tente de novo ou
-              descarte.
+              {comErro.length} cadastro(s) não puderam ser sincronizados. Veja o motivo e tente de novo ou descarte.
             </p>
             <ul className={styles.lista}>
               {comErro.map((r) => (

@@ -10,13 +10,14 @@ import { Button } from "@/components/ui/button";
 import { fetchNegocioPesagem } from "@/lib/api/negocios";
 import type { NegocioPesagem } from "@/lib/api/types";
 import { concluirPesagem, lancarPesagem } from "@/lib/flows/pesagem";
-import { formatDate, formatFazenda, formatHora, formatNumber } from "@/lib/format";
+import { formatFazenda, formatHora, formatNumber } from "@/lib/format";
 import { MODALIDADE_LABELS } from "@/lib/labels";
 import { usePendentes, useVersaoSincronizacao } from "@/lib/offline/fila";
 import { gadoDePendente, type ExibicaoGado } from "@/lib/offline/pendentes";
 import { mensagemDeErro } from "@/lib/offline/rede";
 import { cn } from "@/lib/utils";
 import styles from "./pesagens.module.css";
+import { formatarDataNegocio } from "@/lib/datas";
 
 /**
  * Pesagem de um negócio liberado para o usuário responsável: escolhe o lote e lança o peso.
@@ -94,7 +95,8 @@ export function PesagemNegocio({ negocioId }: { negocioId: number }) {
         <h1 className="page-title">Pesagem</h1>
         {negocio ? (
           <p className={styles.subtitle}>
-            {formatFazenda(negocio.nome_fazenda)} · {negocio.nome_pecuarista} · {formatDate(negocio.data_negocio)}
+            {formatFazenda(negocio.nome_fazenda)} · {negocio.nome_pecuarista} ·{" "}
+            {formatarDataNegocio(negocio.data_negocio)}
             <br />
             Modalidade: {MODALIDADE_LABELS[negocio.modalidade]} · {cabecas.length} cabeça(s) pesada(s)
           </p>

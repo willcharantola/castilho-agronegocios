@@ -9,7 +9,7 @@ import { MinhasPesagens } from "@/components/pesagem/minhas-pesagens";
 import { VISUALIZACAO_LABELS, nomeDoUsuario, useResponsaveis } from "@/components/responsavel-fields";
 import { Button } from "@/components/ui/button";
 import { Fab } from "@/components/fab";
-import { formatCurrency, formatDate, formatPercent, formatFazenda } from "@/lib/format";
+import { formatCurrency, formatPercent, formatFazenda } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { fetchNegocio, fetchNegocios } from "@/lib/api/negocios";
 import { fetchFazendas } from "@/lib/api/fazendas";
@@ -24,6 +24,7 @@ import { hrefNegocio } from "@/lib/offline/rede";
 import { formatarCriterioComissao, modoDoNegocio } from "@/lib/comissao";
 import { BotaoOlhoComissao, exibirComissao, useExibicaoComissao, useUsuario } from "@/lib/permissoes";
 import styles from "./page.module.css";
+import { formatarDataNegocio } from "@/lib/datas";
 
 /**
  * Admin: todos os negócios da empresa. Normal: só os liberados para ele (responsável e
@@ -238,11 +239,10 @@ function NegociosAdmin() {
               href={hrefNegocio(negocio.negocio_id)}
               className="list-card glass-panel"
             >
-             
               <div className="card-info">
-                 <span className="card-icon">
-                <Warehouse size={18} />
-              </span>
+                <span className="card-icon">
+                  <Warehouse size={18} />
+                </span>
                 <p className="card-name">
                   {formatFazenda(
                     nomesPendentes[negocio.negocio_id]?.fazendaNome ??
@@ -254,7 +254,7 @@ function NegociosAdmin() {
                 <p className="card-meta">
                   Comprador: {nomesPendentes[negocio.negocio_id]?.compradorNome ?? negocio.comprador?.nome ?? "—"}
                 </p>
-                <p className="card-meta">{formatDate(negocio.data_negocio)}</p>
+                <p className="card-meta">{formatarDataNegocio(negocio.data_negocio)}</p>
 
                 <p className="card-meta">
                   Comissão: {exibirComissao(negocio.comissao, comissao.exibicao, formatCurrency)}

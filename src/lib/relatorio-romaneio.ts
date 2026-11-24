@@ -2,7 +2,6 @@ import PizZip from "pizzip";
 import Docxtemplater from "docxtemplater";
 import {
   formatCurrency,
-  formatDate,
   formatDecimalCurto,
   formatGenero,
   formatHora,
@@ -14,6 +13,7 @@ import type { Fazenda, Gado, Lote, NegocioDetail } from "@/lib/api/types";
 import { TIPO_COMPRADOR_LABELS } from "@/lib/labels";
 import { centavos, estimarImpostos } from "@/lib/calculo-gado";
 import { docxParaPdf } from "@/lib/docx-para-pdf";
+import { formatarDataNegocio, formatarDataPesagem } from "@/lib/datas";
 
 /**
  * Romaneio de pesagens em PDF: o modelo 1 (.docx) é preenchido e convertido em PDF no
@@ -87,7 +87,7 @@ function gadosOrdenados(negocio: NegocioDetail): { gado: Gado; lote: Lote }[] {
     .flatMap((lote) =>
       [...lote.gados]
         .sort((a, b) => ordemDeCadastro(a.gado_id) - ordemDeCadastro(b.gado_id))
-        .map((gado) => ({ gado, lote }))
+        .map((gado) => ({ gado, lote })),
     );
 }
 
@@ -141,7 +141,7 @@ export function montarDadosCabecalho(negocio: NegocioDetail, fazenda: Fazenda | 
     // Os dois .docx de romaneio ainda usam o placeholder antigo. Remover esta linha
     // quando os modelos passarem a usar {{nome-pecuarista}}.
     "nome-vendedor": pecuarista?.nome_pecuarista ?? "",
-    "data-negocio": formatDate(negocio.data_negocio),
+    "data-negocio": formatarDataNegocio(negocio.data_negocio),
     "hora-inicio-pesagem": formatHora(negocio.hora_inicio_pesagem),
     "hora-fim-pesagem": formatHora(negocio.hora_fim_pesagem),
     "qtd-animais": negocio.qtd_animais !== null ? String(negocio.qtd_animais) : "",
@@ -190,7 +190,7 @@ function linhaGado({ gado, lote }: { gado: Gado; lote: Lote }): Record<string, s
     "peso-calculo": formatNumber(gado.peso_calculo),
     "rend-carcaca": formatPercent(lote.rendimento_carcaca),
     "peso-arroba": formatNumber(gado.peso_arroba),
-    "data-pesagem": formatDate(gado.data_pesagem),
+    "data-pesagem": formatarDataPesagem(gado.data_pesagem),
     "hora-pesagem": formatHora(gado.horario_pesagem),
     "valor-total": gado.valor_total !== null ? formatCurrency(gado.valor_total) : "",
   };
@@ -254,7 +254,7 @@ function renderizar(template: ArrayBuffer, dados: DadosDocumento) {
 export async function gerarRomaneios(
   negocios: NegocioDetail[],
   fazendasPorId: Record<number, Fazenda>,
-  opcoes?: { loteId?: number; tipo?: TipoRelatorio }
+  opcoes?: { loteId?: number; tipo?: TipoRelatorio },
 ): Promise<ResultadoRomaneios> {
   const fechamento = opcoes?.tipo === "fechamento";
   const modelo = await baixarTemplate(fechamento ? TEMPLATE_URL_FECHAMENTO : TEMPLATE_URL_MODELO1);
