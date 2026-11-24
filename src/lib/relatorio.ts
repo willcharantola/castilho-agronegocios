@@ -1,7 +1,8 @@
 import PizZip from "pizzip";
 import Docxtemplater from "docxtemplater";
 import { saveAs } from "file-saver";
-import { formatCurrency, formatDate, formatGenero, formatNumber } from "@/lib/format";
+import { formatCurrency, formatGenero, formatNumber } from "@/lib/format";
+import { formatarDataNegocio, hojeEmCuiaba } from "@/lib/datas";
 import type { Negocio, NegocioDetail } from "@/lib/api/types";
 
 const TEMPLATE_URL = "/templates/modelo-relatorio.docx";
@@ -31,19 +32,19 @@ async function carregarTemplate(url: string) {
 export async function gerarRelatorioNegocios(
   negocios: Negocio[],
   fazendasPorId: Record<number, string>,
-  opcoes?: { titulo?: string; nomeArquivo?: string }
+  opcoes?: { titulo?: string; nomeArquivo?: string },
 ) {
   const doc = await carregarTemplate(TEMPLATE_URL);
 
   doc.render({
     "nome-relatorio": opcoes?.titulo ?? "Relatório de Negócios",
-    "data-emissao": new Date().toLocaleDateString("pt-BR"),
+    "data-emissao": formatarDataNegocio(hojeEmCuiaba()),
     negocios: negocios.map((n) => ({
       fazenda: fazendasPorId[n.fazenda_id] ?? `Fazenda #${n.fazenda_id}`,
       // `negocio` não tem mais `marchante` (nem pecuarista_id) — pendente definir o que
       // vai nessa coluna do modelo .docx (ver alteracoes.md).
       marchante: "—",
-      data_negocio: formatDate(n.data_negocio),
+      data_negocio: formatarDataNegocio(n.data_negocio),
       cabecas: n.qtd_animais !== null ? String(n.qtd_animais) : "—",
       comissao: n.comissao !== null ? formatCurrency(n.comissao) : "—",
     })),
@@ -69,12 +70,12 @@ export async function gerarRelatorioNegocio(negocio: NegocioDetail, fazendaNome:
 
   doc.render({
     "nome-relatorio": `Relatório do Negócio — ${fazendaNome}`,
-    "data-emissao": new Date().toLocaleDateString("pt-BR"),
+    "data-emissao": formatarDataNegocio(hojeEmCuiaba()),
     negocios: [
       {
         fazenda: fazendaNome,
         marchante: "—", // ver comentário acima
-        data_negocio: formatDate(negocio.data_negocio),
+        data_negocio: formatarDataNegocio(negocio.data_negocio),
         cabecas: negocio.qtd_animais !== null ? String(negocio.qtd_animais) : "—",
         comissao: negocio.comissao !== null ? formatCurrency(negocio.comissao) : "—",
       },
@@ -86,7 +87,7 @@ export async function gerarRelatorioNegocio(negocio: NegocioDetail, fazendaNome:
         peso_calculo: formatNumber(g.peso_calculo),
         peso_arroba: formatNumber(g.peso_arroba),
         valor_total: g.valor_total !== null ? formatCurrency(g.valor_total) : "—",
-      }))
+      })),
     ),
   });
 

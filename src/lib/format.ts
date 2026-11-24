@@ -22,31 +22,16 @@ export function formatPercent(value: number) {
   return `${formatDecimalCurto(value)}%`;
 }
 
-export function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("pt-BR");
-}
-
 /** The DB stores genero without accents ("Femea") — display it properly. */
 export function formatGenero(genero: string) {
   return genero === "Femea" ? "Fêmea" : genero;
 }
 
+/** Datas (negócio, pesagem, "hoje"): ver lib/datas.ts. */
+
 /** Colunas TIME chegam como ISO em 1970-01-01 (UTC) — devolve "HH:mm". */
 export function formatHora(iso: string | null | undefined) {
   return iso ? iso.slice(11, 16) : "";
-}
-
-/** Formata uma data local como "YYYY-MM-DD", sem passar por UTC (evita o
- * clássico off-by-one de `toISOString()` perto da virada do dia). */
-export function toDateInputValue(date: Date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
-export function startOfMonth(date: Date) {
-  return new Date(date.getFullYear(), date.getMonth(), 1);
 }
 
 /** Nome da fazenda para exibição, com "Fazenda" na frente (sem repetir se o cadastro já começar assim). */

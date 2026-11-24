@@ -142,6 +142,10 @@ export type Negocio = {
   modalidade: Modalidade;
   tipo_gado: TipoGado;
   tipo_negocio: TipoNegocio;
+  /**
+   * Data de calendário: meia-noite UTC do dia ("2026-11-24T00:00:00.000Z" = dia 24). Exibir
+   * com `formatarDataNegocio` (lib/datas), nunca convertendo para o fuso do aparelho.
+   */
   data_negocio: string;
   /**
    * Valor da comissão informado pelo Admin (0 a 100): R$ por arroba de peso vivo no gado
@@ -209,6 +213,7 @@ export type Gado = {
   gado_id: number;
   lote_id: number;
   peso_total: number;
+  /** Instante da pesagem (UTC): exibir com `formatarDataHoraPesagem`/`formatarDataPesagem` (fuso da empresa). */
   data_pesagem: string;
   /** Registrado pela API no cadastro — use `formatHora`. */
   horario_pesagem: string | null;
@@ -241,6 +246,7 @@ export type GadoPesagem = {
   gado_id: number;
   lote_id: number;
   peso_total: number;
+  /** Instante da pesagem (UTC): exibir com `formatarDataHoraPesagem`/`formatarDataPesagem` (fuso da empresa). */
   data_pesagem: string;
   horario_pesagem: string | null;
 };
@@ -355,6 +361,7 @@ export type CreateNegocioInput = {
   modalidade: Modalidade;
   tipo_gado: TipoGado;
   tipo_negocio: TipoNegocio;
+  /** "YYYY-MM-DD" (a data escolhida, ex.: `hojeEmCuiaba()`); a API grava a meia-noite UTC. */
   data_negocio: string;
   /** Percentual (0 a 100); a API calcula `comissao` em R$. */
   porcentagem_comissao?: number;
