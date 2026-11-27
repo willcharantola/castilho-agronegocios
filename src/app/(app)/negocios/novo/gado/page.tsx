@@ -2,31 +2,15 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { Beef, Pencil, Warehouse } from "lucide-react";
-import { BackLink } from "@/components/back-link";
-import { Button } from "@/components/ui/button";
-import { GadoForm } from "@/components/gado-form";
-import { GadoEditDialog } from "@/components/gado-edit-dialog";
-import { arroba, ChipsLotes, chipId, Detalhes, kg } from "@/components/negocio-carrossel";
-import { PendenteBadge } from "@/components/offline/pendente-badge";
-import { formatCurrency, formatNumber, formatFazenda } from "@/lib/format";
-import { MODALIDADE_LABELS } from "@/lib/labels";
-import { cadastrarGado } from "@/lib/flows/operacoes-lote";
+import { PesagemCabecas } from "@/components/pesagem/pesagem-cabecas";
 import { useNegocioFlow } from "@/lib/flows/negocio-flow";
 import { useNegocioComPendencias } from "@/lib/flows/use-negocio-com-pendencias";
-import { cn } from "@/lib/utils";
-import type { Gado } from "@/lib/api/types";
-import styles from "./page.module.css";
 
 /** Passo 7 (modalidades "arroba" e "kg"): pesagem das cabeças, cada uma num lote. */
 export default function NovoNegocioGadoPage() {
   const router = useRouter();
   const { data, update } = useNegocioFlow();
   const { negocio, erro, recarregar, idReal } = useNegocioComPendencias(data.negocioId);
-  const [gadoEmEdicao, setGadoEmEdicao] = React.useState<Gado | null>(null);
-  // Filtro das cabeças cadastradas: 0 = "Geral", i = i-ésimo lote (como no detalhe do negócio).
-  const [filtro, setFiltro] = React.useState(0);
-  const idListaCabecas = `${React.useId()}-cabecas`;
 
   React.useEffect(() => {
     if (!data.negocioId) router.replace("/negocios/novo/informacoes");
@@ -43,178 +27,19 @@ export default function NovoNegocioGadoPage() {
     else if (negocio && negocio.lotes.length === 0) router.replace("/negocios/novo/lotes");
   }, [modalidade, negocio, router]);
 
-  const cabecas = React.useMemo(
-    () =>
-      (negocio?.lotes ?? [])
-        .flatMap((lote) => lote.gados.map((gado) => ({ gado, nomeLote: lote.nome_lote })))
-        // Mais recente primeiro (a última pesagem logo abaixo do formulário): as ainda na
-        // fila (id negativo) são as mais novas; ids locais e reais não se comparam entre si.
-        .sort(
-          (a, b) =>
-            Number(b.gado.gado_id < 0) - Number(a.gado.gado_id < 0) ||
-            Math.abs(b.gado.gado_id) - Math.abs(a.gado.gado_id)
-        ),
-    [negocio]
-  );
-
-  const lotes = negocio?.lotes ?? [];
-  // Se o lote filtrado deixar de existir, volta ao último disponível.
-  const indiceFiltro = Math.min(filtro, lotes.length);
-  const loteFiltrado = indiceFiltro > 0 ? lotes[indiceFiltro - 1] : null;
-  const cabecasFiltradas = loteFiltrado
-    ? cabecas.filter(({ gado }) => loteFiltrado.gados.includes(gado))
-    : cabecas;
-  // Calculados das cabeças listadas, para incluir as ainda na fila offline.
-  const pesoTotal = cabecasFiltradas.reduce((soma, { gado }) => soma + gado.peso_total, 0);
-  const pesoTotalArroba = cabecasFiltradas.reduce((soma, { gado }) => soma + gado.peso_arroba, 0);
-  const resumoFiltro = [
-    { label: "Cabeças", valor: String(cabecasFiltradas.length) },
-    { label: "Peso total", valor: cabecasFiltradas.length > 0 ? kg(pesoTotal) : "—" },
-    { label: "Peso médio", valor: cabecasFiltradas.length > 0 ? kg(pesoTotal / cabecasFiltradas.length) : "—" },
-    // Na modalidade "kg" não há peso em arroba (a API grava 0).
-    ...(negocio?.modalidade === "arroba"
-      ? [
-          {
-            label: "Peso médio (@)",
-            valor: cabecasFiltradas.length > 0 ? arroba(pesoTotalArroba / cabecasFiltradas.length) : "—",
-          },
-        ]
-      : []),
-  ];
-
   if (!data.negocioId) return null;
 
   return (
-    <div className={cn("page-narrow", styles.page, "pt-safe")}>
-      <BackLink href="/negocios/novo/lotes" label="Lotes" />
-
-      {erro && !negocio ? <div className="state-box state-error glass-panel">{erro}</div> : null}
-
-      {negocio ? (
-        <div className={cn(styles.summary, "glass-dark")}>
-          <div className="card-header">
-            <span className="card-icon-on-dark">
-              <Warehouse size={18} />
-            </span>
-            <div>
-              <p className={styles.summaryFarm}>{formatFazenda(data.fazendaNome)}</p>
-              <p className="card-meta-on-dark">Pecuarista: {negocio.pecuarista.nome_pecuarista}</p>
-              <p className="card-meta-on-dark">Comprador: {negocio.comprador?.nome ?? data.compradorNome}</p>
-            </div>
-          </div>
-          <div className={styles.summaryStats}>
-            <div>
-              <p className={styles.summaryStatLabel}>Modalidade</p>
-              <p className={styles.summaryStatValue}>{MODALIDADE_LABELS[negocio.modalidade]}</p>
-            </div>
-            <div>
-              <p className={styles.summaryStatLabel}>Lotes</p>
-              <p className={styles.summaryStatValue}>{negocio.lotes.length}</p>
-            </div>
-          </div>
-          <div className={styles.summaryFooter}>
-            <span>
-              Cabeças: <b>{cabecas.length}</b>
-            </span>
-            <span>
-              Valor bruto: <b>{negocio.valor_total_bruto !== null ? formatCurrency(negocio.valor_total_bruto) : "—"}</b>
-            </span>
-          </div>
-        </div>
-      ) : null}
-
-      {negocio && negocio.lotes.length > 0 && negocio.modalidade !== "cabeca" ? (
-        <GadoForm
-          // Remonta quando a lista de lotes muda (ex.: lote sincronizado ganhou id real).
-          key={negocio.lotes.map((l) => l.lote_id).join(",")}
-          modalidade={negocio.modalidade}
-          tipoGado={negocio.tipo_gado}
-          lotes={negocio.lotes}
-          defaultValues={{ loteId: data.ultimoLoteId ?? (negocio.lotes.length === 1 ? negocio.lotes[0].lote_id : null) }}
-          submitLabel="Cadastrar"
-          submittingLabel="Cadastrando..."
-          resetAfterSubmit
-          onSubmit={async ({ loteId, pesoTotal }) => {
-            const lote = negocio.lotes.find((l) => l.lote_id === loteId);
-            if (!lote) throw new Error("Lote não encontrado.");
-            const sincronizado = await cadastrarGado(negocio, lote, pesoTotal);
-            update({ ultimoLoteId: loteId });
-            if (sincronizado) await recarregar();
-          }}
-        />
-      ) : null}
-
-      {negocio ? (
-        <div className={styles.sessionList}>
-          {cabecas.length > 0 ? (
-            <>
-              <p className="section-title">Cabeças cadastradas</p>
-              <ChipsLotes
-                lotes={lotes}
-                ativo={indiceFiltro}
-                onAtivoChange={setFiltro}
-                controlaId={idListaCabecas}
-              />
-              <Detalhes itens={resumoFiltro} />
-              <div
-                id={idListaCabecas}
-                role="tabpanel"
-                aria-labelledby={chipId(idListaCabecas, indiceFiltro)}
-                className={styles.sessionItems}
-              >
-                {cabecasFiltradas.length === 0 ? (
-                  <p className={styles.sessionEmpty}>Nenhuma cabeça cadastrada neste lote.</p>
-                ) : null}
-                {cabecasFiltradas.map(({ gado, nomeLote }) => (
-                  <button
-                    key={gado.gado_id}
-                    type="button"
-                    className={styles.sessionRow}
-                    onClick={() => setGadoEmEdicao(gado)}
-                    aria-label={`Editar cabeça de ${formatNumber(gado.peso_total)} kg do lote ${nomeLote}`}
-                  >
-                    <span className={styles.sessionIcon}>
-                      <Beef size={18} />
-                    </span>
-                    <div className={styles.sessionInfo}>
-                      <p className={styles.sessionName}>{nomeLote}</p>
-                      <p className={styles.sessionMeta}>
-                        Peso: {formatNumber(gado.peso_total)} kg · Arrobas: {formatNumber(gado.peso_arroba)}
-                      </p>
-                      {"pendente" in gado && gado.pendente ? <PendenteBadge pendente={gado.pendente} /> : null}
-                    </div>
-                    <div className={styles.sessionAmount}>
-                      <p className={styles.sessionAmountValue}>
-                        {gado.valor_total !== null ? formatCurrency(gado.valor_total) : "—"}
-                      </p>
-                    </div>
-                    <Pencil size={16} className={styles.sessionEditIcon} aria-hidden />
-                  </button>
-                ))}
-              </div>
-            </>
-          ) : null}
-          <Button
-            type="button"
-            variant="ghost"
-            size="xl"
-            className={styles.finishButton}
-            onClick={() => router.push("/negocios/novo/revisao")}
-          >
-            Revisar e concluir
-          </Button>
-        </div>
-      ) : null}
-
-      {negocio ? (
-        <GadoEditDialog
-          gado={gadoEmEdicao}
-          negocio={negocio}
-          lotes={negocio.lotes}
-          onClose={() => setGadoEmEdicao(null)}
-          onSaved={recarregar}
-        />
-      ) : null}
-    </div>
+    <PesagemCabecas
+      negocio={negocio}
+      erro={erro}
+      recarregar={recarregar}
+      voltar={{ href: "/negocios/novo/lotes", label: "Lotes" }}
+      fazendaNome={data.fazendaNome}
+      compradorNome={data.compradorNome}
+      ultimoLoteId={data.ultimoLoteId}
+      onLoteUsado={(loteId) => update({ ultimoLoteId: loteId })}
+      acao={{ label: "Revisar e concluir", onClick: () => router.push("/negocios/novo/revisao") }}
+    />
   );
 }
